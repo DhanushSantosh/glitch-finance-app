@@ -28,6 +28,7 @@ export const OtpVerifyScreen = ({ email, onBack, onVerify }: OtpVerifyScreenProp
     <View style={styles.container}>
       <Text style={styles.title}>Enter OTP</Text>
       <Text style={styles.subtitle}>We sent a 6-digit code to {email}</Text>
+      <Text style={styles.helperText}>Development mode: OTP is printed in the API terminal logs.</Text>
 
       <TextInput
         keyboardType="number-pad"
@@ -70,6 +71,11 @@ const styles = StyleSheet.create({
     color: "#475569",
     fontSize: 14,
     lineHeight: 20
+  },
+  helperText: {
+    color: "#1e40af",
+    fontSize: 12,
+    fontWeight: "600"
   },
   input: {
     borderWidth: 1,

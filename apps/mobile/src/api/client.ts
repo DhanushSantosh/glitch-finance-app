@@ -14,12 +14,29 @@ type ApiErrorPayload = {
   };
 };
 
+const rewriteLoopbackForAndroid = (rawUrl: string): string => {
+  if (Platform.OS !== "android") {
+    return rawUrl;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      parsed.hostname = "10.0.2.2";
+      return parsed.toString().replace(/\/$/, "");
+    }
+    return rawUrl;
+  } catch {
+    return rawUrl;
+  }
+};
+
 const resolveApiBaseUrl = (): string => {
   const fromEnv = process.env.EXPO_PUBLIC_API_URL;
   if (fromEnv && fromEnv.length > 0) {
-    return fromEnv;
+    return rewriteLoopbackForAndroid(fromEnv);
   }
-  return Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000";
+  return rewriteLoopbackForAndroid("http://localhost:4000");
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
