@@ -26,10 +26,6 @@ This folder is the source of truth for product and engineering documentation.
 - `LOCAL_DEV_SETUP.md` - Local setup for mobile and backend development.
 - `OPERATIONS_RUNBOOK.md` - Environment config, runbook steps, and troubleshooting.
 
-## Design Integration
-
-- `code-connect-setup.md` - Figma Code Connect workflow for design-to-code handoff.
-
 ## Documentation Standards
 
 1. Update docs in the same PR as behavior or contract changes.
