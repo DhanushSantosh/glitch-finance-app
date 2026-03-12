@@ -228,7 +228,7 @@ export class AuthService {
 }
 
 const ctxAwareOtpResponse = (nodeEnv: AppEnv["NODE_ENV"], otpCode: string): { message: string; debugOtpCode?: string } => {
-  if (nodeEnv === "test") {
+  if (nodeEnv !== "production") {
     return {
       message: "If this email is valid, an OTP has been sent.",
       debugOtpCode: otpCode

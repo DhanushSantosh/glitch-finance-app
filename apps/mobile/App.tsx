@@ -73,8 +73,11 @@ export default function App() {
   }, []);
 
   const handleRequestOtp = async (email: string) => {
-    await apiClient.requestOtp(email);
+    const response = await apiClient.requestOtp(email);
     setPendingEmail(email.trim().toLowerCase());
+    if (response.debugOtpCode) {
+      Alert.alert("Development OTP", `Use this OTP: ${response.debugOtpCode}`);
+    }
   };
 
   const handleVerifyOtp = async (code: string) => {

@@ -68,8 +68,8 @@ export const apiClient = {
     return request<BootstrapPayload>("/api/v1/bootstrap");
   },
 
-  async requestOtp(email: string): Promise<{ message: string }> {
-    return request<{ message: string }>("/api/v1/auth/request-otp", {
+  async requestOtp(email: string): Promise<{ message: string; debugOtpCode?: string }> {
+    return request<{ message: string; debugOtpCode?: string }>("/api/v1/auth/request-otp", {
       method: "POST",
       body: { email }
     });
