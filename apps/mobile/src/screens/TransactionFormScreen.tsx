@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
+import { AppHeader, Button, Card, InlineMessage, Screen, SegmentedControl, TextField } from "../components/ui";
 import { canSubmitTransaction } from "../flow/mobileFlow";
+import { createStyles, theme } from "../theme";
 import { Category, Transaction, TransactionDirection } from "../types";
 
 type TransactionFormSubmit = {
@@ -29,6 +31,7 @@ export const TransactionFormScreen = ({ categories, initial, onCancel, onSubmit 
   const [note, setNote] = useState(initial?.note ?? "");
   const [occurredAt, setOccurredAt] = useState(initial ? initial.occurredAt.slice(0, 19) : new Date().toISOString().slice(0, 19));
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const eligibleCategories = useMemo(
     () => categories.filter((category) => category.direction === direction || category.direction === "transfer"),
@@ -46,158 +49,84 @@ export const TransactionFormScreen = ({ categories, initial, onCancel, onSubmit 
       setError("Enter a valid date/time in ISO format (YYYY-MM-DDTHH:mm:ss).");
       return;
     }
-    
-    setError(null);
 
-    await onSubmit({
-      categoryId,
-      direction,
-      amount: parsedAmount,
-      currency: currency.toUpperCase(),
-      counterparty: counterparty.trim(),
-      note: note.trim(),
-      occurredAt: new Date(occurredAt).toISOString()
-    });
+    setError(null);
+    setLoading(true);
+
+    try {
+      await onSubmit({
+        categoryId,
+        direction,
+        amount: parsedAmount,
+        currency: currency.toUpperCase(),
+        counterparty: counterparty.trim(),
+        note: note.trim(),
+        occurredAt: new Date(occurredAt).toISOString()
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const categoryOptions = [
+    { value: "none", label: "Uncategorized" },
+    ...eligibleCategories.map((item) => ({ value: item.id, label: item.name }))
+  ];
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{initial ? "Edit Transaction" : "Add Transaction"}</Text>
+    <Screen keyboardAware>
+      <Card>
+        <AppHeader
+          title={initial ? "Edit Transaction" : "Add Transaction"}
+          subtitle="Capture reliable financial events with category and timestamp context."
+        />
 
-      <Text style={styles.label}>Direction</Text>
-      <View style={styles.pillRow}>
-        {(["debit", "credit", "transfer"] as const).map((item) => (
-          <Pressable key={item} onPress={() => setDirection(item)} style={[styles.pill, direction === item && styles.pillActive]}>
-            <Text style={[styles.pillText, direction === item && styles.pillTextActive]}>{item}</Text>
-          </Pressable>
-        ))}
-      </View>
+        <SegmentedControl
+          options={[
+            { value: "debit", label: "Debit" },
+            { value: "credit", label: "Credit" },
+            { value: "transfer", label: "Transfer" }
+          ]}
+          selected={direction}
+          onSelect={(value) => setDirection(value)}
+        />
 
-      <Text style={styles.label}>Amount</Text>
-      <TextInput keyboardType="decimal-pad" value={amount} onChangeText={setAmount} style={styles.input} placeholder="0.00" />
+        <TextField label="Amount" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} placeholder="0.00" />
+        <TextField label="Currency" value={currency} onChangeText={setCurrency} autoCapitalize="characters" maxLength={3} />
 
-      <Text style={styles.label}>Currency</Text>
-      <TextInput value={currency} onChangeText={setCurrency} style={styles.input} autoCapitalize="characters" maxLength={3} />
+        <SegmentedControl
+          options={categoryOptions}
+          selected={categoryId ?? "none"}
+          onSelect={(value) => setCategoryId(value === "none" ? null : value)}
+        />
 
-      <Text style={styles.label}>Category</Text>
-      <ScrollView horizontal contentContainerStyle={styles.pillRow}>
-        <Pressable onPress={() => setCategoryId(null)} style={[styles.pill, categoryId === null && styles.pillActive]}>
-          <Text style={[styles.pillText, categoryId === null && styles.pillTextActive]}>Uncategorized</Text>
-        </Pressable>
-        {eligibleCategories.map((item) => (
-          <Pressable key={item.id} onPress={() => setCategoryId(item.id)} style={[styles.pill, categoryId === item.id && styles.pillActive]}>
-            <Text style={[styles.pillText, categoryId === item.id && styles.pillTextActive]}>{item.name}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+        <TextField label="Counterparty" value={counterparty} onChangeText={setCounterparty} placeholder="Merchant or person" />
+        <TextField label="Notes" value={note} onChangeText={setNote} multiline />
+        <TextField
+          label="Date/Time (ISO)"
+          value={occurredAt}
+          onChangeText={setOccurredAt}
+          placeholder="2026-03-11T19:20:00"
+          helperText="Store precise event time for analytics and summaries."
+        />
 
-      <Text style={styles.label}>Counterparty</Text>
-      <TextInput value={counterparty} onChangeText={setCounterparty} style={styles.input} placeholder="Merchant or person" />
+        {error ? <InlineMessage tone="error" text={error} /> : null}
 
-      <Text style={styles.label}>Notes</Text>
-      <TextInput value={note} onChangeText={setNote} style={[styles.input, styles.textArea]} multiline />
-
-      <Text style={styles.label}>Date/Time (ISO)</Text>
-      <TextInput value={occurredAt} onChangeText={setOccurredAt} style={styles.input} placeholder="2026-03-11T19:20:00" />
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <View style={styles.actions}>
-        <Pressable style={styles.secondaryButton} onPress={onCancel}>
-          <Text style={styles.secondaryText}>Cancel</Text>
-        </Pressable>
-        <Pressable style={styles.primaryButton} onPress={() => void handleSubmit()}>
-          <Text style={styles.primaryText}>{initial ? "Save" : "Create"}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+        <View style={styles.actionRow}>
+          <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.flexAction} />
+          <Button label={initial ? "Save" : "Create"} onPress={() => void handleSubmit()} loading={loading} style={styles.flexAction} />
+        </View>
+      </Card>
+    </Screen>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 8
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#0f172a",
-    marginBottom: 6
-  },
-  label: {
-    marginTop: 8,
-    color: "#334155",
-    fontWeight: "700"
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-    color: "#0f172a"
-  },
-  textArea: {
-    minHeight: 72,
-    textAlignVertical: "top"
-  },
-  pillRow: {
+const styles = createStyles(() => ({
+  actionRow: {
     flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap"
+    gap: theme.spacing.sm
   },
-  pill: {
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-    backgroundColor: "#eff6ff",
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 20
-  },
-  pillActive: {
-    borderColor: "#1d4ed8",
-    backgroundColor: "#1d4ed8"
-  },
-  pillText: {
-    color: "#1d4ed8",
-    fontWeight: "700"
-  },
-  pillTextActive: {
-    color: "#fff"
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 16
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#fff"
-  },
-  secondaryText: {
-    color: "#334155",
-    fontWeight: "700"
-  },
-  primaryButton: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#2563eb"
-  },
-  primaryText: {
-    color: "#fff",
-    fontWeight: "700"
-  },
-  error: {
-    color: "#b91c1c",
-    fontWeight: "600",
-    marginTop: 8
+  flexAction: {
+    flex: 1
   }
-});
+}));

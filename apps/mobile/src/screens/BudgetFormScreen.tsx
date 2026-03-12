@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
+import { AppHeader, Button, Card, InlineMessage, Screen, SegmentedControl, TextField } from "../components/ui";
+import { createStyles, theme } from "../theme";
 import { Budget, Category } from "../types";
 
 type BudgetFormSubmit = {
@@ -17,6 +19,8 @@ type BudgetFormScreenProps = {
   onSubmit: (payload: BudgetFormSubmit) => Promise<void>;
 };
 
+const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
 export const BudgetFormScreen = ({ categories, initial, month, onCancel, onSubmit }: BudgetFormScreenProps) => {
   const debitCategories = useMemo(() => categories.filter((category) => category.direction === "debit"), [categories]);
   const [categoryId, setCategoryId] = useState<string>(initial?.categoryId ?? debitCategories[0]?.id ?? "");
@@ -24,6 +28,7 @@ export const BudgetFormScreen = ({ categories, initial, month, onCancel, onSubmi
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(initial?.currency ?? "INR");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (!categoryId) {
@@ -37,136 +42,67 @@ export const BudgetFormScreen = ({ categories, initial, month, onCancel, onSubmi
       return;
     }
 
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthInput)) {
+    if (!MONTH_PATTERN.test(monthInput)) {
       setError("Month must be in YYYY-MM format.");
       return;
     }
 
     setError(null);
+    setLoading(true);
 
-    await onSubmit({
-      categoryId,
-      month: monthInput,
-      amount: parsedAmount,
-      currency: currency.toUpperCase()
-    });
+    try {
+      await onSubmit({
+        categoryId,
+        month: monthInput,
+        amount: parsedAmount,
+        currency: currency.toUpperCase()
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{initial ? "Edit Budget" : "Create Budget"}</Text>
+    <Screen keyboardAware>
+      <Card>
+        <AppHeader
+          title={initial ? "Edit Budget" : "Create Budget"}
+          subtitle="Set monthly category caps to compare plan versus actual spending."
+        />
 
-      <Text style={styles.label}>Category</Text>
-      <ScrollView horizontal contentContainerStyle={styles.pillRow}>
-        {debitCategories.map((item) => (
-          <Pressable key={item.id} onPress={() => setCategoryId(item.id)} style={[styles.pill, categoryId === item.id && styles.pillActive]}>
-            <Text style={[styles.pillText, categoryId === item.id && styles.pillTextActive]}>{item.name}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+        <SegmentedControl
+          options={debitCategories.map((item) => ({ value: item.id, label: item.name }))}
+          selected={categoryId}
+          onSelect={setCategoryId}
+        />
 
-      <Text style={styles.label}>Month (YYYY-MM)</Text>
-      <TextInput value={monthInput} onChangeText={setMonthInput} style={styles.input} />
+        <TextField
+          label="Month (YYYY-MM)"
+          value={monthInput}
+          onChangeText={setMonthInput}
+          autoCapitalize="none"
+          helperText="Budgets are grouped by month token in the backend."
+        />
+        <TextField label="Amount" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0.00" />
+        <TextField label="Currency" value={currency} onChangeText={setCurrency} autoCapitalize="characters" maxLength={3} />
 
-      <Text style={styles.label}>Amount</Text>
-      <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" style={styles.input} placeholder="0.00" />
+        {error ? <InlineMessage tone="error" text={error} /> : null}
 
-      <Text style={styles.label}>Currency</Text>
-      <TextInput value={currency} onChangeText={setCurrency} autoCapitalize="characters" maxLength={3} style={styles.input} />
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <View style={styles.actions}>
-        <Pressable style={styles.secondaryButton} onPress={onCancel}>
-          <Text style={styles.secondaryText}>Cancel</Text>
-        </Pressable>
-        <Pressable style={styles.primaryButton} onPress={() => void handleSubmit()}>
-          <Text style={styles.primaryText}>{initial ? "Save" : "Create"}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+        <View style={styles.actionRow}>
+          <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.flexAction} />
+          <Button label={initial ? "Save" : "Create"} onPress={() => void handleSubmit()} loading={loading} style={styles.flexAction} />
+        </View>
+      </Card>
+    </Screen>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 8
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#0f172a",
-    marginBottom: 6
-  },
-  label: {
-    marginTop: 8,
-    color: "#334155",
-    fontWeight: "700"
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-    color: "#0f172a"
-  },
-  pillRow: {
+const styles = createStyles(() => ({
+  actionRow: {
     flexDirection: "row",
-    gap: 8
+    gap: theme.spacing.sm
   },
-  pill: {
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-    backgroundColor: "#eff6ff",
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 20
-  },
-  pillActive: {
-    borderColor: "#1d4ed8",
-    backgroundColor: "#1d4ed8"
-  },
-  pillText: {
-    color: "#1d4ed8",
-    fontWeight: "700"
-  },
-  pillTextActive: {
-    color: "#fff"
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 16
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#fff"
-  },
-  secondaryText: {
-    color: "#334155",
-    fontWeight: "700"
-  },
-  primaryButton: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#2563eb"
-  },
-  primaryText: {
-    color: "#fff",
-    fontWeight: "700"
-  },
-  error: {
-    color: "#b91c1c",
-    fontWeight: "600",
-    marginTop: 8
+  flexAction: {
+    flex: 1
   }
-});
+}));

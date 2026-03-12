@@ -1,20 +1,11 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar as NativeStatusBar,
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar as NativeStatusBar, Text, View } from "react-native";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
+import { BottomTabBar, InlineMessage } from "./src/components/ui";
 import { deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "./src/flow/mobileFlow";
+import { AppTabRoute, defaultTabRoute, emptyModalRoute, ModalRoute } from "./src/navigation/routes";
 import { BudgetFormScreen } from "./src/screens/BudgetFormScreen";
 import { BudgetsScreen } from "./src/screens/BudgetsScreen";
 import { DashboardScreen } from "./src/screens/DashboardScreen";
@@ -25,20 +16,8 @@ import { OtpVerifyScreen } from "./src/screens/OtpVerifyScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { TransactionFormScreen } from "./src/screens/TransactionFormScreen";
 import { TransactionsScreen } from "./src/screens/TransactionsScreen";
+import { createStyles, theme } from "./src/theme";
 import { BootstrapPayload, Budget, Category, Goal, ReportSummary, Transaction, User } from "./src/types";
-
-type AppView =
-  | "dashboard"
-  | "transactions"
-  | "transactionCreate"
-  | "transactionEdit"
-  | "budgets"
-  | "budgetCreate"
-  | "budgetEdit"
-  | "goals"
-  | "goalCreate"
-  | "goalEdit"
-  | "settings";
 
 const emptyBudgetTotals = {
   budgeted: 0,
@@ -61,27 +40,15 @@ export default function App() {
   const [reportMonth, setReportMonth] = useState(getCurrentMonthToken());
   const [budgetMonth, setBudgetMonth] = useState(getCurrentMonthToken());
   const [refreshing, setRefreshing] = useState(false);
-  const [view, setView] = useState<AppView>("dashboard");
+
+  const [activeTab, setActiveTab] = useState<AppTabRoute>(defaultTabRoute);
+  const [modalRoute, setModalRoute] = useState<ModalRoute>(emptyModalRoute);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
-
-  const headerTitle = useMemo(() => {
-    if (view === "transactionCreate") return "Add Transaction";
-    if (view === "transactionEdit") return "Edit Transaction";
-    if (view === "budgetCreate") return "Create Budget";
-    if (view === "budgetEdit") return "Edit Budget";
-    if (view === "goalCreate") return "Create Goal";
-    if (view === "goalEdit") return "Edit Goal";
-    if (view === "dashboard") return "Dashboard";
-    if (view === "budgets") return "Budgets";
-    if (view === "goals") return "Goals";
-    if (view === "settings") return "Settings";
-    return "Quantex25";
-  }, [view]);
 
   const loadAuthenticatedData = async (sessionToken: string, budgetMonthToken: string, reportMonthToken: string) => {
     const [bootstrapPayload, currentUser, categoryItems, transactionItems, budgetData, goalItems, reportData] = await Promise.all([
@@ -200,14 +167,15 @@ export default function App() {
   }) => {
     if (!token) return;
 
-    if (view === "transactionEdit" && editingTransaction) {
+    if (modalRoute.kind === "transactionForm" && modalRoute.mode === "edit" && editingTransaction) {
       await apiClient.updateTransaction(token, editingTransaction.id, payload);
     } else {
       await apiClient.createTransaction(token, payload);
     }
 
     setEditingTransaction(null);
-    setView("transactions");
+    setModalRoute(emptyModalRoute);
+    setActiveTab("transactions");
     await refreshAll();
   };
 
@@ -231,7 +199,7 @@ export default function App() {
   const handleSaveBudget = async (payload: { categoryId: string; month: string; amount: number; currency: string }) => {
     if (!token) return;
 
-    if (view === "budgetEdit" && editingBudget) {
+    if (modalRoute.kind === "budgetForm" && modalRoute.mode === "edit" && editingBudget) {
       await apiClient.updateBudget(token, editingBudget.id, payload);
     } else {
       await apiClient.createBudget(token, payload);
@@ -239,7 +207,8 @@ export default function App() {
 
     setBudgetMonth(payload.month);
     setEditingBudget(null);
-    setView("budgets");
+    setModalRoute(emptyModalRoute);
+    setActiveTab("budgets");
     const budgetData = await apiClient.getBudgets(token, payload.month);
     setBudgets(budgetData.items);
     setBudgetTotals(budgetData.totals);
@@ -288,7 +257,7 @@ export default function App() {
       ...(payload.targetDate ? { targetDate: payload.targetDate } : {})
     };
 
-    if (view === "goalEdit" && editingGoal) {
+    if (modalRoute.kind === "goalForm" && modalRoute.mode === "edit" && editingGoal) {
       await apiClient.updateGoal(token, editingGoal.id, {
         ...createPayload,
         targetDate: payload.targetDate
@@ -298,7 +267,8 @@ export default function App() {
     }
 
     setEditingGoal(null);
-    setView("goals");
+    setModalRoute(emptyModalRoute);
+    setActiveTab("goals");
     setGoals(await apiClient.getGoals(token));
   };
 
@@ -331,11 +301,13 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
+    let remoteLogoutFailed = false;
+
     if (token) {
       try {
         await apiClient.logout(token);
       } catch {
-        // Ignore network errors while signing out locally.
+        remoteLogoutFailed = true;
       }
     }
 
@@ -349,59 +321,62 @@ export default function App() {
     setReportMonth(getCurrentMonthToken());
     setCategories([]);
     setPendingEmail("");
-    setView("dashboard");
+    setActiveTab(defaultTabRoute);
+    setModalRoute(emptyModalRoute);
+    setEditingTransaction(null);
+    setEditingBudget(null);
+    setEditingGoal(null);
+
+    if (remoteLogoutFailed) {
+      Alert.alert("Signed out locally", "Could not complete server logout due to a network issue, but this device session is cleared.");
+    }
   };
 
-  if (isBooting) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" translucent={false} backgroundColor="#eef4ff" />
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#2563eb" />
-          <Text style={styles.loadingText}>Preparing your workspace...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const renderActiveContent = () => {
+    if (modalRoute.kind === "transactionForm") {
+      return (
+        <TransactionFormScreen
+          categories={categories}
+          initial={modalRoute.mode === "edit" ? editingTransaction : null}
+          onCancel={() => {
+            setEditingTransaction(null);
+            setModalRoute(emptyModalRoute);
+          }}
+          onSubmit={handleSaveTransaction}
+        />
+      );
+    }
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" translucent={false} backgroundColor="#eef4ff" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{headerTitle}</Text>
-        {isAuthenticated ? (
-          <View style={styles.headerActions}>
-            <Pressable onPress={() => setView("dashboard")}>
-              <Text style={styles.linkText}>Dashboard</Text>
-            </Pressable>
-            <Pressable onPress={() => setView("transactions")}>
-              <Text style={styles.linkText}>Transactions</Text>
-            </Pressable>
-            <Pressable onPress={() => setView("budgets")}>
-              <Text style={styles.linkText}>Budgets</Text>
-            </Pressable>
-            <Pressable onPress={() => setView("goals")}>
-              <Text style={styles.linkText}>Goals</Text>
-            </Pressable>
-            <Pressable onPress={() => setView("settings")}>
-              <Text style={styles.linkText}>Settings</Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
+    if (modalRoute.kind === "budgetForm") {
+      return (
+        <BudgetFormScreen
+          categories={categories}
+          initial={modalRoute.mode === "edit" ? editingBudget : null}
+          month={budgetMonth}
+          onCancel={() => {
+            setEditingBudget(null);
+            setModalRoute(emptyModalRoute);
+          }}
+          onSubmit={handleSaveBudget}
+        />
+      );
+    }
 
-      {!isAuthenticated ? (
-        <ScrollView contentContainerStyle={styles.authContainer}>
-          <Text style={styles.authMeta}>API Base: {apiClient.baseUrl}</Text>
-          {authStage === "login" ? (
-            <LoginScreen onRequestOtp={handleRequestOtp} />
-          ) : (
-            <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
-          )}
-        </ScrollView>
-      ) : null}
+    if (modalRoute.kind === "goalForm") {
+      return (
+        <GoalFormScreen
+          initial={modalRoute.mode === "edit" ? editingGoal : null}
+          onCancel={() => {
+            setEditingGoal(null);
+            setModalRoute(emptyModalRoute);
+          }}
+          onSubmit={handleSaveGoal}
+        />
+      );
+    }
 
-      {isAuthenticated && view === "dashboard" ? (
+    if (activeTab === "dashboard") {
+      return (
         <DashboardScreen
           month={reportMonth}
           summary={reportSummary}
@@ -409,40 +384,32 @@ export default function App() {
           onMonthChange={setReportMonth}
           onApplyMonth={handleApplyReportMonth}
           onRefresh={refreshAll}
-          onOpenTransactions={() => setView("transactions")}
+          onOpenTransactions={() => setActiveTab("transactions")}
         />
-      ) : null}
+      );
+    }
 
-      {isAuthenticated && view === "transactions" ? (
+    if (activeTab === "transactions") {
+      return (
         <TransactionsScreen
           items={transactions}
           refreshing={refreshing}
           onRefresh={refreshAll}
           onAdd={() => {
             setEditingTransaction(null);
-            setView("transactionCreate");
+            setModalRoute({ kind: "transactionForm", mode: "create" });
           }}
           onEdit={(transaction) => {
             setEditingTransaction(transaction);
-            setView("transactionEdit");
+            setModalRoute({ kind: "transactionForm", mode: "edit" });
           }}
           onDelete={handleDeleteTransaction}
         />
-      ) : null}
+      );
+    }
 
-      {isAuthenticated && (view === "transactionCreate" || view === "transactionEdit") ? (
-        <TransactionFormScreen
-          categories={categories}
-          initial={view === "transactionEdit" ? editingTransaction : null}
-          onCancel={() => {
-            setEditingTransaction(null);
-            setView("transactions");
-          }}
-          onSubmit={handleSaveTransaction}
-        />
-      ) : null}
-
-      {isAuthenticated && view === "budgets" ? (
+    if (activeTab === "budgets") {
+      return (
         <BudgetsScreen
           month={budgetMonth}
           items={budgets}
@@ -453,115 +420,118 @@ export default function App() {
           onRefresh={refreshAll}
           onAdd={() => {
             setEditingBudget(null);
-            setView("budgetCreate");
+            setModalRoute({ kind: "budgetForm", mode: "create" });
           }}
           onEdit={(budget) => {
             setEditingBudget(budget);
-            setView("budgetEdit");
+            setModalRoute({ kind: "budgetForm", mode: "edit" });
           }}
           onDelete={handleDeleteBudget}
         />
-      ) : null}
+      );
+    }
 
-      {isAuthenticated && (view === "budgetCreate" || view === "budgetEdit") ? (
-        <BudgetFormScreen
-          categories={categories}
-          initial={view === "budgetEdit" ? editingBudget : null}
-          month={budgetMonth}
-          onCancel={() => {
-            setEditingBudget(null);
-            setView("budgets");
-          }}
-          onSubmit={handleSaveBudget}
-        />
-      ) : null}
-
-      {isAuthenticated && view === "goals" ? (
+    if (activeTab === "goals") {
+      return (
         <GoalsScreen
           items={goals}
           refreshing={refreshing}
           onRefresh={refreshAll}
           onAdd={() => {
             setEditingGoal(null);
-            setView("goalCreate");
+            setModalRoute({ kind: "goalForm", mode: "create" });
           }}
           onEdit={(goal) => {
             setEditingGoal(goal);
-            setView("goalEdit");
+            setModalRoute({ kind: "goalForm", mode: "edit" });
           }}
           onDelete={handleDeleteGoal}
         />
-      ) : null}
+      );
+    }
 
-      {isAuthenticated && (view === "goalCreate" || view === "goalEdit") ? (
-        <GoalFormScreen
-          initial={view === "goalEdit" ? editingGoal : null}
-          onCancel={() => {
-            setEditingGoal(null);
-            setView("goals");
-          }}
-          onSubmit={handleSaveGoal}
-        />
-      ) : null}
+    return (
+      <SettingsScreen
+        smsDisclosureVersion={bootstrap?.legal.smsDisclosureVersion ?? "sms_disclosure_v1"}
+        onRequestEnable={handleSmsIntent}
+        onSignOut={handleSignOut}
+      />
+    );
+  };
 
-      {isAuthenticated && view === "settings" ? (
-        <SettingsScreen
-          smsDisclosureVersion={bootstrap?.legal.smsDisclosureVersion ?? "sms_disclosure_v1"}
-          onRequestEnable={handleSmsIntent}
-          onSignOut={handleSignOut}
-        />
-      ) : null}
+  if (isBooting) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="dark" translucent={false} backgroundColor={theme.color.bgBase} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.color.actionPrimary} />
+          <Text style={styles.loadingText}>Preparing your workspace...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="dark" translucent={false} backgroundColor={theme.color.bgBase} />
+        <View style={styles.authShell}>
+          <View style={styles.authMetaWrap}>
+            <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
+          </View>
+          <View style={styles.flexFill}>
+            {authStage === "login" ? (
+              <LoginScreen onRequestOtp={handleRequestOtp} />
+            ) : (
+              <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
+            )}
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="dark" translucent={false} backgroundColor={theme.color.bgBase} />
+      <View style={styles.appShell}>
+        <View style={styles.flexFill}>{renderActiveContent()}</View>
+        {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
+      </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createStyles(() => ({
   safeArea: {
     flex: 1,
-    backgroundColor: "#eef4ff",
+    backgroundColor: theme.color.bgBase,
     paddingTop: Platform.OS === "android" ? (NativeStatusBar.currentHeight ?? 0) : 0
+  },
+  flexFill: {
+    flex: 1
   },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10
+    gap: theme.spacing.sm
   },
   loadingText: {
-    color: "#334155",
+    color: theme.color.textSecondary,
     fontWeight: "600"
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#dbe5f5",
-    backgroundColor: "#f8fbff",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
+  authShell: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    gap: theme.spacing.sm
   },
-  headerTitle: {
-    fontSize: 20,
-    color: "#0f172a",
-    fontWeight: "800"
+  authMetaWrap: {
+    paddingHorizontal: theme.spacing.sm
   },
-  headerActions: {
-    flexDirection: "row",
-    gap: 12
-  },
-  linkText: {
-    color: "#1d4ed8",
-    fontWeight: "700"
-  },
-  authContainer: {
-    padding: 16,
-    gap: 12
-  },
-  authMeta: {
-    color: "#64748b",
-    fontSize: 12,
-    fontWeight: "700"
+  appShell: {
+    flex: 1,
+    backgroundColor: theme.color.bgBase
   }
-});
+}));

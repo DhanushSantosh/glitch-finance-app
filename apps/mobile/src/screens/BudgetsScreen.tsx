@@ -1,5 +1,8 @@
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
+import { AppHeader, Button, Card, EmptyState, ListItem, Screen, StatTile, TextField } from "../components/ui";
+import { createStyles, theme } from "../theme";
 import { Budget } from "../types";
+import { formatMoney } from "../utils/format";
 
 type BudgetsScreenProps = {
   month: string;
@@ -18,11 +21,6 @@ type BudgetsScreenProps = {
   onDelete: (budget: Budget) => Promise<void>;
 };
 
-const formatMoney = (value: number, currency: string): string => {
-  const symbol = currency === "INR" ? "₹" : `${currency} `;
-  return `${symbol}${value.toFixed(2)}`;
-};
-
 export const BudgetsScreen = ({
   month,
   items,
@@ -36,203 +34,56 @@ export const BudgetsScreen = ({
   onDelete
 }: BudgetsScreenProps) => {
   return (
-    <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />} contentContainerStyle={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Budgets</Text>
-        <Pressable style={styles.addButton} onPress={onAdd}>
-          <Text style={styles.addButtonText}>Add Budget</Text>
-        </Pressable>
-      </View>
+    <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
+      <AppHeader
+        title="Budgets"
+        subtitle="Set monthly spend goals and compare planned vs actual outcomes."
+        rightSlot={<Button label="Add" onPress={onAdd} />}
+      />
 
-      <View style={styles.filterCard}>
-        <Text style={styles.label}>Month (YYYY-MM)</Text>
-        <View style={styles.filterRow}>
-          <TextInput value={month} onChangeText={onMonthChange} style={styles.input} autoCapitalize="none" />
-          <Pressable style={styles.applyButton} onPress={() => void onApplyMonth()}>
-            <Text style={styles.applyText}>Load</Text>
-          </Pressable>
-        </View>
-      </View>
+      <Card variant="muted">
+        <TextField label="Month (YYYY-MM)" value={month} onChangeText={onMonthChange} autoCapitalize="none" />
+        <Button label="Load Month" variant="secondary" onPress={() => void onApplyMonth()} />
+      </Card>
 
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Summary</Text>
-        <Text style={styles.summaryText}>Budgeted: {formatMoney(totals.budgeted, "INR")}</Text>
-        <Text style={styles.summaryText}>Spent: {formatMoney(totals.spent, "INR")}</Text>
-        <Text style={styles.summaryText}>Remaining: {formatMoney(totals.remaining, "INR")}</Text>
+      <View style={styles.statGrid}>
+        <StatTile label="Budgeted" value={formatMoney(totals.budgeted, "INR")} tone="info" />
+        <StatTile label="Spent" value={formatMoney(totals.spent, "INR")} tone="negative" />
+        <StatTile label="Remaining" value={formatMoney(totals.remaining, "INR")} tone="positive" />
       </View>
 
       {items.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No budgets for this month</Text>
-          <Text style={styles.emptySubtitle}>Create a category budget to track plan vs actual spend.</Text>
-        </View>
+        <EmptyState title="No budgets for this month" description="Create category budgets to track plan vs actual spend." />
       ) : null}
 
       {items.map((item) => (
-        <View key={item.id} style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.category}>{item.categoryName}</Text>
-            <Text style={styles.utilization}>{item.utilizationPercent.toFixed(2)}%</Text>
-          </View>
-          <Text style={styles.meta}>Planned: {formatMoney(item.amount, item.currency)}</Text>
-          <Text style={styles.meta}>Spent: {formatMoney(item.spentAmount, item.currency)}</Text>
-          <Text style={styles.meta}>Remaining: {formatMoney(item.remainingAmount, item.currency)}</Text>
-
+        <ListItem
+          key={item.id}
+          title={item.categoryName}
+          subtitle={`Utilization: ${item.utilizationPercent.toFixed(2)}%`}
+          detail={`Planned ${formatMoney(item.amount, item.currency)} | Spent ${formatMoney(item.spentAmount, item.currency)} | Remaining ${formatMoney(item.remainingAmount, item.currency)}`}
+        >
           <View style={styles.actionRow}>
-            <Pressable style={styles.actionButton} onPress={() => onEdit(item)}>
-              <Text style={styles.actionText}>Edit</Text>
-            </Pressable>
-            <Pressable style={[styles.actionButton, styles.deleteButton]} onPress={() => void onDelete(item)}>
-              <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
-            </Pressable>
+            <Button label="Edit" variant="secondary" onPress={() => onEdit(item)} style={styles.flexAction} />
+            <Button label="Delete" variant="danger" onPress={() => void onDelete(item)} style={styles.flexAction} />
           </View>
-        </View>
+        </ListItem>
       ))}
-    </ScrollView>
+    </Screen>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 12
-  },
-  headerRow: {
+const styles = createStyles(() => ({
+  statGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#0f172a"
-  },
-  addButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 14
-  },
-  addButtonText: {
-    color: "#fff",
-    fontWeight: "700"
-  },
-  filterCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#dbe5f5",
-    backgroundColor: "#fff",
-    padding: 12,
-    gap: 8
-  },
-  label: {
-    color: "#334155",
-    fontWeight: "700"
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center"
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
-    color: "#0f172a"
-  },
-  applyButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#1d4ed8"
-  },
-  applyText: {
-    color: "#fff",
-    fontWeight: "700"
-  },
-  summaryCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-    backgroundColor: "#eff6ff",
-    padding: 12,
-    gap: 4
-  },
-  summaryTitle: {
-    color: "#1e3a8a",
-    fontWeight: "800"
-  },
-  summaryText: {
-    color: "#1e3a8a",
-    fontWeight: "600"
-  },
-  emptyCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#dbe5f5",
-    backgroundColor: "#fff",
-    padding: 16,
-    gap: 6
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1e293b"
-  },
-  emptySubtitle: {
-    color: "#475569"
-  },
-  card: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#dbe5f5",
-    backgroundColor: "#fff",
-    padding: 14,
-    gap: 6
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  category: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0f172a"
-  },
-  utilization: {
-    color: "#1e40af",
-    fontWeight: "700"
-  },
-  meta: {
-    color: "#475569"
+    flexWrap: "wrap",
+    gap: theme.spacing.sm
   },
   actionRow: {
-    marginTop: 8,
     flexDirection: "row",
-    gap: 8
+    gap: theme.spacing.sm
   },
-  actionButton: {
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-    backgroundColor: "#eff6ff",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8
-  },
-  actionText: {
-    color: "#1d4ed8",
-    fontWeight: "700"
-  },
-  deleteButton: {
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2"
-  },
-  deleteText: {
-    color: "#b91c1c"
+  flexAction: {
+    flex: 1
   }
-});
+}));

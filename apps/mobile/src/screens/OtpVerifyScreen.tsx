@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
 
 type OtpVerifyScreenProps = {
   email: string;
@@ -18,99 +18,34 @@ export const OtpVerifyScreen = ({ email, onBack, onVerify }: OtpVerifyScreenProp
       setError(null);
       await onVerify(code);
     } catch (verifyError) {
-      setError(verifyError instanceof Error ? verifyError.message : "Unable to verify OTP");
+      setError(verifyError instanceof Error ? verifyError.message : "Unable to verify OTP.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Enter OTP</Text>
-      <Text style={styles.subtitle}>We sent a 6-digit code to {email}</Text>
-      <Text style={styles.helperText}>Development mode: OTP is printed in the API terminal logs.</Text>
+    <Screen keyboardAware>
+      <Card>
+        <AppHeader title="Verify OTP" subtitle={`Enter the 6-digit code sent to ${email}.`} />
 
-      <TextInput
-        keyboardType="number-pad"
-        maxLength={6}
-        placeholder="123456"
-        placeholderTextColor="#7c8aa5"
-        style={styles.input}
-        value={code}
-        onChangeText={setCode}
-      />
+        <InlineMessage tone="info" text="Development mode: OTP is shown in API logs and debug alert." />
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <TextField
+          label="One-time passcode"
+          keyboardType="number-pad"
+          maxLength={6}
+          value={code}
+          onChangeText={setCode}
+          placeholder="123456"
+          textContentType="oneTimeCode"
+        />
 
-      <Pressable onPress={() => void handleVerify()} disabled={loading || code.length !== 6} style={[styles.button, (loading || code.length !== 6) && styles.buttonDisabled]}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify and Continue</Text>}
-      </Pressable>
+        {error ? <InlineMessage tone="error" text={error} /> : null}
 
-      <Pressable onPress={onBack} style={styles.secondaryButton}>
-        <Text style={styles.secondaryText}>Change email</Text>
-      </Pressable>
-    </View>
+        <Button label="Verify and Continue" loading={loading} disabled={code.length !== 6} onPress={() => void handleVerify()} />
+        <Button label="Change Email" variant="ghost" onPress={onBack} />
+      </Card>
+    </Screen>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 14,
-    padding: 20,
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    borderColor: "#dbe5f5",
-    borderWidth: 1
-  },
-  title: {
-    color: "#0f172a",
-    fontSize: 24,
-    fontWeight: "800"
-  },
-  subtitle: {
-    color: "#475569",
-    fontSize: 14,
-    lineHeight: 20
-  },
-  helperText: {
-    color: "#1e40af",
-    fontSize: 12,
-    fontWeight: "600"
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 24,
-    letterSpacing: 6,
-    color: "#0f172a"
-  },
-  button: {
-    marginTop: 8,
-    backgroundColor: "#2563eb",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center"
-  },
-  buttonDisabled: {
-    opacity: 0.6
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700"
-  },
-  secondaryButton: {
-    alignItems: "center"
-  },
-  secondaryText: {
-    color: "#2563eb",
-    fontWeight: "700"
-  },
-  errorText: {
-    color: "#b91c1c",
-    fontWeight: "600"
-  }
-});

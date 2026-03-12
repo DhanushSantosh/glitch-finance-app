@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
+import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
+import { createStyles, theme } from "../theme";
 import { Goal } from "../types";
 
 type GoalFormSubmit = {
@@ -23,6 +25,7 @@ export const GoalFormScreen = ({ initial, onCancel, onSubmit }: GoalFormScreenPr
   const [currency, setCurrency] = useState(initial?.currency ?? "INR");
   const [targetDate, setTargetDate] = useState(initial?.targetDate ? initial.targetDate.slice(0, 10) : "");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (name.trim().length < 2) {
@@ -49,105 +52,58 @@ export const GoalFormScreen = ({ initial, onCancel, onSubmit }: GoalFormScreenPr
     }
 
     setError(null);
+    setLoading(true);
 
-    await onSubmit({
-      name: name.trim(),
-      targetAmount: parsedTarget,
-      currentAmount: parsedCurrent,
-      currency: currency.toUpperCase(),
-      targetDate: targetDate ? new Date(targetDate).toISOString() : null
-    });
+    try {
+      await onSubmit({
+        name: name.trim(),
+        targetAmount: parsedTarget,
+        currentAmount: parsedCurrent,
+        currency: currency.toUpperCase(),
+        targetDate: targetDate ? new Date(targetDate).toISOString() : null
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{initial ? "Edit Goal" : "Create Goal"}</Text>
+    <Screen keyboardAware>
+      <Card>
+        <AppHeader
+          title={initial ? "Edit Goal" : "Create Goal"}
+          subtitle="Capture target, current value, and optional completion date for progress tracking."
+        />
 
-      <Text style={styles.label}>Goal name</Text>
-      <TextInput value={name} onChangeText={setName} style={styles.input} placeholder="Emergency Fund" />
+        <TextField label="Goal Name" value={name} onChangeText={setName} placeholder="Emergency Fund" />
+        <TextField label="Target Amount" value={targetAmount} onChangeText={setTargetAmount} keyboardType="decimal-pad" placeholder="50000" />
+        <TextField label="Current Amount" value={currentAmount} onChangeText={setCurrentAmount} keyboardType="decimal-pad" placeholder="0" />
+        <TextField label="Currency" value={currency} onChangeText={setCurrency} autoCapitalize="characters" maxLength={3} />
+        <TextField
+          label="Target Date (Optional: YYYY-MM-DD)"
+          value={targetDate}
+          onChangeText={setTargetDate}
+          autoCapitalize="none"
+          placeholder="2026-12-31"
+        />
 
-      <Text style={styles.label}>Target amount</Text>
-      <TextInput value={targetAmount} onChangeText={setTargetAmount} keyboardType="decimal-pad" style={styles.input} placeholder="50000" />
+        {error ? <InlineMessage tone="error" text={error} /> : null}
 
-      <Text style={styles.label}>Current amount</Text>
-      <TextInput value={currentAmount} onChangeText={setCurrentAmount} keyboardType="decimal-pad" style={styles.input} placeholder="0" />
-
-      <Text style={styles.label}>Currency</Text>
-      <TextInput value={currency} onChangeText={setCurrency} autoCapitalize="characters" maxLength={3} style={styles.input} />
-
-      <Text style={styles.label}>Target date (optional: YYYY-MM-DD)</Text>
-      <TextInput value={targetDate} onChangeText={setTargetDate} style={styles.input} placeholder="2026-12-31" />
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <View style={styles.actions}>
-        <Pressable style={styles.secondaryButton} onPress={onCancel}>
-          <Text style={styles.secondaryText}>Cancel</Text>
-        </Pressable>
-        <Pressable style={styles.primaryButton} onPress={() => void handleSubmit()}>
-          <Text style={styles.primaryText}>{initial ? "Save" : "Create"}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+        <View style={styles.actionRow}>
+          <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.flexAction} />
+          <Button label={initial ? "Save" : "Create"} onPress={() => void handleSubmit()} loading={loading} style={styles.flexAction} />
+        </View>
+      </Card>
+    </Screen>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 8
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#0f172a",
-    marginBottom: 6
-  },
-  label: {
-    marginTop: 8,
-    color: "#334155",
-    fontWeight: "700"
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-    color: "#0f172a"
-  },
-  actions: {
+const styles = createStyles(() => ({
+  actionRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 16
+    gap: theme.spacing.sm
   },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#fff"
-  },
-  secondaryText: {
-    color: "#334155",
-    fontWeight: "700"
-  },
-  primaryButton: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#2563eb"
-  },
-  primaryText: {
-    color: "#fff",
-    fontWeight: "700"
-  },
-  error: {
-    color: "#b91c1c",
-    fontWeight: "600",
-    marginTop: 8
+  flexAction: {
+    flex: 1
   }
-});
+}));
