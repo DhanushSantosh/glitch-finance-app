@@ -67,14 +67,20 @@ const toQueryString = (query: Record<string, string | number | undefined>): stri
 };
 
 const request = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const headers: Record<string, string> = {
+    ...(options.token ? { Authorization: `Bearer ${options.token}` } : {})
+  };
+  const requestInit: RequestInit = {
     method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {})
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined
-  });
+    headers
+  };
+
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    requestInit.body = JSON.stringify(options.body);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, requestInit);
 
   const json = (await response.json()) as T & ApiErrorPayload;
 

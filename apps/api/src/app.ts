@@ -55,6 +55,26 @@ export const createApp = async (): Promise<FastifyInstance> => {
       });
     }
 
+    const httpStatusCode =
+      typeof (error as { statusCode?: unknown }).statusCode === "number"
+        ? (error as { statusCode: number }).statusCode
+        : undefined;
+    const errorCode = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : undefined;
+    const errorMessage =
+      typeof (error as { message?: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : "Invalid request.";
+
+    if (httpStatusCode && httpStatusCode >= 400 && httpStatusCode < 500) {
+      return reply.status(httpStatusCode).send({
+        error: {
+          code: errorCode ?? "BAD_REQUEST",
+          message: errorMessage
+        },
+        requestId: request.id
+      });
+    }
+
     request.log.error({ err: error }, "Unhandled request error");
     return reply.status(500).send({
       error: {
