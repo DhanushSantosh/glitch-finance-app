@@ -139,6 +139,7 @@ export const DashboardScreen = ({
               onChangeText={onMonthChange}
               autoCapitalize="none"
               style={styles.compactInput}
+              containerStyle={{ marginBottom: 0 }}
               placeholder="YYYY-MM"
             />
           </View>

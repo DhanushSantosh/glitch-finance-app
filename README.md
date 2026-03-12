@@ -8,18 +8,38 @@ Production-oriented monorepo for Quantex25 Sprint 1.1:
 
 ## 1. Prerequisites
 
+- Git
 - Node.js `>=22`
 - pnpm `>=10`
 - Docker Desktop (or Docker Engine + Compose)
-- Android emulator setup (already configured for this workspace)
+- For mobile development:
+  - Android: Android Studio + Android SDK/emulator
+  - iOS (macOS only): Xcode + iOS Simulator
 
 ## 2. First-time setup
 
 ```bash
-cd /home/dhanush/Projects/glitch-finance-app
+git clone <your-fork-or-repo-url>
+cd glitch-finance-app
 pnpm install
+cp apps/api/.env.example apps/api/.env
+cp apps/mobile/.env.example apps/mobile/.env
 pnpm db:up
 pnpm --filter @glitch/api db:migrate
+```
+
+If you use Android emulator, set:
+
+```env
+# apps/mobile/.env
+EXPO_PUBLIC_API_URL=http://10.0.2.2:4000
+```
+
+If you use iOS simulator or web, set:
+
+```env
+# apps/mobile/.env
+EXPO_PUBLIC_API_URL=http://localhost:4000
 ```
 
 ## 3. Start the app
@@ -35,6 +55,13 @@ Alternative split:
 ```bash
 pnpm dev:api
 pnpm android:fast
+```
+
+Other options:
+
+```bash
+pnpm dev:mobile  # Expo only
+pnpm dev         # API + Expo (no forced Android launch)
 ```
 
 ## 4. Sprint 1.1 API surface

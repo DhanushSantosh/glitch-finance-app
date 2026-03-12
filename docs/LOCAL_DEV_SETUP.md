@@ -3,8 +3,11 @@
 ## Quick start
 
 ```bash
-cd /home/dhanush/Projects/glitch-finance-app
+git clone <your-fork-or-repo-url>
+cd glitch-finance-app
 pnpm install
+cp apps/api/.env.example apps/api/.env
+cp apps/mobile/.env.example apps/mobile/.env
 pnpm db:up
 pnpm --filter @glitch/api db:migrate
 pnpm dev:android
@@ -15,6 +18,13 @@ pnpm dev:android
 ```bash
 pnpm dev:api
 pnpm android:fast
+```
+
+Other options:
+
+```bash
+pnpm dev         # API + mobile
+pnpm dev:mobile  # Expo only
 ```
 
 ## API connection
