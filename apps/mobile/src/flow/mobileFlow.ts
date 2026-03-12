@@ -27,3 +27,10 @@ export const canSubmitTransaction = (amountText: string, occurredAtIsoLike: stri
   const parsed = new Date(occurredAtIsoLike);
   return !Number.isNaN(parsed.getTime());
 };
+
+export const getCurrentMonthToken = (): string => {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};

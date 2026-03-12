@@ -18,11 +18,16 @@ Glitch is a mobile-first finance tracker with a modular Fastify backend and Expo
 
 - Expo React Native app for Android/iOS.
 - Session token persisted with AsyncStorage.
-- Screens implemented in Sprint 1:
+- Screens implemented in Sprint 1.1:
+  - Dashboard (monthly summary + top categories + daily net trend)
   - Login
   - OTP Verify
   - Transactions List
   - Add/Edit Transaction
+  - Budgets List
+  - Budget Create/Edit
+  - Goals List
+  - Goal Create/Edit
   - Settings (SMS intent logging only)
 
 ### API (`apps/api`)
@@ -37,6 +42,9 @@ Implemented modules:
 - `auth` - email OTP, session issuance, logout, identity resolution.
 - `categories` - default and user category listing.
 - `transactions` - user-scoped CRUD and filters.
+- `reports` - monthly dashboard summary with totals, top debit categories, and daily trend series.
+- `budgets` - monthly per-category budgets with spent aggregation from transactions.
+- `goals` - savings goal tracking with progress and completion state.
 - `consents` - SMS import consent state and intent logging.
 - `audit` - immutable audit event writes.
 
@@ -54,7 +62,7 @@ Implemented modules:
 - App enforces user isolation by `user_id` on all transaction mutations and reads.
 - OTP values are never stored in plain text, only hashed.
 - Session tokens are stored as hashed values server-side.
-- SMS detection remains disabled by default and unavailable for actual ingestion in Sprint 1.
+- SMS detection remains disabled by default and unavailable for actual ingestion in Sprint 1.1.
 
 ## Deployment Shape (Target)
 

@@ -1,4 +1,4 @@
-# Data Model
+# Data Model (Sprint 1.1)
 
 Database: PostgreSQL 16+
 
@@ -53,6 +53,38 @@ ORM: Drizzle (`apps/api/src/db/schema.ts`)
 - `currency` (3-char)
 - `counterparty`, `note`
 - `occurred_at`, `created_at`, `updated_at`
+
+### `budget_plans`
+
+- `id` (uuid, pk)
+- `user_id` -> `users.id`
+- `category_id` -> `categories.id`
+- `month` (`YYYY-MM`)
+- `amount` (numeric 14,2)
+- `currency` (3-char)
+- `created_at`, `updated_at`
+
+Indexes and constraints:
+
+- Index: `(user_id, month)`
+- Index: `(category_id)`
+- Unique: `(user_id, category_id, month)`
+
+### `savings_goals`
+
+- `id` (uuid, pk)
+- `user_id` -> `users.id`
+- `name`
+- `target_amount` (numeric 14,2)
+- `current_amount` (numeric 14,2)
+- `currency` (3-char)
+- `target_date` nullable
+- `closed_at` nullable
+- `created_at`, `updated_at`
+
+Indexes:
+
+- Index: `(user_id, updated_at)`
 
 ### `consents`
 

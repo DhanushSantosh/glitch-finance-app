@@ -1,9 +1,9 @@
 # Glitch Finance App
 
-Production-oriented monorepo for Quantex25 Sprint 1:
+Production-oriented monorepo for Quantex25 Sprint 1.1:
 
-- `apps/mobile` - React Native + Expo app with Email OTP auth + manual transaction tracking
-- `apps/api` - Fastify + Drizzle API (auth, categories, transactions, consents, audit)
+- `apps/mobile` - React Native + Expo app with Email OTP auth, dashboard, transactions, budgets, goals
+- `apps/api` - Fastify + Drizzle API (auth, categories, transactions, reports, budgets, goals, consents, audit)
 - `infra` - Docker Compose services (Postgres + Redis)
 
 ## 1. Prerequisites
@@ -37,7 +37,7 @@ pnpm dev:api
 pnpm android:fast
 ```
 
-## 4. Sprint 1 API surface
+## 4. Sprint 1.1 API surface
 
 - `POST /api/v1/auth/request-otp`
 - `POST /api/v1/auth/verify-otp`
@@ -48,6 +48,15 @@ pnpm android:fast
 - `POST /api/v1/transactions`
 - `PATCH /api/v1/transactions/:id`
 - `DELETE /api/v1/transactions/:id`
+- `GET /api/v1/reports/summary`
+- `GET /api/v1/budgets`
+- `POST /api/v1/budgets`
+- `PATCH /api/v1/budgets/:id`
+- `DELETE /api/v1/budgets/:id`
+- `GET /api/v1/goals`
+- `POST /api/v1/goals`
+- `PATCH /api/v1/goals/:id`
+- `DELETE /api/v1/goals/:id`
 - `GET /api/v1/bootstrap`
 - `GET /api/v1/consents/sms-import`
 - `POST /api/v1/consents/sms-import-intent`
@@ -75,7 +84,7 @@ curl http://localhost:4000/api/v1/bootstrap
 
 ## 7. Notes
 
-- SMS detection is disabled by default in Sprint 1 and exposed as intent logging only.
+- SMS detection is disabled by default in Sprint 1.1 and exposed as intent logging only.
 - OTP values are logged to API console in development delivery mode.
 
 ## 8. Documentation

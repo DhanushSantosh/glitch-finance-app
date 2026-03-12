@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSubmitTransaction, deriveAuthStage, resolveSmsIntentOutcome } from "./mobileFlow";
+import { canSubmitTransaction, deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "./mobileFlow";
 
 describe("mobile flow helpers", () => {
   it("handles auth stage transitions", () => {
@@ -20,5 +20,9 @@ describe("mobile flow helpers", () => {
     expect(canSubmitTransaction("150.25", "2026-03-11T18:35:00")).toBe(true);
     expect(canSubmitTransaction("0", "2026-03-11T18:35:00")).toBe(false);
     expect(canSubmitTransaction("200", "invalid-date")).toBe(false);
+  });
+
+  it("returns month token in YYYY-MM format", () => {
+    expect(getCurrentMonthToken()).toMatch(/^\d{4}-(0[1-9]|1[0-2])$/);
   });
 });

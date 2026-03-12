@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { BootstrapPayload, Category, Transaction, User } from "../types";
+import { BootstrapPayload, Budget, BudgetListResponse, Category, Goal, ReportSummary, Transaction, User } from "../types";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -164,6 +164,84 @@ export const apiClient = {
       method: "POST",
       token,
       body: { enabled }
+    });
+  },
+
+  async getBudgets(token: string, month?: string): Promise<BudgetListResponse> {
+    const query = month ? `?month=${encodeURIComponent(month)}` : "";
+    return request<BudgetListResponse>(`/api/v1/budgets${query}`, {
+      token
+    });
+  },
+
+  async createBudget(token: string, payload: { categoryId: string; month: string; amount: number; currency: string }): Promise<void> {
+    await request<{ item: unknown }>("/api/v1/budgets", {
+      method: "POST",
+      token,
+      body: payload
+    });
+  },
+
+  async updateBudget(
+    token: string,
+    budgetId: string,
+    payload: Partial<{ categoryId: string; month: string; amount: number; currency: string }>
+  ): Promise<void> {
+    await request<{ item: unknown }>(`/api/v1/budgets/${budgetId}`, {
+      method: "PATCH",
+      token,
+      body: payload
+    });
+  },
+
+  async deleteBudget(token: string, budgetId: string): Promise<void> {
+    await request<{ success: boolean }>(`/api/v1/budgets/${budgetId}`, {
+      method: "DELETE",
+      token
+    });
+  },
+
+  async getGoals(token: string): Promise<Goal[]> {
+    const result = await request<{ items: Goal[] }>("/api/v1/goals", {
+      token
+    });
+    return result.items;
+  },
+
+  async createGoal(
+    token: string,
+    payload: { name: string; targetAmount: number; currentAmount: number; currency: string; targetDate?: string }
+  ): Promise<void> {
+    await request<{ item: Goal }>("/api/v1/goals", {
+      method: "POST",
+      token,
+      body: payload
+    });
+  },
+
+  async updateGoal(
+    token: string,
+    goalId: string,
+    payload: Partial<{ name: string; targetAmount: number; currentAmount: number; currency: string; targetDate: string | null }>
+  ): Promise<void> {
+    await request<{ item: Goal }>(`/api/v1/goals/${goalId}`, {
+      method: "PATCH",
+      token,
+      body: payload
+    });
+  },
+
+  async deleteGoal(token: string, goalId: string): Promise<void> {
+    await request<{ success: boolean }>(`/api/v1/goals/${goalId}`, {
+      method: "DELETE",
+      token
+    });
+  },
+
+  async getReportSummary(token: string, month?: string): Promise<ReportSummary> {
+    const query = month ? `?month=${encodeURIComponent(month)}` : "";
+    return request<ReportSummary>(`/api/v1/reports/summary${query}`, {
+      token
     });
   }
 };

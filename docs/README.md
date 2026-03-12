@@ -5,7 +5,7 @@ This folder is the source of truth for product and engineering documentation.
 ## Product and Scope
 
 - `SRS_v1.md` - Product requirements and long-term scope.
-- `SPRINT1_TRACEABILITY.md` - Mapping of Sprint 1 implementation to SRS requirements.
+- `SPRINT1_TRACEABILITY.md` - Mapping of Sprint 1.1 implementation to SRS requirements.
 
 ## Engineering
 

@@ -8,6 +8,9 @@ import { registerAuthRoutes } from "./modules/auth/routes.js";
 import { registerCategoryRoutes } from "./modules/categories/routes.js";
 import { registerTransactionRoutes } from "./modules/transactions/routes.js";
 import { registerConsentRoutes } from "./modules/consents/routes.js";
+import { registerBudgetRoutes } from "./modules/budgets/routes.js";
+import { registerGoalRoutes } from "./modules/goals/routes.js";
+import { registerReportRoutes } from "./modules/reports/routes.js";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
@@ -66,6 +69,9 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await registerAuthRoutes(app, ctx);
   await registerCategoryRoutes(app, ctx);
   await registerTransactionRoutes(app, ctx);
+  await registerBudgetRoutes(app, ctx);
+  await registerGoalRoutes(app, ctx);
+  await registerReportRoutes(app, ctx);
   await registerConsentRoutes(app, ctx);
 
   app.addHook("onClose", async () => {

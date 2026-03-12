@@ -13,7 +13,7 @@ export const SettingsScreen = ({ smsDisclosureVersion, onRequestEnable, onSignOu
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>SMS Detection</Text>
-        <Text style={styles.text}>Disabled by default. This feature is privacy-guarded and currently not enabled in Sprint 1.</Text>
+        <Text style={styles.text}>Disabled by default. This feature is privacy-guarded and currently not enabled in Sprint 1.1.</Text>
         <Text style={styles.meta}>Disclosure version: {smsDisclosureVersion}</Text>
 
         <View style={styles.row}>

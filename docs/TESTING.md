@@ -6,11 +6,21 @@
 
 - OTP expiry and attempt policy logic.
 - Transaction validation and normalization rules.
+- Budget validation rules:
+  - `YYYY-MM` month format
+  - positive amount and valid currency shape
+  - non-empty patch payload enforcement
+- Goal validation rules:
+  - minimum name length
+  - positive target amount and non-negative current amount
 
 ### API Integration Tests
 
 - OTP request/verify/login/logout lifecycle.
 - Transaction CRUD and user isolation.
+- Report summary correctness and cross-user isolation.
+- Budget CRUD, per-month spend aggregation, and cross-user isolation.
+- Savings goals CRUD and cross-user isolation.
 - Bootstrap policy checks for SMS disabled default.
 
 ### Mobile Unit Tests
@@ -18,6 +28,7 @@
 - Auth stage transitions (login -> otp -> authenticated).
 - SMS intent guardrail behavior.
 - Transaction input validity checks.
+- Budget month token derivation helper for month-scoped queries.
 
 ## Commands
 
@@ -29,12 +40,15 @@ pnpm --filter @glitch/api test
 pnpm --filter @glitch/mobile test
 ```
 
-## Acceptance Scenarios (Sprint 1)
+## Acceptance Scenarios (Sprint 1.1)
 
 1. New user can request OTP, verify OTP, and get authenticated.
 2. Authenticated user can create, update, delete own transactions.
 3. User cannot access or mutate another user’s transactions.
-4. Settings SMS action logs intent but keeps feature disabled.
+4. Authenticated user sees monthly dashboard summary with income/expense/net and top categories.
+5. Authenticated user can create, update, delete monthly category budgets and see spent/remaining values.
+6. Authenticated user can create, update, delete savings goals and view progress state.
+7. Settings SMS action logs intent but keeps feature disabled.
 
 ## Recommended Next-Level Test Additions
 

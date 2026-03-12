@@ -37,3 +37,72 @@ export type BootstrapPayload = {
     smsDisclosureVersion: string;
   };
 };
+
+export type Budget = {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  month: string;
+  amount: number;
+  spentAmount: number;
+  remainingAmount: number;
+  utilizationPercent: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BudgetListResponse = {
+  month: string;
+  items: Budget[];
+  totals: {
+    budgeted: number;
+    spent: number;
+    remaining: number;
+  };
+};
+
+export type Goal = {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  remainingAmount: number;
+  progressPercent: number;
+  currency: string;
+  targetDate: string | null;
+  closedAt: string | null;
+  isCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReportSummary = {
+  month: string;
+  period: {
+    start: string;
+    endExclusive: string;
+  };
+  totals: {
+    income: number;
+    expense: number;
+    transfer: number;
+    net: number;
+    transactionCount: number;
+    currency: string;
+  };
+  topCategories: Array<{
+    categoryId: string | null;
+    categoryName: string;
+    amount: number;
+    transactionCount: number;
+    currency: string;
+  }>;
+  dailySeries: Array<{
+    date: string;
+    income: number;
+    expense: number;
+    net: number;
+    currency: string;
+  }>;
+};

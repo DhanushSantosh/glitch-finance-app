@@ -1,6 +1,6 @@
 # Security and Privacy
 
-## Sprint 1 Security Controls
+## Sprint 1.1 Security Controls
 
 ### Authentication and Session
 
@@ -28,7 +28,7 @@
 ## SMS Guardrails (Critical Policy)
 
 - SMS detection is disabled by default.
-- Sprint 1 does not ingest, parse, or store raw SMS content.
+- Sprint 1.1 does not ingest, parse, or store raw SMS content.
 - Settings action records intent only via consent endpoint.
 - API bootstrap explicitly exposes disabled default flag.
 
@@ -46,7 +46,7 @@ Audit log stores request id and source IP for traceability.
 ## Sensitive Data Handling
 
 - Never log raw OTP to production logs.
-- Never persist full SMS payload in Sprint 1.
+- Never persist full SMS payload in Sprint 1.1.
 - Keep secrets in environment variables.
 
 ## Production Hardening Checklist

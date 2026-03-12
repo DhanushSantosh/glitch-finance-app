@@ -120,6 +120,50 @@ export const consents = pgTable(
   })
 );
 
+export const budgetPlans = pgTable(
+  "budget_plans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    month: varchar("month", { length: 7 }).notNull(),
+    amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).default("INR").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => ({
+    budgetPlansUserMonthIndex: index("budget_plans_user_month_idx").on(table.userId, table.month),
+    budgetPlansCategoryIndex: index("budget_plans_category_idx").on(table.categoryId),
+    budgetPlansUnique: uniqueIndex("budget_plans_user_category_month_unique").on(table.userId, table.categoryId, table.month)
+  })
+);
+
+export const savingsGoals = pgTable(
+  "savings_goals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 120 }).notNull(),
+    targetAmount: numeric("target_amount", { precision: 14, scale: 2 }).notNull(),
+    currentAmount: numeric("current_amount", { precision: 14, scale: 2 }).default("0").notNull(),
+    currency: varchar("currency", { length: 3 }).default("INR").notNull(),
+    targetDate: timestamp("target_date", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => ({
+    savingsGoalsUserIndex: index("savings_goals_user_idx").on(table.userId, table.updatedAt)
+  })
+);
+
 export const auditLogs = pgTable(
   "audit_logs",
   {

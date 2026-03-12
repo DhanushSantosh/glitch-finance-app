@@ -1,4 +1,4 @@
-# API Reference (Sprint 1)
+# API Reference (Sprint 1.1)
 
 Base URL: `http://localhost:4000`
 
@@ -41,7 +41,7 @@ Returns app config and feature flags.
 
 Key guarantee:
 
-- `featureFlags.smsImportEnabledByDefault` is always `false` in Sprint 1.
+- `featureFlags.smsImportEnabledByDefault` is always `false` in Sprint 1.1.
 
 ## Authentication
 
@@ -63,7 +63,7 @@ Response:
 }
 ```
 
-Test-only addition (`NODE_ENV=test`): includes `debugOtpCode` for integration tests.
+Non-production addition (`NODE_ENV !== production`): includes `debugOtpCode` for local testing.
 
 ### `POST /api/v1/auth/verify-otp`
 
@@ -161,6 +161,95 @@ Requires auth. Partial update accepted.
 
 Requires auth. Deletes only if owned by authenticated user.
 
+## Reports
+
+### `GET /api/v1/reports/summary`
+
+Requires auth.
+
+Query parameters:
+
+- `month` (`YYYY-MM`, default current UTC month)
+- `currency` (3-char ISO code, default `APP_CURRENCY`)
+- `top` (number of top debit categories, default `5`, max `10`)
+
+Response includes:
+
+- `totals`: income, expense, transfer, net, transactionCount for selected month/currency
+- `topCategories`: top debit categories by spend
+- `dailySeries`: date-wise income/expense/net rows across the month window
+- `period`: resolved UTC start and endExclusive boundaries used for aggregation
+
+## Budgets
+
+### `GET /api/v1/budgets?month=YYYY-MM`
+
+Requires auth.
+
+Response includes:
+
+- Per-category budget amount
+- Month spend aggregation from debit transactions
+- Remaining amount and utilization percentage
+- Month totals summary
+
+### `POST /api/v1/budgets`
+
+Requires auth.
+
+Request body:
+
+```json
+{
+  "categoryId": "uuid",
+  "month": "2026-03",
+  "amount": 2000,
+  "currency": "INR"
+}
+```
+
+Budgets are constrained to debit categories and upserted by `(user, category, month)`.
+
+### `PATCH /api/v1/budgets/:id`
+
+Requires auth. Partial update accepted.
+
+### `DELETE /api/v1/budgets/:id`
+
+Requires auth. Deletes only if owned by authenticated user.
+
+## Goals
+
+### `GET /api/v1/goals`
+
+Requires auth.
+
+Returns goal list ordered by latest update with progress and completion state.
+
+### `POST /api/v1/goals`
+
+Requires auth.
+
+Request body:
+
+```json
+{
+  "name": "Emergency Fund",
+  "targetAmount": 50000,
+  "currentAmount": 10000,
+  "currency": "INR",
+  "targetDate": "2026-12-31T00:00:00.000Z"
+}
+```
+
+### `PATCH /api/v1/goals/:id`
+
+Requires auth. Partial update accepted.
+
+### `DELETE /api/v1/goals/:id`
+
+Requires auth. Deletes only if owned by authenticated user.
+
 ## SMS Consent Guardrail
 
 ### `GET /api/v1/consents/sms-import`
@@ -183,7 +272,7 @@ Behavior:
 
 - Logs user intent.
 - Returns `featureAvailable: false`.
-- Keeps `enabled: false` in Sprint 1.
+- Keeps `enabled: false` in Sprint 1.1.
 
 ## Rate Limits (Auth)
 
