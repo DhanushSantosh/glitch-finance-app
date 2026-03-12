@@ -31,7 +31,9 @@ export const listQuerySchema = z.object({
   direction: z.enum(["debit", "credit", "transfer"]).optional(),
   categoryId: z.string().uuid().optional(),
   from: z.coerce.date().optional(),
-  to: z.coerce.date().optional()
+  to: z.coerce.date().optional(),
+  sortBy: z.enum(["occurredAt", "amount"]).default("occurredAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc")
 });
 
 export const normalizeTransactionPayload = (input: {

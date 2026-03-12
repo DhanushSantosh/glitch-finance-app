@@ -11,9 +11,12 @@ type GoalsScreenProps = {
   onAdd: () => void;
   onEdit: (goal: Goal) => void;
   onDelete: (goal: Goal) => Promise<void>;
+  onContribute: (goal: Goal, increment: number) => Promise<void>;
 };
 
-export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDelete }: GoalsScreenProps) => {
+const quickContributeIncrements = [500, 1000, 5000] as const;
+
+export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDelete, onContribute }: GoalsScreenProps) => {
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <AppHeader
@@ -35,6 +38,18 @@ export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDel
           meta={item.targetDate ? `Target date ${new Date(item.targetDate).toLocaleDateString()}` : "No target date"}
           trailing={<Text style={[styles.progress, item.isCompleted ? styles.completed : null]}>{item.progressPercent.toFixed(2)}%</Text>}
         >
+          <View style={styles.quickRow}>
+            {quickContributeIncrements.map((increment) => (
+              <Button
+                key={`${item.id}-${increment}`}
+                label={`+${formatMoney(increment, item.currency)}`}
+                variant="ghost"
+                onPress={() => void onContribute(item, increment)}
+                style={styles.quickAction}
+              />
+            ))}
+          </View>
+
           <View style={styles.actionRow}>
             <Button label="Edit" variant="secondary" onPress={() => onEdit(item)} style={styles.flexAction} />
             <Button label="Delete" variant="danger" onPress={() => void onDelete(item)} style={styles.flexAction} />
@@ -53,6 +68,14 @@ const styles = createStyles(() => ({
   },
   completed: {
     color: theme.color.statusSuccess
+  },
+  quickRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm
+  },
+  quickAction: {
+    flex: 1,
+    minHeight: 44
   },
   actionRow: {
     flexDirection: "row",

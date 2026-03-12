@@ -27,6 +27,7 @@ This folder is the source of truth for product and engineering documentation.
 
 - `LOCAL_DEV_SETUP.md` - Local setup for mobile and backend development.
 - `OPERATIONS_RUNBOOK.md` - Environment config, runbook steps, and troubleshooting.
+- `PLATFORM_READINESS.md` - CI/CD, infra provisioning, secrets, monitoring, and DR baseline.
 
 ## Documentation Standards
 

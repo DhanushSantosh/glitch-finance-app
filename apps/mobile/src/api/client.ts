@@ -1,5 +1,16 @@
 import { Platform } from "react-native";
-import { BootstrapPayload, Budget, BudgetListResponse, Category, Goal, ReportSummary, Transaction, User } from "../types";
+import {
+  BootstrapPayload,
+  Budget,
+  BudgetListResponse,
+  Category,
+  Goal,
+  ReportSummary,
+  Transaction,
+  TransactionListQuery,
+  TransactionListResponse,
+  User
+} from "../types";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -40,6 +51,20 @@ const resolveApiBaseUrl = (): string => {
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
+
+const toQueryString = (query: Record<string, string | number | undefined>): string => {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined) {
+      continue;
+    }
+    params.set(key, String(value));
+  }
+
+  const encoded = params.toString();
+  return encoded.length > 0 ? `?${encoded}` : "";
+};
 
 const request = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -104,11 +129,22 @@ export const apiClient = {
     return result.items;
   },
 
-  async getTransactions(token: string): Promise<Transaction[]> {
-    const result = await request<{ items: Transaction[] }>("/api/v1/transactions?page=1&pageSize=100", {
+  async getTransactions(token: string, query: TransactionListQuery = {}): Promise<TransactionListResponse> {
+    const queryString = toQueryString({
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 20,
+      direction: query.direction,
+      categoryId: query.categoryId,
+      from: query.from,
+      to: query.to,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder
+    });
+
+    const result = await request<TransactionListResponse>(`/api/v1/transactions${queryString}`, {
       token
     });
-    return result.items;
+    return result;
   },
 
   async createTransaction(

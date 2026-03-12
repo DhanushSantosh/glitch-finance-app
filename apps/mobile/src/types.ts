@@ -26,6 +26,27 @@ export type Transaction = {
   updatedAt: string;
 };
 
+export type TransactionListQuery = {
+  page?: number;
+  pageSize?: number;
+  direction?: TransactionDirection;
+  categoryId?: string;
+  from?: string;
+  to?: string;
+  sortBy?: "occurredAt" | "amount";
+  sortOrder?: "asc" | "desc";
+};
+
+export type TransactionListResponse = {
+  items: Transaction[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+    nextPage: number | null;
+  };
+};
+
 export type BootstrapPayload = {
   appName: string;
   currency: string;

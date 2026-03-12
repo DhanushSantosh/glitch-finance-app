@@ -33,7 +33,7 @@ Returns API liveness.
 
 ### `GET /api/v1/status`
 
-Returns runtime status and dependency configuration flags.
+Returns runtime status, dependency configuration flags, and live dependency health.
 
 ### `GET /api/v1/bootstrap`
 
@@ -134,6 +134,16 @@ Query parameters:
 - `categoryId`
 - `from` (ISO datetime)
 - `to` (ISO datetime)
+- `sortBy` (`occurredAt|amount`, default `occurredAt`)
+- `sortOrder` (`asc|desc`, default `desc`)
+
+Response includes:
+
+- `items`: transaction list for current page
+- `pagination.page`
+- `pagination.pageSize`
+- `pagination.hasMore`
+- `pagination.nextPage`
 
 ### `POST /api/v1/transactions`
 

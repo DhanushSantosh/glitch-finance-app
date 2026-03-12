@@ -18,6 +18,7 @@
 
 - OTP request/verify/login/logout lifecycle.
 - Transaction CRUD and user isolation.
+- Transaction list sorting and pagination semantics.
 - Report summary correctness and cross-user isolation.
 - Budget CRUD, per-month spend aggregation, and cross-user isolation.
 - Savings goals CRUD and cross-user isolation.
@@ -29,6 +30,8 @@
 - SMS intent guardrail behavior.
 - Transaction input validity checks.
 - Budget month token derivation helper for month-scoped queries.
+- Theme token and navigation route integrity checks.
+- Screen style guard to block raw hex colors in screen files.
 
 ## Commands
 

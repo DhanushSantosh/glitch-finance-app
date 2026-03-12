@@ -51,6 +51,10 @@ curl http://localhost:4000/api/v1/status
 curl http://localhost:4000/api/v1/bootstrap
 ```
 
+`/api/v1/status` includes dependency health signals:
+- `dependencies.databaseHealthy`
+- `dependencies.redisHealthy`
+
 ## Common Troubleshooting
 
 ### API cannot connect to DB
@@ -58,6 +62,9 @@ curl http://localhost:4000/api/v1/bootstrap
 1. Run `pnpm db:up`.
 2. Verify postgres container is healthy with `pnpm db:logs`.
 3. Re-run `pnpm --filter @glitch/api db:migrate`.
+4. Restart API with `pnpm dev:api`.
+
+If startup fails, API now logs actionable hints for connection refusal.
 
 ### Mobile cannot reach API on Android emulator
 
@@ -80,3 +87,14 @@ Restart Expo after update.
 2. Migrations applied in target environment.
 3. Secrets configured with production values.
 4. SMS remains disabled by default until explicit release gate.
+
+## CI Workflow
+
+GitHub Actions pipeline is defined in:
+
+`/.github/workflows/ci.yml`
+
+It validates:
+1. Workspace typecheck
+2. API tests
+3. Mobile tests

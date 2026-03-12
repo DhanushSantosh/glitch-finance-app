@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { AppHeader, Button, Card, EmptyState, ListItem, Screen, StatTile, TextField } from "../components/ui";
+import { AppHeader, Button, Card, EmptyState, InlineMessage, ListItem, Screen, StatTile, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { Budget } from "../types";
 import { formatMoney } from "../utils/format";
@@ -15,6 +15,8 @@ type BudgetsScreenProps = {
   refreshing: boolean;
   onMonthChange: (value: string) => void;
   onApplyMonth: () => Promise<void>;
+  onPreviousMonth: () => Promise<void>;
+  onNextMonth: () => Promise<void>;
   onRefresh: () => Promise<void>;
   onAdd: () => void;
   onEdit: (budget: Budget) => void;
@@ -28,11 +30,16 @@ export const BudgetsScreen = ({
   refreshing,
   onMonthChange,
   onApplyMonth,
+  onPreviousMonth,
+  onNextMonth,
   onRefresh,
   onAdd,
   onEdit,
   onDelete
 }: BudgetsScreenProps) => {
+  const overLimitCount = items.filter((item) => item.utilizationPercent > 100).length;
+  const nearLimitCount = items.filter((item) => item.utilizationPercent >= 85 && item.utilizationPercent <= 100).length;
+
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <AppHeader
@@ -42,9 +49,21 @@ export const BudgetsScreen = ({
       />
 
       <Card variant="muted">
-        <TextField label="Month (YYYY-MM)" value={month} onChangeText={onMonthChange} autoCapitalize="none" />
+        <View style={styles.monthNavRow}>
+          <Button label="Prev" variant="ghost" onPress={() => void onPreviousMonth()} style={styles.navButton} />
+          <TextField label="Month (YYYY-MM)" value={month} onChangeText={onMonthChange} autoCapitalize="none" containerStyle={styles.monthField} />
+          <Button label="Next" variant="ghost" onPress={() => void onNextMonth()} style={styles.navButton} />
+        </View>
         <Button label="Load Month" variant="secondary" onPress={() => void onApplyMonth()} />
       </Card>
+
+      {overLimitCount > 0 ? (
+        <InlineMessage tone="error" text={`${overLimitCount} budget ${overLimitCount === 1 ? "is" : "are"} over 100% utilization this month.`} />
+      ) : null}
+
+      {overLimitCount === 0 && nearLimitCount > 0 ? (
+        <InlineMessage tone="warn" text={`${nearLimitCount} budget ${nearLimitCount === 1 ? "is" : "are"} above 85% utilization.`} />
+      ) : null}
 
       <View style={styles.statGrid}>
         <StatTile label="Budgeted" value={formatMoney(totals.budgeted, "INR")} tone="info" />
@@ -74,6 +93,17 @@ export const BudgetsScreen = ({
 };
 
 const styles = createStyles(() => ({
+  monthNavRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+    alignItems: "flex-end"
+  },
+  monthField: {
+    flex: 1
+  },
+  navButton: {
+    minWidth: 82
+  },
   statGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

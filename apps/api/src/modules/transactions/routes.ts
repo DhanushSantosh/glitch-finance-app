@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { AppContext } from "../../context.js";
@@ -58,6 +58,17 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
       conditions.push(lte(transactions.occurredAt, query.to));
     }
 
+    const primaryOrder =
+      query.sortBy === "amount"
+        ? query.sortOrder === "asc"
+          ? asc(transactions.amount)
+          : desc(transactions.amount)
+        : query.sortOrder === "asc"
+          ? asc(transactions.occurredAt)
+          : desc(transactions.occurredAt);
+    const occurredAtOrder = query.sortOrder === "asc" ? asc(transactions.occurredAt) : desc(transactions.occurredAt);
+    const idOrder = query.sortOrder === "asc" ? asc(transactions.id) : desc(transactions.id);
+
     const rows = await ctx.db
       .select({
         id: transactions.id,
@@ -75,7 +86,7 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
       .from(transactions)
       .leftJoin(categories, eq(categories.id, transactions.categoryId))
       .where(and(...conditions))
-      .orderBy(desc(transactions.occurredAt))
+      .orderBy(primaryOrder, occurredAtOrder, idOrder)
       .limit(query.pageSize + 1)
       .offset((query.page - 1) * query.pageSize);
 

@@ -35,5 +35,17 @@ describe("transactions validation", () => {
     const query = listQuerySchema.parse({});
     expect(query.page).toBe(1);
     expect(query.pageSize).toBe(20);
+    expect(query.sortBy).toBe("occurredAt");
+    expect(query.sortOrder).toBe("desc");
+  });
+
+  it("accepts explicit sorting options", () => {
+    const query = listQuerySchema.parse({
+      sortBy: "amount",
+      sortOrder: "asc"
+    });
+
+    expect(query.sortBy).toBe("amount");
+    expect(query.sortOrder).toBe("asc");
   });
 });

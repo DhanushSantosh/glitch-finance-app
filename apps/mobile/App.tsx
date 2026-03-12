@@ -17,12 +17,81 @@ import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { TransactionFormScreen } from "./src/screens/TransactionFormScreen";
 import { TransactionsScreen } from "./src/screens/TransactionsScreen";
 import { createStyles, theme } from "./src/theme";
-import { BootstrapPayload, Budget, Category, Goal, ReportSummary, Transaction, User } from "./src/types";
+import { BootstrapPayload, Budget, Category, Goal, ReportSummary, Transaction, TransactionListQuery, User } from "./src/types";
+import { shiftMonthToken } from "./src/utils/month";
 
 const emptyBudgetTotals = {
   budgeted: 0,
   spent: 0,
   remaining: 0
+};
+
+type TransactionFilters = {
+  direction: "all" | "debit" | "credit" | "transfer";
+  categoryId: "all" | string;
+  from: string;
+  to: string;
+  sortBy: "occurredAt" | "amount";
+  sortOrder: "asc" | "desc";
+  pageSize: number;
+};
+
+const defaultTransactionFilters: TransactionFilters = {
+  direction: "all",
+  categoryId: "all",
+  from: "",
+  to: "",
+  sortBy: "occurredAt",
+  sortOrder: "desc",
+  pageSize: 20
+};
+
+const emptyTransactionPagination = {
+  page: 1,
+  pageSize: defaultTransactionFilters.pageSize,
+  hasMore: false,
+  nextPage: null as number | null
+};
+
+const dateTokenPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+const parseDateToken = (value: string): Date | null => {
+  if (!dateTokenPattern.test(value)) {
+    return null;
+  }
+
+  const [yearRaw, monthRaw, dayRaw] = value.split("-");
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+
+  const parsed = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    return null;
+  }
+
+  return parsed;
+};
+
+const buildTransactionQuery = (filters: TransactionFilters, page: number): TransactionListQuery => {
+  const fromDate = parseDateToken(filters.from);
+  const toDate = parseDateToken(filters.to);
+
+  if (toDate) {
+    toDate.setUTCHours(23, 59, 59, 999);
+  }
+
+  return {
+    page,
+    pageSize: filters.pageSize,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+    ...(filters.direction !== "all" ? { direction: filters.direction } : {}),
+    ...(filters.categoryId !== "all" ? { categoryId: filters.categoryId } : {}),
+    ...(fromDate ? { from: fromDate.toISOString() } : {}),
+    ...(toDate ? { to: toDate.toISOString() } : {})
+  };
 };
 
 export default function App() {
@@ -33,6 +102,10 @@ export default function App() {
   const [bootstrap, setBootstrap] = useState<BootstrapPayload | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>(defaultTransactionFilters);
+  const [transactionPagination, setTransactionPagination] = useState(emptyTransactionPagination);
+  const [transactionLoadingMore, setTransactionLoadingMore] = useState(false);
+
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [budgetTotals, setBudgetTotals] = useState(emptyBudgetTotals);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -50,12 +123,26 @@ export default function App() {
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
 
+  const fetchTransactions = async (
+    sessionToken: string,
+    filters: TransactionFilters,
+    page: number,
+    append: boolean
+  ): Promise<void> => {
+    const response = await apiClient.getTransactions(sessionToken, buildTransactionQuery(filters, page));
+
+    setTransactions((previous) => (append ? [...previous, ...response.items] : response.items));
+    setTransactionPagination(response.pagination);
+  };
+
   const loadAuthenticatedData = async (sessionToken: string, budgetMonthToken: string, reportMonthToken: string) => {
-    const [bootstrapPayload, currentUser, categoryItems, transactionItems, budgetData, goalItems, reportData] = await Promise.all([
+    const initialFilters = defaultTransactionFilters;
+
+    const [bootstrapPayload, currentUser, categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
       apiClient.getBootstrap(),
       apiClient.me(sessionToken),
       apiClient.getCategories(sessionToken),
-      apiClient.getTransactions(sessionToken),
+      apiClient.getTransactions(sessionToken, buildTransactionQuery(initialFilters, 1)),
       apiClient.getBudgets(sessionToken, budgetMonthToken),
       apiClient.getGoals(sessionToken),
       apiClient.getReportSummary(sessionToken, reportMonthToken)
@@ -64,7 +151,9 @@ export default function App() {
     setBootstrap(bootstrapPayload);
     setUser(currentUser);
     setCategories(categoryItems);
-    setTransactions(transactionItems);
+    setTransactionFilters(initialFilters);
+    setTransactions(transactionData.items);
+    setTransactionPagination(transactionData.pagination);
     setBudgets(budgetData.items);
     setBudgetTotals(budgetData.totals);
     setBudgetMonth(budgetData.month);
@@ -101,16 +190,17 @@ export default function App() {
 
     setRefreshing(true);
     try {
-      const [categoryItems, transactionItems, budgetData, goalItems, reportData] = await Promise.all([
+      const [categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
         apiClient.getCategories(token),
-        apiClient.getTransactions(token),
+        apiClient.getTransactions(token, buildTransactionQuery(transactionFilters, 1)),
         apiClient.getBudgets(token, budgetMonth),
         apiClient.getGoals(token),
         apiClient.getReportSummary(token, reportMonth)
       ]);
 
       setCategories(categoryItems);
-      setTransactions(transactionItems);
+      setTransactions(transactionData.items);
+      setTransactionPagination(transactionData.pagination);
       setBudgets(budgetData.items);
       setBudgetTotals(budgetData.totals);
       setGoals(goalItems);
@@ -149,11 +239,35 @@ export default function App() {
         onPress: () => {
           void (async () => {
             await apiClient.deleteTransaction(token, transaction.id);
-            await refreshAll();
+            await fetchTransactions(token, transactionFilters, 1, false);
           })();
         }
       }
     ]);
+  };
+
+  const handleApplyTransactionFilters = async () => {
+    if (!token) return;
+    await fetchTransactions(token, transactionFilters, 1, false);
+  };
+
+  const handleResetTransactionFilters = async () => {
+    if (!token) return;
+    setTransactionFilters(defaultTransactionFilters);
+    await fetchTransactions(token, defaultTransactionFilters, 1, false);
+  };
+
+  const handleLoadMoreTransactions = async () => {
+    if (!token || !transactionPagination.hasMore || !transactionPagination.nextPage) {
+      return;
+    }
+
+    setTransactionLoadingMore(true);
+    try {
+      await fetchTransactions(token, transactionFilters, transactionPagination.nextPage, true);
+    } finally {
+      setTransactionLoadingMore(false);
+    }
   };
 
   const handleSaveTransaction = async (payload: {
@@ -176,13 +290,25 @@ export default function App() {
     setEditingTransaction(null);
     setModalRoute(emptyModalRoute);
     setActiveTab("transactions");
-    await refreshAll();
+    await fetchTransactions(token, transactionFilters, 1, false);
   };
 
   const handleApplyBudgetMonth = async () => {
     if (!token) return;
 
     const budgetData = await apiClient.getBudgets(token, budgetMonth);
+    setBudgets(budgetData.items);
+    setBudgetTotals(budgetData.totals);
+    setBudgetMonth(budgetData.month);
+  };
+
+  const handleShiftBudgetMonth = async (delta: number) => {
+    if (!token) return;
+
+    const nextMonth = shiftMonthToken(budgetMonth, delta);
+    setBudgetMonth(nextMonth);
+
+    const budgetData = await apiClient.getBudgets(token, nextMonth);
     setBudgets(budgetData.items);
     setBudgetTotals(budgetData.totals);
     setBudgetMonth(budgetData.month);
@@ -272,6 +398,18 @@ export default function App() {
     setGoals(await apiClient.getGoals(token));
   };
 
+  const handleContributeGoal = async (goal: Goal, increment: number) => {
+    if (!token) return;
+
+    const nextCurrentAmount = Number((goal.currentAmount + increment).toFixed(2));
+
+    await apiClient.updateGoal(token, goal.id, {
+      currentAmount: nextCurrentAmount
+    });
+
+    setGoals(await apiClient.getGoals(token));
+  };
+
   const handleDeleteGoal = async (goal: Goal) => {
     if (!token) return;
 
@@ -315,6 +453,8 @@ export default function App() {
     setToken(null);
     setUser(null);
     setTransactions([]);
+    setTransactionFilters(defaultTransactionFilters);
+    setTransactionPagination(emptyTransactionPagination);
     setBudgets([]);
     setGoals([]);
     setReportSummary(null);
@@ -393,8 +533,16 @@ export default function App() {
       return (
         <TransactionsScreen
           items={transactions}
+          categories={categories}
+          filters={transactionFilters}
+          pagination={transactionPagination}
           refreshing={refreshing}
+          loadingMore={transactionLoadingMore}
           onRefresh={refreshAll}
+          onFilterChange={(patch) => setTransactionFilters((current) => ({ ...current, ...patch }))}
+          onApplyFilters={handleApplyTransactionFilters}
+          onResetFilters={handleResetTransactionFilters}
+          onLoadMore={handleLoadMoreTransactions}
           onAdd={() => {
             setEditingTransaction(null);
             setModalRoute({ kind: "transactionForm", mode: "create" });
@@ -417,6 +565,8 @@ export default function App() {
           refreshing={refreshing}
           onMonthChange={setBudgetMonth}
           onApplyMonth={handleApplyBudgetMonth}
+          onPreviousMonth={() => handleShiftBudgetMonth(-1)}
+          onNextMonth={() => handleShiftBudgetMonth(1)}
           onRefresh={refreshAll}
           onAdd={() => {
             setEditingBudget(null);
@@ -446,6 +596,7 @@ export default function App() {
             setModalRoute({ kind: "goalForm", mode: "edit" });
           }}
           onDelete={handleDeleteGoal}
+          onContribute={handleContributeGoal}
         />
       );
     }

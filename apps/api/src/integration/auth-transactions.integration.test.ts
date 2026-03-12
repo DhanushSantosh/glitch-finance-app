@@ -150,8 +150,13 @@ describe("auth + transaction integration", () => {
     });
 
     expect(listResponseUserA.statusCode).toBe(200);
-    const listAJson = listResponseUserA.json() as { items: Array<{ id: string }> };
+    const listAJson = listResponseUserA.json() as {
+      items: Array<{ id: string }>;
+      pagination: { page: number; pageSize: number; hasMore: boolean; nextPage: number | null };
+    };
     expect(listAJson.items.some((item) => item.id === createdJson.item.id)).toBe(true);
+    expect(listAJson.pagination.page).toBe(1);
+    expect(listAJson.pagination.pageSize).toBe(20);
 
     const listResponseUserB = await app.inject({
       method: "GET",
@@ -164,6 +169,71 @@ describe("auth + transaction integration", () => {
     expect(listResponseUserB.statusCode).toBe(200);
     const listBJson = listResponseUserB.json() as { items: Array<{ id: string }> };
     expect(listBJson.items.some((item) => item.id === createdJson.item.id)).toBe(false);
+
+    const sortingUser = await authViaOtp(app, `sort-${randomUUID()}@example.com`);
+    const occurredAtBase = new Date("2026-03-11T10:00:00.000Z");
+
+    const createForSort = async (amount: number, minutesOffset: number) => {
+      const occurredAt = new Date(occurredAtBase.getTime() + minutesOffset * 60_000).toISOString();
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/transactions",
+        headers: {
+          authorization: `Bearer ${sortingUser.token}`
+        },
+        payload: {
+          direction: "debit",
+          amount,
+          currency: "INR",
+          categoryId: debitCategory?.id,
+          counterparty: "Sort Merchant",
+          occurredAt
+        }
+      });
+
+      expect(response.statusCode).toBe(200);
+    };
+
+    await createForSort(300, 1);
+    await createForSort(100, 2);
+    await createForSort(200, 3);
+
+    const amountAscending = await app.inject({
+      method: "GET",
+      url: "/api/v1/transactions?page=1&pageSize=2&sortBy=amount&sortOrder=asc",
+      headers: {
+        authorization: `Bearer ${sortingUser.token}`
+      }
+    });
+
+    expect(amountAscending.statusCode).toBe(200);
+    const amountAscJson = amountAscending.json() as {
+      items: Array<{ amount: number }>;
+      pagination: { hasMore: boolean; nextPage: number | null };
+    };
+
+    expect(amountAscJson.items.map((item) => item.amount)).toEqual([100, 200]);
+    expect(amountAscJson.pagination.hasMore).toBe(true);
+    expect(amountAscJson.pagination.nextPage).toBe(2);
+
+    const amountAscendingPageTwo = await app.inject({
+      method: "GET",
+      url: "/api/v1/transactions?page=2&pageSize=2&sortBy=amount&sortOrder=asc",
+      headers: {
+        authorization: `Bearer ${sortingUser.token}`
+      }
+    });
+
+    expect(amountAscendingPageTwo.statusCode).toBe(200);
+    const amountAscPageTwoJson = amountAscendingPageTwo.json() as {
+      items: Array<{ amount: number }>;
+      pagination: { hasMore: boolean; nextPage: number | null };
+    };
+
+    expect(amountAscPageTwoJson.items[0]?.amount).toBe(300);
+    expect(amountAscPageTwoJson.pagination.hasMore).toBe(false);
+    expect(amountAscPageTwoJson.pagination.nextPage).toBeNull();
 
     const deleteResponse = await app.inject({
       method: "DELETE",

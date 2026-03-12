@@ -12,10 +12,30 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
   });
 
   app.get("/api/v1/status", async () => {
+    let databaseHealthy = true;
+    try {
+      await ctx.sql`select 1 as ok`;
+    } catch {
+      databaseHealthy = false;
+    }
+
+    let redisHealthy = false;
+    if (ctx.redis) {
+      try {
+        redisHealthy = (await ctx.redis.ping()) === "PONG";
+      } catch {
+        redisHealthy = false;
+      }
+    }
+
     return {
       message: "Glitch API is running",
       databaseUrlSet: Boolean(ctx.env.DATABASE_URL),
-      redisUrlSet: Boolean(ctx.env.REDIS_URL)
+      redisUrlSet: Boolean(ctx.env.REDIS_URL),
+      dependencies: {
+        databaseHealthy,
+        redisHealthy
+      }
     };
   });
 
