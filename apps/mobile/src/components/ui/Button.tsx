@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleProp, Text, ViewStyle } from "react-native";
 import { createStyles, theme } from "../../theme";
 
@@ -17,7 +18,7 @@ export const getButtonPalette = (variant: ButtonVariant): { background: string; 
 };
 
 type ButtonProps = {
-  label: string;
+  label: string | ReactNode;
   onPress: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
@@ -42,28 +43,40 @@ export const Button = ({ label, onPress, variant = "primary", disabled = false, 
       ]}
       accessibilityRole="button"
     >
-      {loading ? <ActivityIndicator color={palette.text} /> : <Text style={[styles.label, { color: palette.text }]}>{label}</Text>}
+      {loading ? (
+        <ActivityIndicator color={palette.text} />
+      ) : (
+        typeof label === "string" ? <Text style={[styles.label, { color: palette.text }]}>{label}</Text> : label
+      )}
     </Pressable>
   );
 };
 
+
 const styles = createStyles(() => ({
   base: {
-    minHeight: 48,
-    borderRadius: theme.radius.sm,
+    minHeight: 52,
+    borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    shadowColor: theme.color.actionPrimary,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 }
   },
   label: {
-    fontSize: theme.typography.bodySmall,
-    fontWeight: "700"
+    fontSize: theme.typography.body,
+    fontWeight: "700",
+    letterSpacing: 0.5
   },
   pressed: {
-    opacity: theme.state.pressedOpacity
+    opacity: theme.state.pressedOpacity,
+    transform: [{ scale: 0.98 }]
   },
   disabled: {
     opacity: theme.state.disabledOpacity
   }
 }));
+

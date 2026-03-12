@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { Text, View } from "react-native";
 import { createStyles, theme } from "../../theme";
 
@@ -7,13 +8,17 @@ type StatTileProps = {
   label: string;
   value: string;
   tone?: StatTone;
+  icon?: ReactNode;
 };
 
-export const StatTile = ({ label, value, tone = "default" }: StatTileProps) => {
+export const StatTile = ({ label, value, tone = "default", icon }: StatTileProps) => {
   return (
-    <View style={styles.tile}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.value, tone === "positive" ? styles.positive : null, tone === "negative" ? styles.negative : null, tone === "info" ? styles.info : null]}>
+    <View style={[styles.tile, tone === "positive" ? styles.tilePositive : tone === "negative" ? styles.tileNegative : null]}>
+      <View style={styles.headerRow}>
+        {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
+        <Text style={styles.label}>{label}</Text>
+      </View>
+      <Text style={[styles.value, tone === "positive" ? styles.positive : tone === "negative" ? styles.negative : tone === "info" ? styles.info : null]}>
         {value}
       </Text>
     </View>
@@ -23,23 +28,40 @@ export const StatTile = ({ label, value, tone = "default" }: StatTileProps) => {
 const styles = createStyles(() => ({
   tile: {
     flex: 1,
-    minWidth: 148,
+    minWidth: 140,
     borderRadius: theme.radius.sm,
-    borderWidth: 1,
-    borderColor: theme.color.borderSubtle,
     backgroundColor: theme.color.surface,
     padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle
+  },
+  tilePositive: {
+    borderColor: "rgba(212, 255, 0, 0.2)"
+  },
+  tileNegative: {
+    borderColor: "rgba(255, 51, 102, 0.2)"
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.xs
   },
+  iconContainer: {
+    opacity: 0.7
+  },
   label: {
-    color: theme.color.textMuted,
-    fontSize: theme.typography.caption,
-    fontWeight: "700"
+    color: theme.color.textSecondary,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1.5
   },
   value: {
     color: theme.color.textPrimary,
     fontSize: theme.typography.heading,
-    fontWeight: "800"
+    fontWeight: "800",
+    letterSpacing: -0.5
   },
   positive: {
     color: theme.color.statusSuccess
@@ -51,3 +73,5 @@ const styles = createStyles(() => ({
     color: theme.color.statusInfo
   }
 }));
+
+

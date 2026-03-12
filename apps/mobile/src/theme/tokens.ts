@@ -7,70 +7,70 @@ const common = {
     sm: 8,
     md: 12,
     lg: 16,
-    xl: 20,
-    xxl: 28
+    xl: 24,
+    xxl: 36
   },
   radius: {
-    sm: 10,
-    md: 14,
-    lg: 18,
+    sm: 12,
+    md: 18,
+    lg: 24,
     pill: 999
   },
   typography: {
-    display: 30,
-    title: 24,
-    heading: 18,
+    display: 34,
+    title: 26,
+    heading: 20,
     body: 16,
     bodySmall: 14,
     caption: 12,
     label: 13
   },
   motion: {
-    durationFast: 140,
-    durationNormal: 220,
+    durationFast: 120,
+    durationNormal: 200,
     easingStandard: "ease-in-out" as const
   },
   state: {
-    disabledOpacity: 0.55,
-    pressedOpacity: 0.88
+    disabledOpacity: 0.4,
+    pressedOpacity: 0.8
   }
 };
 
 export const lightTheme: ThemeTokens = {
   ...common,
   color: {
-    bgBase: "#EFF8F7",
-    bgElevated: "#E8F4F4",
+    bgBase: "#F8FAFC",
+    bgElevated: "#F1F5F9",
     surface: "#FFFFFF",
-    surfaceMuted: "#F5FAFA",
-    borderSubtle: "#D4E8E8",
-    borderStrong: "#A9CCCC",
-    textPrimary: "#163336",
-    textSecondary: "#2C555A",
-    textMuted: "#5C7A7F",
-    textInverse: "#F8FFFF",
-    actionPrimary: "#2E8B89",
-    actionPrimaryPressed: "#257170",
-    actionSecondary: "#DDF0EF",
-    actionSecondaryPressed: "#C6E5E4",
-    actionGhost: "#F3FAFA",
-    actionGhostPressed: "#E3F2F1",
-    actionDanger: "#C4514C",
-    actionDangerPressed: "#A63E39",
-    statusSuccess: "#2E8A60",
-    statusWarn: "#B7842F",
-    statusError: "#BE4A46",
-    statusInfo: "#367C99",
-    focusRing: "#65A9A8"
+    surfaceMuted: "#F8FAFC",
+    borderSubtle: "#E2E8F0",
+    borderStrong: "#CBD5E1",
+    textPrimary: "#0F172A",
+    textSecondary: "#475569",
+    textMuted: "#94A3B8",
+    textInverse: "#FFFFFF",
+    actionPrimary: "#0EA5E9",
+    actionPrimaryPressed: "#0284C7",
+    actionSecondary: "#E0F2FE",
+    actionSecondaryPressed: "#BAE6FD",
+    actionGhost: "#F1F5F9",
+    actionGhostPressed: "#E2E8F0",
+    actionDanger: "#EF4444",
+    actionDangerPressed: "#DC2626",
+    statusSuccess: "#10B981",
+    statusWarn: "#F59E0B",
+    statusError: "#EF4444",
+    statusInfo: "#3B82F6",
+    focusRing: "#7DD3FC"
   },
   elevation: {
     card: {
-      shadowColor: "#0E2A2D",
-      shadowOpacity: 0.08,
-      shadowRadius: 10,
+      shadowColor: "#000000",
+      shadowOpacity: 0.05,
+      shadowRadius: 15,
       shadowOffset: {
         width: 0,
-        height: 3
+        height: 4
       },
       elevation: 2
     }
@@ -80,40 +80,42 @@ export const lightTheme: ThemeTokens = {
 export const darkTheme: ThemeTokens = {
   ...common,
   color: {
-    bgBase: "#0E1A1D",
-    bgElevated: "#112226",
-    surface: "#152A2E",
-    surfaceMuted: "#1A3136",
-    borderSubtle: "#264247",
-    borderStrong: "#3F696F",
-    textPrimary: "#E5F4F4",
-    textSecondary: "#C7DDDD",
-    textMuted: "#96B3B5",
-    textInverse: "#0B1B1D",
-    actionPrimary: "#5DB4B2",
-    actionPrimaryPressed: "#4B9A98",
-    actionSecondary: "#1F3E42",
-    actionSecondaryPressed: "#264A4F",
-    actionGhost: "#1A3337",
-    actionGhostPressed: "#214145",
-    actionDanger: "#D9736F",
-    actionDangerPressed: "#C55D58",
-    statusSuccess: "#61C394",
-    statusWarn: "#E0B45A",
-    statusError: "#E67772",
-    statusInfo: "#79B8D1",
-    focusRing: "#73B9B7"
+    bgBase: "#000000", // True Black
+    bgElevated: "#0A0A0A", // Extremely dark gray
+    surface: "#121212", // Pure minimal surface
+    surfaceMuted: "rgba(255, 255, 255, 0.03)", // Ultra-subtle glass
+    borderSubtle: "rgba(255, 255, 255, 0.06)", // Barely visible borders
+    borderStrong: "rgba(255, 255, 255, 0.12)",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#A3A3A3",
+    textMuted: "#666666",
+    textInverse: "#000000",
+    actionPrimary: "#D4FF00", // High-energy Chartreuse / Lime
+    actionPrimaryPressed: "#B8DF00",
+    actionSecondary: "rgba(255, 255, 255, 0.08)",
+    actionSecondaryPressed: "rgba(255, 255, 255, 0.15)",
+    actionGhost: "transparent",
+    actionGhostPressed: "rgba(255, 255, 255, 0.05)",
+    actionDanger: "#FF3366", // Sharp aggressive red/pink
+    actionDangerPressed: "#E62E5C",
+    statusSuccess: "#D4FF00", // Using the brand color for success
+    statusWarn: "#FFB020",
+    statusError: "#FF3366",
+    statusInfo: "#3388FF",
+    focusRing: "rgba(212, 255, 0, 0.4)"
   },
   elevation: {
     card: {
       shadowColor: "#000000",
-      shadowOpacity: 0.32,
-      shadowRadius: 12,
+      shadowOpacity: 0.5,
+      shadowRadius: 16,
       shadowOffset: {
         width: 0,
-        height: 4
+        height: 8
       },
-      elevation: 3
+      elevation: 0 // Rely on borders and background contrast in true black
     }
   }
 };
+
+

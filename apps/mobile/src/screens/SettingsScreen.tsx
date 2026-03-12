@@ -1,6 +1,7 @@
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import { AppHeader, Button, Card, InlineMessage, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
+import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare } from "lucide-react-native";
 
 type SettingsScreenProps = {
   smsDisclosureVersion: string;
@@ -11,33 +12,128 @@ type SettingsScreenProps = {
 export const SettingsScreen = ({ smsDisclosureVersion, onRequestEnable, onSignOut }: SettingsScreenProps) => {
   return (
     <Screen>
-      <AppHeader title="Settings" subtitle="Manage privacy controls and account access in one place." />
+      <AppHeader title="System" subtitle="Security and configuration." />
 
-      <Card>
-        <AppHeader title="SMS Detection" subtitle="Disabled by default. Sprint 1 keeps this feature blocked while collecting intent only." />
-        <InlineMessage tone="warn" text="Guardrail: no SMS read path exists in this release." />
-        <InlineMessage tone="info" text={`Disclosure version: ${smsDisclosureVersion}`} />
+      <Card variant="glass" style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleRow}>
+            <TerminalSquare size={18} color={theme.color.textMuted} />
+            <Text style={styles.sectionTitle}>DATA EXTRACTION</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>SMS Parsing Protocol</Text>
+        </View>
+        
+        <InlineMessage 
+          tone="warn" 
+          text="Extraction protocol offline. Intent logging only for current build." 
+        />
+        
+        <View style={styles.disclosureInfo}>
+          <Text style={styles.disclosureText}>POLICY VER: {smsDisclosureVersion.toUpperCase()}</Text>
+        </View>
 
         <View style={styles.actionRow}>
-          <Button label="Keep Disabled" variant="secondary" onPress={() => void onRequestEnable(false)} style={styles.flexAction} />
-          <Button label="Request Enable" onPress={() => void onRequestEnable(true)} style={styles.flexAction} />
+          <Button 
+            label={<><ShieldCheck size={16} color={theme.color.textPrimary} style={{marginRight: 8}}/><Text style={{color: theme.color.textPrimary, fontWeight: '700'}}>MAINTAIN OFFLINE</Text></>} 
+            variant="ghost" 
+            onPress={() => void onRequestEnable(false)} 
+            style={styles.flexAction} 
+          />
+          <Button 
+            label={<><ShieldAlert size={16} color={theme.color.textInverse} style={{marginRight: 8}}/><Text style={{color: theme.color.textInverse, fontWeight: '800'}}>AUTHORIZE</Text></>} 
+            variant="primary" 
+            onPress={() => void onRequestEnable(true)} 
+            style={styles.flexAction} 
+          />
         </View>
       </Card>
 
-      <Card>
-        <AppHeader title="Account" subtitle="Sign out from this device safely." />
-        <Button label="Sign Out" variant="danger" onPress={() => void onSignOut()} />
+      <Card variant="muted" style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleRow}>
+            <LogOut size={18} color={theme.color.statusError} />
+            <Text style={[styles.sectionTitle, { color: theme.color.statusError }]}>SESSION TERMINATION</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>Revoke local access tokens</Text>
+        </View>
+        <Button 
+          label="SEVER CONNECTION" 
+          variant="danger" 
+          onPress={() => void onSignOut()} 
+          style={styles.signOutButton}
+        />
       </Card>
+
+      <View style={styles.versionFooter}>
+        <Text style={styles.versionText}>GLITCH CORE V1.0.0 // BUILD 2026.1</Text>
+      </View>
     </Screen>
   );
 };
 
 const styles = createStyles(() => ({
+  sectionCard: {
+    padding: theme.spacing.xl,
+    gap: theme.spacing.lg
+  },
+  sectionHeader: {
+    gap: 4
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs
+  },
+  sectionTitle: {
+    color: theme.color.textPrimary,
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 2
+  },
+  sectionSubtitle: {
+    color: theme.color.textSecondary,
+    fontSize: theme.typography.body,
+    fontWeight: "600",
+    letterSpacing: -0.5
+  },
+  disclosureInfo: {
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.color.bgBase,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle,
+    borderRadius: theme.radius.sm,
+    alignItems: "center"
+  },
+  disclosureText: {
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1
+  },
   actionRow: {
     flexDirection: "row",
-    gap: theme.spacing.sm
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xs
   },
   flexAction: {
-    flex: 1
+    flex: 1,
+    minHeight: 48,
+    flexDirection: "row"
+  },
+  signOutButton: {
+    marginTop: theme.spacing.sm,
+    minHeight: 52
+  },
+  versionFooter: {
+    alignItems: "center",
+    paddingVertical: theme.spacing.xl,
+    opacity: 0.5
+  },
+  versionText: {
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 2
   }
 }));

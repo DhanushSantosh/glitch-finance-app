@@ -18,6 +18,7 @@ import { TransactionFormScreen } from "./src/screens/TransactionFormScreen";
 import { TransactionsScreen } from "./src/screens/TransactionsScreen";
 import { createStyles, theme } from "./src/theme";
 import { BootstrapPayload, Budget, Category, Goal, ReportSummary, Transaction, TransactionListQuery, User } from "./src/types";
+import { calculateBudgetTotals } from "./src/utils/budgetTotals";
 import { shiftMonthToken } from "./src/utils/month";
 
 const emptyBudgetTotals = {
@@ -92,6 +93,13 @@ const buildTransactionQuery = (filters: TransactionFilters, page: number): Trans
     ...(fromDate ? { from: fromDate.toISOString() } : {}),
     ...(toDate ? { to: toDate.toISOString() } : {})
   };
+};
+
+const resolveErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return fallback;
 };
 
 export default function App() {
@@ -238,8 +246,12 @@ export default function App() {
         style: "destructive",
         onPress: () => {
           void (async () => {
-            await apiClient.deleteTransaction(token, transaction.id);
-            await fetchTransactions(token, transactionFilters, 1, false);
+            try {
+              await apiClient.deleteTransaction(token, transaction.id);
+              await fetchTransactions(token, transactionFilters, 1, false);
+            } catch (error) {
+              Alert.alert("Unable to delete transaction", resolveErrorMessage(error, "Please try again."));
+            }
           })();
         }
       }
@@ -350,10 +362,17 @@ export default function App() {
         style: "destructive",
         onPress: () => {
           void (async () => {
-            await apiClient.deleteBudget(token, budget.id);
-            const budgetData = await apiClient.getBudgets(token, budgetMonth);
-            setBudgets(budgetData.items);
-            setBudgetTotals(budgetData.totals);
+            try {
+              await apiClient.deleteBudget(token, budget.id);
+
+              setBudgets((previous) => {
+                const next = previous.filter((item) => item.id !== budget.id);
+                setBudgetTotals(calculateBudgetTotals(next));
+                return next;
+              });
+            } catch (error) {
+              Alert.alert("Unable to delete budget", resolveErrorMessage(error, "Please try again."));
+            }
           })();
         }
       }
@@ -420,8 +439,12 @@ export default function App() {
         style: "destructive",
         onPress: () => {
           void (async () => {
-            await apiClient.deleteGoal(token, goal.id);
-            setGoals(await apiClient.getGoals(token));
+            try {
+              await apiClient.deleteGoal(token, goal.id);
+              setGoals((previous) => previous.filter((item) => item.id !== goal.id));
+            } catch (error) {
+              Alert.alert("Unable to delete goal", resolveErrorMessage(error, "Please try again."));
+            }
           })();
         }
       }
@@ -612,20 +635,20 @@ export default function App() {
 
   if (isBooting) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" translucent={false} backgroundColor={theme.color.bgBase} />
+      <View style={styles.safeArea}>
+        <StatusBar style="light" translucent={false} backgroundColor={theme.color.bgBase} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.color.actionPrimary} />
           <Text style={styles.loadingText}>Preparing your workspace...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" translucent={false} backgroundColor={theme.color.bgBase} />
+      <View style={styles.safeArea}>
+        <StatusBar style="light" translucent={false} backgroundColor={theme.color.bgBase} />
         <View style={styles.authShell}>
           <View style={styles.authMetaWrap}>
             <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
@@ -638,18 +661,18 @@ export default function App() {
             )}
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" translucent={false} backgroundColor={theme.color.bgBase} />
+    <View style={styles.safeArea}>
+      <StatusBar style="light" translucent={false} backgroundColor={theme.color.bgBase} />
       <View style={styles.appShell}>
         <View style={styles.flexFill}>{renderActiveContent()}</View>
         {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -666,20 +689,22 @@ const styles = createStyles(() => ({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: theme.spacing.sm
+    gap: theme.spacing.md
   },
   loadingText: {
     color: theme.color.textSecondary,
-    fontWeight: "600"
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontSize: 10
   },
   authShell: {
     flex: 1,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
     gap: theme.spacing.sm
   },
   authMetaWrap: {
-    paddingHorizontal: theme.spacing.sm
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md
   },
   appShell: {
     flex: 1,

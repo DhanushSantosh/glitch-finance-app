@@ -69,13 +69,16 @@ const styles = createStyles(() => ({
   },
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    gap: theme.spacing.md
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.xxl,
+    gap: theme.spacing.xl
   },
   viewContent: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    gap: theme.spacing.md
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.xxl,
+    gap: theme.spacing.xl
   }
 }));
+

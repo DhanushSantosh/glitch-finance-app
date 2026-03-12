@@ -42,37 +42,47 @@ export const TextField = ({ label, helperText, errorText, containerStyle, style,
 
 const styles = createStyles(() => ({
   container: {
-    gap: theme.spacing.xs
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.sm
   },
   label: {
     color: theme.color.textSecondary,
     fontSize: theme.typography.label,
-    fontWeight: "700"
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginLeft: theme.spacing.xs
   },
   input: {
-    minHeight: 48,
-    borderWidth: 1,
+    minHeight: 52,
+    borderWidth: 1.5,
     borderColor: theme.color.borderSubtle,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.color.surface,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.surfaceMuted,
     color: theme.color.textPrimary,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,
-    fontSize: theme.typography.body
+    fontSize: theme.typography.body,
+    fontWeight: "600"
   },
   focused: {
-    borderColor: theme.color.focusRing
+    borderColor: theme.color.actionPrimary,
+    backgroundColor: theme.color.surface
   },
   errorBorder: {
     borderColor: theme.color.statusError
   },
   helperText: {
     color: theme.color.textMuted,
-    fontSize: theme.typography.caption
+    fontSize: theme.typography.caption,
+    marginLeft: theme.spacing.xs,
+    fontWeight: "500"
   },
   errorText: {
     color: theme.color.statusError,
     fontSize: theme.typography.caption,
-    fontWeight: "600"
+    fontWeight: "700",
+    marginLeft: theme.spacing.xs
   }
 }));
+

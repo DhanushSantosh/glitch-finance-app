@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 import { lightTheme, darkTheme } from "./tokens";
 import { ThemeTokens } from "./types";
 
-export const theme: ThemeTokens = lightTheme;
+export const theme: ThemeTokens = darkTheme;
 export const themes = {
   light: lightTheme,
   dark: darkTheme
