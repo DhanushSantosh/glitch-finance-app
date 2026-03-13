@@ -59,6 +59,7 @@ const emptyTransactionPagination = {
 
 const BACKGROUND_SYNC_INTERVAL_MS = 15_000;
 const MUTATION_RECONCILE_DELAY_MS = 700;
+const TRANSACTION_FILTER_SYNC_DEBOUNCE_MS = 300;
 
 const dateTokenPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
@@ -101,6 +102,17 @@ const buildTransactionQuery = (filters: TransactionFilters, page: number): Trans
   };
 };
 
+const buildTransactionFilterSignature = (filters: TransactionFilters): string =>
+  JSON.stringify({
+    direction: filters.direction,
+    categoryId: filters.categoryId,
+    from: filters.from.trim(),
+    to: filters.to.trim(),
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+    pageSize: filters.pageSize
+  });
+
 const resolveErrorMessage = (error: unknown, fallback: string): string => {
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
@@ -137,6 +149,10 @@ export default function App() {
   const syncInFlightRef = useRef(false);
   const syncQueuedRef = useRef(false);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transactionFilterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transactionFiltersRef = useRef<TransactionFilters>(defaultTransactionFilters);
+  const activeTransactionFilterSignatureRef = useRef<string>(buildTransactionFilterSignature(defaultTransactionFilters));
+  const latestTransactionReplaceRequestRef = useRef(0);
 
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
@@ -207,11 +223,35 @@ export default function App() {
     page: number,
     append: boolean
   ): Promise<void> => {
+    const requestedFilterSignature = buildTransactionFilterSignature(filters);
+    const replaceRequestId = append ? latestTransactionReplaceRequestRef.current : latestTransactionReplaceRequestRef.current + 1;
+
+    if (!append) {
+      latestTransactionReplaceRequestRef.current = replaceRequestId;
+      activeTransactionFilterSignatureRef.current = requestedFilterSignature;
+    }
+
+    const replaceGenerationAtStart = latestTransactionReplaceRequestRef.current;
     const response = await apiClient.getTransactions(sessionToken, buildTransactionQuery(filters, page));
+
+    if (append) {
+      const hasNewerReplace = replaceGenerationAtStart !== latestTransactionReplaceRequestRef.current;
+      const filtersChanged = requestedFilterSignature !== activeTransactionFilterSignatureRef.current;
+      if (hasNewerReplace || filtersChanged) {
+        return;
+      }
+    } else if (replaceRequestId !== latestTransactionReplaceRequestRef.current) {
+      return;
+    }
 
     setTransactions((previous) => (append ? [...previous, ...response.items] : response.items));
     setTransactionPagination(response.pagination);
   };
+
+  useEffect(() => {
+    transactionFiltersRef.current = transactionFilters;
+    activeTransactionFilterSignatureRef.current = buildTransactionFilterSignature(transactionFilters);
+  }, [transactionFilters]);
 
   const resolveCategoryName = useCallback(
     (categoryId: string | null, fallbackName?: string | null): string | null => {
@@ -250,8 +290,12 @@ export default function App() {
         ]);
 
         setCategories(categoryItems);
-        setTransactions(transactionData.items);
-        setTransactionPagination(transactionData.pagination);
+        const requestedFilterSignature = buildTransactionFilterSignature(transactionFilters);
+        const latestFilterSignature = buildTransactionFilterSignature(transactionFiltersRef.current);
+        if (requestedFilterSignature === latestFilterSignature) {
+          setTransactions(transactionData.items);
+          setTransactionPagination(transactionData.pagination);
+        }
         setBudgets(budgetData.items);
         setBudgetTotals(budgetData.totals);
         setGoals(goalItems);
@@ -339,9 +383,38 @@ export default function App() {
       if (syncTimerRef.current) {
         clearTimeout(syncTimerRef.current);
       }
+      if (transactionFilterTimerRef.current) {
+        clearTimeout(transactionFilterTimerRef.current);
+      }
     },
     []
   );
+
+  useEffect(() => {
+    if (!token || !isAuthenticated) {
+      return undefined;
+    }
+
+    if (activeTab !== "transactions" || modalRoute.kind !== "none") {
+      return undefined;
+    }
+
+    if (transactionFilterTimerRef.current) {
+      clearTimeout(transactionFilterTimerRef.current);
+    }
+
+    const snapshot = transactionFilters;
+    transactionFilterTimerRef.current = setTimeout(() => {
+      transactionFilterTimerRef.current = null;
+      void fetchTransactions(token, snapshot, 1, false);
+    }, TRANSACTION_FILTER_SYNC_DEBOUNCE_MS);
+
+    return () => {
+      if (transactionFilterTimerRef.current) {
+        clearTimeout(transactionFilterTimerRef.current);
+      }
+    };
+  }, [activeTab, isAuthenticated, modalRoute.kind, token, transactionFilters]);
 
   const refreshAll = async () => {
     if (!token) return;
@@ -413,11 +486,19 @@ export default function App() {
 
   const handleApplyTransactionFilters = async () => {
     if (!token) return;
+    if (transactionFilterTimerRef.current) {
+      clearTimeout(transactionFilterTimerRef.current);
+      transactionFilterTimerRef.current = null;
+    }
     await fetchTransactions(token, transactionFilters, 1, false);
   };
 
   const handleResetTransactionFilters = async () => {
     if (!token) return;
+    if (transactionFilterTimerRef.current) {
+      clearTimeout(transactionFilterTimerRef.current);
+      transactionFilterTimerRef.current = null;
+    }
     setTransactionFilters(defaultTransactionFilters);
     await fetchTransactions(token, defaultTransactionFilters, 1, false);
   };
