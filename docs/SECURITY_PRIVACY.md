@@ -8,6 +8,8 @@
 - OTP values are generated server-side and stored only as hash.
 - Session token is issued to client and stored as hash in DB.
 - Logout revokes session by setting `revoked_at`.
+- Dedicated recovery OTP aliases are available for account recovery flows.
+- Account deletion endpoint removes user data via cascade constraints.
 
 ### Request Validation and Error Handling
 
@@ -40,6 +42,8 @@ Audit events are captured for:
 - Logout
 - Consent intent actions
 - Transaction create/update/delete
+- Category create/update/delete
+- Account deletion requests
 
 Audit log stores request id and source IP for traceability.
 
@@ -48,6 +52,7 @@ Audit log stores request id and source IP for traceability.
 - Never log raw OTP to production logs.
 - Never persist full SMS payload in Sprint 1.1.
 - Keep secrets in environment variables.
+- Use `OTP_PROVIDER=resend` in production and disable debug OTP exposure.
 
 ## Production Hardening Checklist
 
@@ -56,3 +61,4 @@ Audit log stores request id and source IP for traceability.
 3. Enforce TLS termination at edge/load balancer.
 4. Configure secret manager for environment variables.
 5. Add request-level abuse monitoring and alerting.
+6. Scrape `/api/v1/metrics` and configure alerts for error rate/latency SLOs.

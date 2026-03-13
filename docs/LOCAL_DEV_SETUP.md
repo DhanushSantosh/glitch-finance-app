@@ -13,6 +13,10 @@ pnpm --filter @glitch/api db:migrate
 pnpm dev:android
 ```
 
+OTP provider mode for local:
+- Keep `OTP_PROVIDER=console` in `apps/api/.env` to use debug OTP.
+- Use `OTP_PROVIDER=resend` only when validating real email delivery with `RESEND_API_KEY`.
+
 ## Alternative startup
 
 ```bash
@@ -50,3 +54,11 @@ EXPO_PUBLIC_API_URL=http://192.168.x.x:4000
 ```
 
 Restart Expo after changing this value.
+
+## Quick diagnostics
+
+```bash
+curl http://localhost:4000/api/v1/status
+curl http://localhost:4000/api/v1/bootstrap
+curl http://localhost:4000/api/v1/metrics
+```

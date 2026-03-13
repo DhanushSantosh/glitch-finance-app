@@ -6,6 +6,7 @@ This folder is the source of truth for product and engineering documentation.
 
 - `SRS_v1.md` - Product requirements and long-term scope.
 - `SPRINT1_TRACEABILITY.md` - Mapping of Sprint 1.1 implementation to SRS requirements.
+- `WORKLIST_EXECUTION.md` - Completed execution checklist for current delivery batch.
 - `UI_STYLE_GUIDE.md` - Soft Aqua design system tokens, UX principles, and accessibility standards.
 - `UI_SCREEN_BLUEPRINTS.md` - Per-screen structure and component contracts for mobile flows.
 

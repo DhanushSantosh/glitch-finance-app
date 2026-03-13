@@ -1,0 +1,65 @@
+name: DR Drill - Backup and Restore
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup-restore-drill:
+    runs-on: ubuntu-latest
+
+    services:
+      drill_postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: glitch
+          POSTGRES_PASSWORD: glitch
+          POSTGRES_DB: glitch_restore_drill
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U glitch -d glitch_restore_drill"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      SOURCE_DATABASE_URL: ${{ secrets.BACKUP_SOURCE_DATABASE_URL }}
+      DRILL_DATABASE_URL: postgresql://glitch:glitch@127.0.0.1:5433/glitch_restore_drill
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Validate source database URL
+        run: |
+          if [ -z "${SOURCE_DATABASE_URL}" ]; then
+            echo "BACKUP_SOURCE_DATABASE_URL is not configured."
+            exit 1
+          fi
+
+      - name: Create source backup
+        env:
+          DATABASE_URL: ${{ env.SOURCE_DATABASE_URL }}
+          BACKUP_DIR: ./backups
+        run: ./scripts/backup/postgres-backup.sh
+
+      - name: Restore backup into drill database
+        env:
+          DATABASE_URL: ${{ env.DRILL_DATABASE_URL }}
+        run: |
+          backup_file="$(ls -t ./backups/glitch_*.dump | head -n 1)"
+          ./scripts/backup/postgres-restore.sh "$backup_file"
+
+      - name: Smoke check restored schema
+        env:
+          DATABASE_URL: ${{ env.DRILL_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -c "select count(*) from users;"
+          psql "$DATABASE_URL" -c "select count(*) from transactions;"
+

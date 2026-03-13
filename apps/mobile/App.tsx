@@ -9,6 +9,8 @@ import { deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "
 import { AppTabRoute, defaultTabRoute, emptyModalRoute, ModalRoute } from "./src/navigation/routes";
 import { BudgetFormScreen } from "./src/screens/BudgetFormScreen";
 import { BudgetsScreen } from "./src/screens/BudgetsScreen";
+import { CategoryFormScreen } from "./src/screens/CategoryFormScreen";
+import { CategoryManagerScreen } from "./src/screens/CategoryManagerScreen";
 import { DashboardScreen } from "./src/screens/DashboardScreen";
 import { GoalFormScreen } from "./src/screens/GoalFormScreen";
 import { GoalsScreen } from "./src/screens/GoalsScreen";
@@ -126,6 +128,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AppTabRoute>(defaultTabRoute);
   const [modalRoute, setModalRoute] = useState<ModalRoute>(emptyModalRoute);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
@@ -306,6 +309,44 @@ export default function App() {
     await fetchTransactions(token, transactionFilters, 1, false);
   };
 
+  const handleSaveCategory = async (payload: { name: string; direction: "debit" | "credit" | "transfer" }) => {
+    if (!token) return;
+
+    if (modalRoute.kind === "categoryForm" && modalRoute.mode === "edit" && editingCategory) {
+      await apiClient.updateCategory(token, editingCategory.id, payload);
+    } else {
+      await apiClient.createCategory(token, payload);
+    }
+
+    const updatedCategories = await apiClient.getCategories(token);
+    setCategories(updatedCategories);
+    setEditingCategory(null);
+    setModalRoute({ kind: "categoryManager" });
+  };
+
+  const handleDeleteCategory = async (category: Category) => {
+    if (!token) return;
+
+    Alert.alert("Delete category", `Delete "${category.name}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          void (async () => {
+            try {
+              await apiClient.deleteCategory(token, category.id);
+              setCategories((previous) => previous.filter((item) => item.id !== category.id));
+              await fetchTransactions(token, transactionFilters, 1, false);
+            } catch (error) {
+              Alert.alert("Unable to delete category", resolveErrorMessage(error, "Please try again."));
+            }
+          })();
+        }
+      }
+    ]);
+  };
+
   const handleApplyBudgetMonth = async () => {
     if (!token) return;
 
@@ -462,18 +503,7 @@ export default function App() {
     );
   };
 
-  const handleSignOut = async () => {
-    let remoteLogoutFailed = false;
-
-    if (token) {
-      try {
-        await apiClient.logout(token);
-      } catch {
-        remoteLogoutFailed = true;
-      }
-    }
-
-    await clearSessionToken();
+  const clearAuthenticatedState = () => {
     setToken(null);
     setUser(null);
     setTransactions([]);
@@ -488,12 +518,57 @@ export default function App() {
     setActiveTab(defaultTabRoute);
     setModalRoute(emptyModalRoute);
     setEditingTransaction(null);
+    setEditingCategory(null);
     setEditingBudget(null);
     setEditingGoal(null);
+  };
+
+  const handleSignOut = async () => {
+    let remoteLogoutFailed = false;
+
+    if (token) {
+      try {
+        await apiClient.logout(token);
+      } catch {
+        remoteLogoutFailed = true;
+      }
+    }
+
+    await clearSessionToken();
+    clearAuthenticatedState();
 
     if (remoteLogoutFailed) {
       Alert.alert("Signed out locally", "Could not complete server logout due to a network issue, but this device session is cleared.");
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!token) return;
+
+    Alert.alert(
+      "Delete account",
+      "This permanently deletes your account and all related cloud data. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                await apiClient.deleteAccount(token);
+              } catch {
+                Alert.alert("Delete failed", "Could not delete account right now. Please try again.");
+                return;
+              }
+
+              await clearSessionToken();
+              clearAuthenticatedState();
+            })();
+          }
+        }
+      ]
+    );
   };
 
   const renderActiveContent = () => {
@@ -507,6 +582,39 @@ export default function App() {
             setModalRoute(emptyModalRoute);
           }}
           onSubmit={handleSaveTransaction}
+        />
+      );
+    }
+
+    if (modalRoute.kind === "categoryManager") {
+      return (
+        <CategoryManagerScreen
+          categories={categories}
+          refreshing={refreshing}
+          onRefresh={refreshAll}
+          onBack={() => setModalRoute(emptyModalRoute)}
+          onAdd={() => {
+            setEditingCategory(null);
+            setModalRoute({ kind: "categoryForm", mode: "create" });
+          }}
+          onEdit={(category) => {
+            setEditingCategory(category);
+            setModalRoute({ kind: "categoryForm", mode: "edit" });
+          }}
+          onDelete={handleDeleteCategory}
+        />
+      );
+    }
+
+    if (modalRoute.kind === "categoryForm") {
+      return (
+        <CategoryFormScreen
+          initial={modalRoute.mode === "edit" ? editingCategory : null}
+          onCancel={() => {
+            setEditingCategory(null);
+            setModalRoute({ kind: "categoryManager" });
+          }}
+          onSubmit={handleSaveCategory}
         />
       );
     }
@@ -629,6 +737,10 @@ export default function App() {
       <SettingsScreen
         smsDisclosureVersion={bootstrap?.legal.smsDisclosureVersion ?? "sms_disclosure_v1"}
         onRequestEnable={handleSmsIntent}
+        onOpenCategoryManager={() => {
+          setModalRoute({ kind: "categoryManager" });
+        }}
+        onDeleteAccount={handleDeleteAccount}
         onSignOut={handleSignOut}
       />
     );

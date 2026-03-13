@@ -261,4 +261,242 @@ describe("auth + transaction integration", () => {
     expect(bootstrapJson.featureFlags.smsImportEnabledByDefault).toBe(false);
     expect(typeof bootstrapJson.legal.smsDisclosureVersion).toBe("string");
   });
+
+  it("supports custom categories and auto-categorization rules", async () => {
+    const user = await authViaOtp(app, `categories-${randomUUID()}@example.com`);
+
+    const initialCategoriesResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/categories",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(initialCategoriesResponse.statusCode).toBe(200);
+    const initialCategoriesJson = initialCategoriesResponse.json() as {
+      items: Array<{ id: string; name: string; direction: "debit" | "credit" | "transfer"; isDefault: boolean }>;
+    };
+
+    const foodCategoryId = initialCategoriesJson.items.find((item) => item.name === "Food & Dining" && item.direction === "debit")?.id;
+    const defaultDebitCategoryId = initialCategoriesJson.items.find((item) => item.isDefault && item.direction === "debit")?.id;
+
+    expect(foodCategoryId).toBeTruthy();
+    expect(defaultDebitCategoryId).toBeTruthy();
+
+    const createCategory = await app.inject({
+      method: "POST",
+      url: "/api/v1/categories",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        name: "Rent",
+        direction: "debit"
+      }
+    });
+
+    expect(createCategory.statusCode).toBe(200);
+    const createdCategory = createCategory.json() as {
+      item: { id: string; name: string; direction: "debit" | "credit" | "transfer"; isDefault: boolean };
+    };
+    expect(createdCategory.item.name).toBe("Rent");
+    expect(createdCategory.item.isDefault).toBe(false);
+
+    const duplicateCategory = await app.inject({
+      method: "POST",
+      url: "/api/v1/categories",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        name: "rent",
+        direction: "debit"
+      }
+    });
+
+    expect(duplicateCategory.statusCode).toBe(409);
+
+    const renameCategory = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/categories/${createdCategory.item.id}`,
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        name: "House Rent"
+      }
+    });
+
+    expect(renameCategory.statusCode).toBe(200);
+
+    const updateDefaultAttempt = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/categories/${defaultDebitCategoryId}`,
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        name: "Cannot Edit"
+      }
+    });
+
+    expect(updateDefaultAttempt.statusCode).toBe(404);
+
+    const anchorTransaction = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        direction: "debit",
+        amount: 12000,
+        currency: "INR",
+        categoryId: createdCategory.item.id,
+        counterparty: "Landlord PVT LTD",
+        note: "monthly rent",
+        occurredAt: "2026-03-01T06:30:00.000Z"
+      }
+    });
+
+    expect(anchorTransaction.statusCode).toBe(200);
+
+    const learnedTransaction = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        direction: "debit",
+        amount: 11500,
+        currency: "INR",
+        counterparty: "Landlord PVT LTD",
+        note: "month two",
+        occurredAt: "2026-03-05T07:30:00.000Z"
+      }
+    });
+
+    expect(learnedTransaction.statusCode).toBe(200);
+    const learnedTransactionJson = learnedTransaction.json() as { item: { categoryId: string | null } };
+    expect(learnedTransactionJson.item.categoryId).toBe(createdCategory.item.id);
+
+    const keywordTransaction = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        direction: "debit",
+        amount: 560,
+        currency: "INR",
+        counterparty: "Zomato",
+        note: "dinner order",
+        occurredAt: "2026-03-05T10:00:00.000Z"
+      }
+    });
+
+    expect(keywordTransaction.statusCode).toBe(200);
+    const keywordJson = keywordTransaction.json() as { item: { categoryId: string | null } };
+    expect(keywordJson.item.categoryId).toBe(foodCategoryId);
+
+    const budgetAgainstCategory = await app.inject({
+      method: "POST",
+      url: "/api/v1/budgets",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        categoryId: createdCategory.item.id,
+        month: "2026-03",
+        amount: 20000,
+        currency: "INR"
+      }
+    });
+
+    expect(budgetAgainstCategory.statusCode).toBe(200);
+
+    const deleteBlockedCategory = await app.inject({
+      method: "DELETE",
+      url: `/api/v1/categories/${createdCategory.item.id}`,
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(deleteBlockedCategory.statusCode).toBe(409);
+
+    const removableCategory = await app.inject({
+      method: "POST",
+      url: "/api/v1/categories",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        name: "Freelance",
+        direction: "credit"
+      }
+    });
+
+    expect(removableCategory.statusCode).toBe(200);
+    const removableCategoryId = (removableCategory.json() as { item: { id: string } }).item.id;
+
+    const deleteCategory = await app.inject({
+      method: "DELETE",
+      url: `/api/v1/categories/${removableCategoryId}`,
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(deleteCategory.statusCode).toBe(200);
+  });
+
+  it("supports recovery OTP aliases and account deletion", async () => {
+    const email = `recovery-${randomUUID()}@example.com`;
+
+    const recoveryRequest = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/recovery/request-otp",
+      payload: { email }
+    });
+
+    expect(recoveryRequest.statusCode).toBe(200);
+    const recoveryRequestJson = recoveryRequest.json() as { debugOtpCode?: string };
+    expect(recoveryRequestJson.debugOtpCode).toBeTruthy();
+
+    const recoveryVerify = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/recovery/verify-otp",
+      payload: {
+        email,
+        code: recoveryRequestJson.debugOtpCode
+      }
+    });
+
+    expect(recoveryVerify.statusCode).toBe(200);
+    const recoveryVerifyJson = recoveryVerify.json() as { token: string };
+
+    const deleteAccountResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/account",
+      headers: {
+        authorization: `Bearer ${recoveryVerifyJson.token}`
+      }
+    });
+
+    expect(deleteAccountResponse.statusCode).toBe(200);
+
+    const meAfterDelete = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: {
+        authorization: `Bearer ${recoveryVerifyJson.token}`
+      }
+    });
+
+    expect(meAfterDelete.statusCode).toBe(401);
+  });
 });

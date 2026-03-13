@@ -232,4 +232,63 @@ describe("reports integration", () => {
     expect(summaryJson.totals.expense).toBe(250);
     expect(summaryJson.totals.transactionCount).toBe(1);
   });
+
+  it("exports report summary as csv and pdf", async () => {
+    const user = await authViaOtp(app, `reports-export-${randomUUID()}@example.com`);
+
+    const categoriesResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/categories",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+    const categoryJson = categoriesResponse.json() as { items: Array<{ id: string; direction: string }> };
+    const debitCategory = categoryJson.items.find((item) => item.direction === "debit");
+    expect(debitCategory).toBeDefined();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        direction: "debit",
+        amount: 321,
+        currency: "INR",
+        categoryId: debitCategory?.id,
+        counterparty: "Export Check",
+        occurredAt: "2026-03-08T10:00:00.000Z"
+      }
+    });
+    expect(createResponse.statusCode).toBe(200);
+
+    const csvResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03&format=csv",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(csvResponse.statusCode).toBe(200);
+    expect(csvResponse.headers["content-type"]).toContain("text/csv");
+    expect(csvResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.csv");
+    expect(csvResponse.body).toContain("section,key,value");
+    expect(csvResponse.body).toContain("totals,expense");
+
+    const pdfResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03&format=pdf",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(pdfResponse.statusCode).toBe(200);
+    expect(pdfResponse.headers["content-type"]).toContain("application/pdf");
+    expect(pdfResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.pdf");
+    expect(pdfResponse.rawPayload.slice(0, 8).toString("utf8")).toContain("%PDF-1.4");
+  });
 });

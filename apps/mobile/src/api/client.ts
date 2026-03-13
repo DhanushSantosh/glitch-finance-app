@@ -128,11 +128,50 @@ export const apiClient = {
     });
   },
 
+  async deleteAccount(token: string): Promise<void> {
+    await request<{ success: boolean }>("/api/v1/account", {
+      method: "DELETE",
+      token
+    });
+  },
+
   async getCategories(token: string): Promise<Category[]> {
     const result = await request<{ items: Category[] }>("/api/v1/categories", {
       token
     });
     return result.items;
+  },
+
+  async createCategory(
+    token: string,
+    payload: { name: string; direction: "debit" | "credit" | "transfer" }
+  ): Promise<Category> {
+    const result = await request<{ item: Category }>("/api/v1/categories", {
+      method: "POST",
+      token,
+      body: payload
+    });
+    return result.item;
+  },
+
+  async updateCategory(
+    token: string,
+    categoryId: string,
+    payload: Partial<{ name: string; direction: "debit" | "credit" | "transfer" }>
+  ): Promise<Category> {
+    const result = await request<{ item: Category }>(`/api/v1/categories/${categoryId}`, {
+      method: "PATCH",
+      token,
+      body: payload
+    });
+    return result.item;
+  },
+
+  async deleteCategory(token: string, categoryId: string): Promise<void> {
+    await request<{ success: boolean }>(`/api/v1/categories/${categoryId}`, {
+      method: "DELETE",
+      token
+    });
   },
 
   async getTransactions(token: string, query: TransactionListQuery = {}): Promise<TransactionListResponse> {

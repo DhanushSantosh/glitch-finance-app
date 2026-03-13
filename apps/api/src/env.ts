@@ -3,23 +3,36 @@ import { z } from "zod";
 
 dotenv.config({ path: process.env.ENV_FILE ?? ".env" });
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
-  API_HOST: z.string().default("0.0.0.0"),
-  MOBILE_APP_ORIGIN: z.string().url().default("http://localhost:8081"),
-  DATABASE_URL: z.string().min(1).default("postgresql://glitch:glitch@localhost:5432/glitch"),
-  REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
-  OTP_HASH_SECRET: z.string().min(16).default("change-me-in-production-otp-secret"),
-  AUTH_OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(1800).default(300),
-  AUTH_MAX_OTP_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
-  AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
-  AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
-  AUTH_RATE_LIMIT_MAX_REQUEST_OTP: z.coerce.number().int().min(1).max(20).default(5),
-  AUTH_RATE_LIMIT_MAX_VERIFY_OTP: z.coerce.number().int().min(1).max(30).default(10),
-  SMS_DISCLOSURE_VERSION: z.string().default("sms_disclosure_v1"),
-  APP_CURRENCY: z.string().length(3).default("INR")
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+    API_HOST: z.string().default("0.0.0.0"),
+    MOBILE_APP_ORIGIN: z.string().url().default("http://localhost:8081"),
+    DATABASE_URL: z.string().min(1).default("postgresql://glitch:glitch@localhost:5432/glitch"),
+    REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
+    OTP_HASH_SECRET: z.string().min(16).default("change-me-in-production-otp-secret"),
+    OTP_PROVIDER: z.enum(["console", "resend"]).default("console"),
+    OTP_EMAIL_FROM: z.string().min(3).default("Glitch Finance <noreply@glitch.local>"),
+    RESEND_API_KEY: z.string().min(1).optional(),
+    AUTH_OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(1800).default(300),
+    AUTH_MAX_OTP_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
+    AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+    AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
+    AUTH_RATE_LIMIT_MAX_REQUEST_OTP: z.coerce.number().int().min(1).max(20).default(5),
+    AUTH_RATE_LIMIT_MAX_VERIFY_OTP: z.coerce.number().int().min(1).max(30).default(10),
+    SMS_DISCLOSURE_VERSION: z.string().default("sms_disclosure_v1"),
+    APP_CURRENCY: z.string().length(3).default("INR")
+  })
+  .superRefine((value, refinementContext) => {
+    if (value.OTP_PROVIDER === "resend" && !value.RESEND_API_KEY) {
+      refinementContext.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "RESEND_API_KEY is required when OTP_PROVIDER=resend",
+        path: ["RESEND_API_KEY"]
+      });
+    }
+  });
 
 const parsed = envSchema.safeParse(process.env);
 

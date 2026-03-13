@@ -4,7 +4,7 @@ import { createDbClient } from "./db/client.js";
 import { env, AppEnv } from "./env.js";
 import { RateLimiter } from "./rate-limit/rate-limiter.js";
 import { AuditService } from "./modules/audit/service.js";
-import { ConsoleOtpProvider } from "./modules/auth/provider.js";
+import { ConsoleOtpProvider, OtpDeliveryProvider, ResendOtpProvider } from "./modules/auth/provider.js";
 import { AuthService } from "./modules/auth/service.js";
 import { ensureDefaultCategories } from "./modules/categories/defaults.js";
 
@@ -106,7 +106,14 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
 
   const rateLimiter = new RateLimiter(redis);
   const auditService = new AuditService(db);
-  const otpProvider = new ConsoleOtpProvider(logger);
+  const otpProvider: OtpDeliveryProvider =
+    env.OTP_PROVIDER === "resend"
+      ? new ResendOtpProvider({
+          apiKey: env.RESEND_API_KEY ?? "",
+          fromEmail: env.OTP_EMAIL_FROM,
+          logger
+        })
+      : new ConsoleOtpProvider(logger);
 
   const authService = new AuthService({
     db,

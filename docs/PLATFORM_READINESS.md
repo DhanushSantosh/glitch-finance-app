@@ -4,6 +4,7 @@
 
 Implemented:
 - GitHub Actions workflow: `.github/workflows/ci.yml`
+- API image publish workflow: `.github/workflows/cd-image.yml`
 - Trigger: push to `main` and pull requests
 - Stages:
   1. Install dependencies
@@ -15,6 +16,12 @@ Quality gate:
 - Merge to `main` should be blocked unless CI is green.
 
 ## Staging and Production Provisioning
+
+Implemented baseline artifacts:
+- Render Blueprint manifests:
+  - `infra/render/staging.yaml`
+  - `infra/render/production.yaml`
+- API container image build path: `apps/api/Dockerfile`
 
 Target runtime shape:
 - Stateless API service replicas
@@ -39,6 +46,9 @@ Secrets that must be managed centrally:
 - `OTP_HASH_SECRET`
 - Email OTP provider secrets (for production provider)
 
+Implemented tooling:
+- Secret generation helper: `scripts/ops/generate-otp-secret.sh`
+
 Rotation policy:
 - Rotate high-sensitivity secrets every 90 days.
 - Rotate immediately on suspected leak.
@@ -49,6 +59,7 @@ Rotation policy:
 
 Current state:
 - Development uses console OTP delivery.
+- Production-ready provider integration implemented for Resend (`OTP_PROVIDER=resend`).
 
 Production readiness requirement:
 1. Enable a real email OTP provider implementation via existing provider abstraction.
@@ -63,6 +74,10 @@ Minimum production telemetry:
 - Auth endpoint rate-limit events
 - Database connectivity and query error rate
 - Redis connectivity status
+
+Implemented telemetry endpoints:
+- `GET /api/v1/status` for dependency health
+- `GET /api/v1/metrics` for Prometheus scrape metrics
 
 Alert thresholds (initial):
 - 5xx error rate > 2% for 5 minutes
@@ -93,3 +108,8 @@ DR checklist:
 2. Run migration state verification.
 3. Run smoke tests (`/health`, auth login, transaction read/write).
 4. Document elapsed recovery time and issues.
+
+Implemented automation:
+- Backup script: `scripts/backup/postgres-backup.sh`
+- Restore script: `scripts/backup/postgres-restore.sh`
+- Manual DR drill workflow: `.github/workflows/dr-drill.yml`

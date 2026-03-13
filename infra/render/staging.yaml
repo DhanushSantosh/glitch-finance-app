@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: glitch-api-staging
+    env: docker
+    dockerfilePath: apps/api/Dockerfile
+    autoDeploy: true
+    plan: starter
+    healthCheckPath: /api/v1/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: "4000"
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: MOBILE_APP_ORIGIN
+        value: https://staging.quantex25.app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: glitch-postgres-staging
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: glitch-redis-staging
+          property: connectionString
+      - key: OTP_PROVIDER
+        value: resend
+      - key: OTP_EMAIL_FROM
+        value: Glitch Finance <noreply@staging.quantex25.app>
+      - key: RESEND_API_KEY
+        sync: false
+      - key: OTP_HASH_SECRET
+        sync: false
+      - key: SMS_DISCLOSURE_VERSION
+        value: sms_disclosure_v1
+      - key: APP_CURRENCY
+        value: INR
+  - type: redis
+    name: glitch-redis-staging
+    plan: starter
+
+databases:
+  - name: glitch-postgres-staging
+    plan: starter
+    databaseName: glitch
+    user: glitch
+

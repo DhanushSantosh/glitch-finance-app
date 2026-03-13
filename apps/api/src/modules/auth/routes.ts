@@ -46,6 +46,35 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     };
   });
 
+  app.post("/api/v1/auth/recovery/request-otp", async (request) => {
+    const body = parseOrThrow(requestOtpSchema, request.body);
+
+    return ctx.authService.requestOtp({
+      email: body.email,
+      ipAddress: request.ip,
+      requestId: request.id
+    });
+  });
+
+  app.post("/api/v1/auth/recovery/verify-otp", async (request) => {
+    const body = parseOrThrow(verifyOtpSchema, request.body);
+
+    const result = await ctx.authService.verifyOtp({
+      email: body.email,
+      code: body.code,
+      ipAddress: request.ip,
+      requestId: request.id
+    });
+
+    return {
+      token: result.token,
+      user: result.user,
+      session: {
+        expiresInDays: ctx.env.AUTH_SESSION_TTL_DAYS
+      }
+    };
+  });
+
   app.post("/api/v1/auth/logout", async (request) => {
     const identity = requireAuth(request);
     await ctx.authService.logout(identity, request.id, request.ip);
@@ -58,5 +87,11 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
       id: identity.userId,
       email: identity.email
     };
+  });
+
+  app.delete("/api/v1/account", async (request) => {
+    const identity = requireAuth(request);
+    await ctx.authService.deleteAccount(identity, request.id, request.ip);
+    return { success: true };
   });
 };

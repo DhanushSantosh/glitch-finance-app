@@ -8,7 +8,8 @@ import Animated, {
   useSharedValue, 
   withSpring,
   interpolate,
-  Extrapolation
+  Extrapolation,
+  type SharedValue
 } from "react-native-reanimated";
 import { useEffect, useState } from "react";
 
@@ -25,7 +26,19 @@ const routeToIconMap: Record<AppTabRoute, any> = {
   settings: Settings
 };
 
-const AnimatedIconComponent = ({ route, activeIndex, index, pillX, tabWidth }: { route: AppTabRoute, activeIndex: number, index: number, pillX: Animated.SharedValue<number>, tabWidth: Animated.SharedValue<number> }) => {
+const AnimatedIconComponent = ({
+  route,
+  activeIndex,
+  index,
+  pillX,
+  tabWidth
+}: {
+  route: AppTabRoute;
+  activeIndex: number;
+  index: number;
+  pillX: SharedValue<number>;
+  tabWidth: SharedValue<number>;
+}) => {
   const Icon = routeToIconMap[route];
   const size = 22;
 
@@ -227,4 +240,3 @@ const styles = createStyles(() => ({
     shadowOffset: { width: 0, height: 0 },
   }
 }));
-

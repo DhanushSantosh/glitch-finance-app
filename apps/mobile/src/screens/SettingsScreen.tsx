@@ -1,15 +1,23 @@
 import { Text, View } from "react-native";
 import { AppHeader, Button, Card, InlineMessage, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare } from "lucide-react-native";
+import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree } from "lucide-react-native";
 
 type SettingsScreenProps = {
   smsDisclosureVersion: string;
   onRequestEnable: (enabled: boolean) => Promise<void>;
+  onOpenCategoryManager: () => void;
+  onDeleteAccount: () => Promise<void>;
   onSignOut: () => Promise<void>;
 };
 
-export const SettingsScreen = ({ smsDisclosureVersion, onRequestEnable, onSignOut }: SettingsScreenProps) => {
+export const SettingsScreen = ({
+  smsDisclosureVersion,
+  onRequestEnable,
+  onOpenCategoryManager,
+  onDeleteAccount,
+  onSignOut
+}: SettingsScreenProps) => {
   return (
     <Screen>
       <AppHeader title="System" subtitle="Security and configuration." />
@@ -58,6 +66,17 @@ export const SettingsScreen = ({ smsDisclosureVersion, onRequestEnable, onSignOu
         </View>
       </Card>
 
+      <Card variant="glass" style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleRow}>
+            <FolderTree size={18} color={theme.color.textMuted} />
+            <Text style={styles.sectionTitle}>CATEGORY STUDIO</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>Create and maintain your custom categories.</Text>
+        </View>
+        <Button label="MANAGE CATEGORIES" variant="secondary" onPress={onOpenCategoryManager} />
+      </Card>
+
       <Card variant="muted" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
           <View style={styles.titleRow}>
@@ -72,6 +91,14 @@ export const SettingsScreen = ({ smsDisclosureVersion, onRequestEnable, onSignOu
           onPress={() => void onSignOut()} 
           style={styles.signOutButton}
         />
+      </Card>
+
+      <Card variant="muted" style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.color.statusError }]}>ACCOUNT DELETION</Text>
+          <Text style={styles.sectionSubtitle}>Permanently remove account data from cloud storage.</Text>
+        </View>
+        <Button label="DELETE ACCOUNT" variant="danger" onPress={() => void onDeleteAccount()} />
       </Card>
 
       <View style={styles.versionFooter}>

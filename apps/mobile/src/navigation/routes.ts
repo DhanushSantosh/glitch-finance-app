@@ -4,6 +4,8 @@ export type AppTabRoute = (typeof tabRouteOrder)[number];
 
 export type ModalRoute =
   | { kind: "none" }
+  | { kind: "categoryManager" }
+  | { kind: "categoryForm"; mode: "create" | "edit" }
   | { kind: "transactionForm"; mode: "create" | "edit" }
   | { kind: "budgetForm"; mode: "create" | "edit" }
   | { kind: "goalForm"; mode: "create" | "edit" };

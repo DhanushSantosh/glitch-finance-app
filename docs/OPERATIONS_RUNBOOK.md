@@ -30,6 +30,9 @@ API (`apps/api/.env`):
 - `DATABASE_URL`
 - `REDIS_URL`
 - `OTP_HASH_SECRET`
+- `OTP_PROVIDER` (`console` or `resend`)
+- `OTP_EMAIL_FROM`
+- `RESEND_API_KEY` (required when `OTP_PROVIDER=resend`)
 - `AUTH_OTP_TTL_SECONDS`
 - `AUTH_MAX_OTP_ATTEMPTS`
 - `AUTH_SESSION_TTL_DAYS`
@@ -49,6 +52,7 @@ Mobile (`apps/mobile/.env`):
 curl http://localhost:4000/health
 curl http://localhost:4000/api/v1/status
 curl http://localhost:4000/api/v1/bootstrap
+curl http://localhost:4000/api/v1/metrics
 ```
 
 `/api/v1/status` includes dependency health signals:
@@ -81,6 +85,28 @@ Restart Expo after update.
 - In development, OTP is delivered via API logs.
 - Check API terminal output for generated OTP code.
 
+### Production OTP email delivery
+
+1. Set `OTP_PROVIDER=resend`.
+2. Set `OTP_EMAIL_FROM` and `RESEND_API_KEY`.
+3. Restart API and verify `/api/v1/auth/request-otp`.
+
+## Backup and Restore Scripts
+
+```bash
+export DATABASE_URL=postgresql://...
+pnpm backup:create
+./scripts/backup/postgres-restore.sh ./backups/<file>.dump
+```
+
+## Secrets Rotation
+
+```bash
+pnpm secrets:otp
+```
+
+Use generated value for `OTP_HASH_SECRET` in staging and production secret stores.
+
 ## Release Readiness Checklist
 
 1. All tests green in CI.
@@ -98,3 +124,7 @@ It validates:
 1. Workspace typecheck
 2. API tests
 3. Mobile tests
+
+Additional workflows:
+1. `/.github/workflows/cd-image.yml` - builds and pushes API container image to GHCR.
+2. `/.github/workflows/dr-drill.yml` - manual backup/restore disaster recovery drill.

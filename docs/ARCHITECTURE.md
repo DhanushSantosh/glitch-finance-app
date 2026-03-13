@@ -29,6 +29,7 @@ Glitch is a mobile-first finance tracker with a modular Fastify backend and Expo
   - Goals List
   - Goal Create/Edit
   - Settings (SMS intent logging only)
+  - Category Studio (custom category CRUD)
 
 ### API (`apps/api`)
 
@@ -40,13 +41,14 @@ Implemented modules:
 
 - `health` - health/status/bootstrap endpoints.
 - `auth` - email OTP, session issuance, logout, identity resolution.
-- `categories` - default and user category listing.
-- `transactions` - user-scoped CRUD and filters.
-- `reports` - monthly dashboard summary with totals, top debit categories, and daily trend series.
+- `categories` - default/user listing plus custom category CRUD.
+- `transactions` - user-scoped CRUD, filters, and deterministic auto-categorization baseline.
+- `reports` - monthly dashboard summary with totals, top debit categories, daily trend series, and export.
 - `budgets` - monthly per-category budgets with spent aggregation from transactions.
 - `goals` - savings goal tracking with progress and completion state.
 - `consents` - SMS import consent state and intent logging.
 - `audit` - immutable audit event writes.
+- `metrics` - Prometheus metrics endpoint for observability.
 
 ## Request Lifecycle
 
@@ -63,6 +65,7 @@ Implemented modules:
 - OTP values are never stored in plain text, only hashed.
 - Session tokens are stored as hashed values server-side.
 - SMS detection remains disabled by default and unavailable for actual ingestion in Sprint 1.1.
+- Account deletion endpoint removes user-owned data via cascade constraints.
 
 ## Deployment Shape (Target)
 

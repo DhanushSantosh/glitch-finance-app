@@ -91,6 +91,22 @@ Response:
 }
 ```
 
+### `POST /api/v1/auth/recovery/request-otp`
+
+Alias of request OTP flow for account recovery.
+
+Request body:
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+### `POST /api/v1/auth/recovery/verify-otp`
+
+Alias of OTP verification flow for recovery login.
+
 ### `POST /api/v1/auth/logout`
 
 Requires auth. Revokes active session.
@@ -98,6 +114,10 @@ Requires auth. Revokes active session.
 ### `GET /api/v1/me`
 
 Requires auth. Returns current user identity.
+
+### `DELETE /api/v1/account`
+
+Requires auth. Permanently deletes authenticated user and cascaded user-owned records.
 
 ## Categories
 
@@ -119,6 +139,30 @@ Response:
   ]
 }
 ```
+
+### `POST /api/v1/categories`
+
+Requires auth. Creates a user-owned custom category.
+
+Request body:
+
+```json
+{
+  "name": "Rent",
+  "direction": "debit"
+}
+```
+
+### `PATCH /api/v1/categories/:id`
+
+Requires auth. Updates only user-owned custom categories.
+
+### `DELETE /api/v1/categories/:id`
+
+Requires auth. Deletes only user-owned custom categories.
+
+Guardrail:
+- Returns conflict if the category is currently used by a budget plan.
 
 ## Transactions
 
@@ -163,6 +207,12 @@ Request body:
 }
 ```
 
+Auto-categorization behavior when `categoryId` is omitted:
+
+- Deterministic keyword rules are applied.
+- Prior user corrections are learned from transaction history (counterparty + direction).
+- If no rule matches, transaction remains uncategorized.
+
 ### `PATCH /api/v1/transactions/:id`
 
 Requires auth. Partial update accepted.
@@ -189,6 +239,22 @@ Response includes:
 - `topCategories`: top debit categories by spend
 - `dailySeries`: date-wise income/expense/net rows across the month window
 - `period`: resolved UTC start and endExclusive boundaries used for aggregation
+
+### `GET /api/v1/reports/export`
+
+Requires auth.
+
+Query parameters:
+
+- `month` (`YYYY-MM`, default current UTC month)
+- `currency` (3-char ISO code, default `APP_CURRENCY`)
+- `top` (number of top debit categories, default `5`, max `10`)
+- `format` (`csv|pdf`, default `csv`)
+
+Response:
+
+- CSV: `text/csv` attachment
+- PDF: `application/pdf` attachment
 
 ## Budgets
 
@@ -283,6 +349,12 @@ Behavior:
 - Logs user intent.
 - Returns `featureAvailable: false`.
 - Keeps `enabled: false` in Sprint 1.1.
+
+## Metrics
+
+### `GET /api/v1/metrics`
+
+Prometheus-compatible metrics endpoint for request rate, status distribution, and latency histograms.
 
 ## Rate Limits (Auth)
 

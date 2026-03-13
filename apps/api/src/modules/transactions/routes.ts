@@ -6,11 +6,39 @@ import { categories, transactions } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
 import { parseOrThrow } from "../../utils/validation.js";
+import { suggestCategoryIdForTransaction } from "./auto-categorize.js";
 import { listQuerySchema, normalizeTransactionPayload, transactionInputSchema, transactionUpdateSchema } from "./validation.js";
 
 const idParamSchema = z.object({
   id: z.string().uuid()
 });
+
+const resolveCategoryForTransaction = async (
+  ctx: AppContext,
+  input: {
+    userId: string;
+    categoryId: string;
+    transactionDirection: "debit" | "credit" | "transfer";
+  }
+): Promise<void> => {
+  const rows = await ctx.db
+    .select({
+      id: categories.id,
+      direction: categories.direction
+    })
+    .from(categories)
+    .where(and(eq(categories.id, input.categoryId), or(eq(categories.userId, input.userId), isNull(categories.userId))))
+    .limit(1);
+
+  const category = rows[0];
+  if (!category) {
+    throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
+  }
+
+  if (category.direction !== input.transactionDirection && category.direction !== "transfer") {
+    throw new AppError(400, "INVALID_CATEGORY_DIRECTION", "Category direction is incompatible with transaction direction.");
+  }
+};
 
 const toApiTransaction = (row: {
   id: string;
@@ -108,25 +136,31 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
     const identity = requireAuth(request);
     const body = parseOrThrow(transactionInputSchema, request.body);
     const normalizedPayload = normalizeTransactionPayload(body);
+    let resolvedCategoryId = normalizedPayload.categoryId;
 
-    if (normalizedPayload.categoryId) {
-      const categoryRows = await ctx.db
-        .select({ id: categories.id })
-        .from(categories)
-        .where(
-          and(eq(categories.id, normalizedPayload.categoryId), or(eq(categories.userId, identity.userId), isNull(categories.userId)))
-        );
+    if (!resolvedCategoryId) {
+      resolvedCategoryId = await suggestCategoryIdForTransaction({
+        db: ctx.db,
+        userId: identity.userId,
+        direction: normalizedPayload.direction,
+        counterparty: normalizedPayload.counterparty,
+        note: normalizedPayload.note
+      });
+    }
 
-      if (!categoryRows[0]) {
-        throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
-      }
+    if (resolvedCategoryId) {
+      await resolveCategoryForTransaction(ctx, {
+        userId: identity.userId,
+        categoryId: resolvedCategoryId,
+        transactionDirection: normalizedPayload.direction
+      });
     }
 
     const inserted = await ctx.db
       .insert(transactions)
       .values({
         userId: identity.userId,
-        categoryId: normalizedPayload.categoryId,
+        categoryId: resolvedCategoryId,
         direction: normalizedPayload.direction,
         source: "manual",
         amount: normalizedPayload.amount,
@@ -182,20 +216,22 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
       throw new AppError(404, "TRANSACTION_NOT_FOUND", "Transaction not found.");
     }
 
-    if (body.categoryId) {
-      const categoryRows = await ctx.db
-        .select({ id: categories.id })
-        .from(categories)
-        .where(and(eq(categories.id, body.categoryId), or(eq(categories.userId, identity.userId), isNull(categories.userId))));
+    const nextDirection = body.direction ?? existing.direction;
+    const hasCategoryPatch = Object.prototype.hasOwnProperty.call(body, "categoryId");
 
-      if (!categoryRows[0]) {
-        throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
-      }
+    const nextCategoryId = hasCategoryPatch ? body.categoryId ?? null : existing.categoryId;
+
+    if (nextCategoryId) {
+      await resolveCategoryForTransaction(ctx, {
+        userId: identity.userId,
+        categoryId: nextCategoryId,
+        transactionDirection: nextDirection
+      });
     }
 
     const normalizedUpdate = normalizeTransactionPayload({
-      categoryId: body.categoryId ?? existing.categoryId,
-      direction: body.direction ?? existing.direction,
+      categoryId: nextCategoryId,
+      direction: nextDirection,
       amount: body.amount ?? Number(existing.amount),
       currency: body.currency ?? existing.currency,
       counterparty: body.counterparty ?? existing.counterparty ?? undefined,

@@ -19,10 +19,14 @@
 - OTP request/verify/login/logout lifecycle.
 - Transaction CRUD and user isolation.
 - Transaction list sorting and pagination semantics.
+- Custom category CRUD with ownership and conflict guardrails.
+- Deterministic auto-categorization and correction-learning behavior.
 - Report summary correctness and cross-user isolation.
+- Report export (CSV/PDF) contract checks.
 - Budget CRUD, per-month spend aggregation, and cross-user isolation.
 - Savings goals CRUD and cross-user isolation.
 - Bootstrap policy checks for SMS disabled default.
+- Recovery OTP alias flow and account deletion lifecycle.
 
 ### Mobile Unit Tests
 
@@ -51,7 +55,11 @@ pnpm --filter @glitch/mobile test
 4. Authenticated user sees monthly dashboard summary with income/expense/net and top categories.
 5. Authenticated user can create, update, delete monthly category budgets and see spent/remaining values.
 6. Authenticated user can create, update, delete savings goals and view progress state.
-7. Settings SMS action logs intent but keeps feature disabled.
+7. User can create custom categories and system blocks edits/deletes on default categories.
+8. Transaction without explicit category can auto-map from deterministic rules or user correction history.
+9. Reports can be exported in CSV and PDF format.
+10. User can delete account and the session becomes invalid immediately.
+11. Settings SMS action logs intent but keeps feature disabled.
 
 ## Recommended Next-Level Test Additions
 

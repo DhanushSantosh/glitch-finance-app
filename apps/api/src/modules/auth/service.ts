@@ -225,6 +225,27 @@ export class AuthService {
       ipAddress
     });
   }
+
+  async deleteAccount(identity: AuthIdentity, requestId: string, ipAddress: string): Promise<void> {
+    await this.deps.auditService.log({
+      userId: identity.userId,
+      action: "auth.account_delete_requested",
+      entityType: "user",
+      entityId: identity.userId,
+      metadata: { email: identity.email },
+      requestId,
+      ipAddress
+    });
+
+    const deletedUsers = await this.deps.db
+      .delete(users)
+      .where(and(eq(users.id, identity.userId), eq(users.email, identity.email)))
+      .returning({ id: users.id });
+
+    if (!deletedUsers[0]) {
+      throw new AppError(404, "USER_NOT_FOUND", "User account not found.");
+    }
+  }
 }
 
 const ctxAwareOtpResponse = (nodeEnv: AppEnv["NODE_ENV"], otpCode: string): { message: string; debugOtpCode?: string } => {
