@@ -1,64 +1,73 @@
 # Security and Privacy
 
-## Sprint 1.1 Security Controls
+## Authentication and Session
 
-### Authentication and Session
-
-- Email OTP flow for sign-in.
-- OTP values are generated server-side and stored only as hash.
-- Session token is issued to client and stored as hash in DB.
+- Email OTP flow for sign-in and account recovery.
+- OTP values are generated server-side and stored only as a hash (`OTP_HASH_SECRET`-keyed HMAC).
+- Session token is issued to client and stored as hash in DB (`sessions.token_hash`).
 - Logout revokes session by setting `revoked_at`.
-- Dedicated recovery OTP aliases are available for account recovery flows.
-- Account deletion endpoint removes user data via cascade constraints.
+- Dedicated recovery OTP alias routes are available for account recovery flows.
+- Account deletion permanently removes the user and all cascaded owned records.
 
-### Request Validation and Error Handling
+## Request Validation and Error Handling
 
-- Zod validation at all route boundaries.
-- Typed validation failure responses with stable error envelope.
-- Unified error handler prevents leaking stack traces to clients.
+- Zod validation enforced at all route input boundaries.
+- Typed validation failure responses with stable error envelope (`code`, `message`, `details`).
+- Unified error handler in `app.ts` prevents stack trace leakage to clients.
 
-### Authorization and Data Isolation
+## Authorization and Data Isolation
 
-- Transaction routes enforce `user_id` ownership on reads and writes.
-- Cross-user transaction update/delete attempts return not found behavior.
+- All transaction, budget, goal, and category routes enforce `user_id` ownership on reads and writes.
+- Cross-user access attempts return `404 TRANSACTION_NOT_FOUND` (or equivalent), not `403`.
+- Default categories (`user_id = null`) are protected: user CRUD operations are rejected.
+- Cascade `ON DELETE` constraints in Postgres ensure data is removed atomically on account deletion.
 
-### Rate Limiting
+## Rate Limiting
 
-- Auth routes are rate-limited by email and IP.
-- Redis-backed limiter with in-memory fallback for local reliability.
+- `request-otp` and `verify-otp` routes are rate-limited by both email and IP.
+- Redis is the primary rate-limit store; in-memory fallback is used if Redis is unavailable.
+- Limits are configurable via environment variables: `AUTH_RATE_LIMIT_WINDOW_SECONDS`, `AUTH_RATE_LIMIT_MAX_REQUEST_OTP`, `AUTH_RATE_LIMIT_MAX_VERIFY_OTP`.
 
 ## SMS Guardrails (Critical Policy)
 
 - SMS detection is disabled by default.
-- Sprint 1.1 does not ingest, parse, or store raw SMS content.
-- Settings action records intent only via consent endpoint.
-- API bootstrap explicitly exposes disabled default flag.
+- No raw SMS content is ingested, parsed, or stored.
+- Settings action records intent only via the consent endpoint.
+- API bootstrap explicitly exposes the disabled default flag (`featureFlags.smsImportEnabledByDefault = false`).
 
 ## Auditability
 
-Audit events are captured for:
+Audit events are captured for all security and mutation actions via `AuditService`:
 
-- Login
-- Logout
-- Consent intent actions
-- Transaction create/update/delete
-- Category create/update/delete
-- Account deletion requests
+| Event | Trigger |
+|---|---|
+| `auth.login` | Successful OTP verification |
+| `auth.logout` | Session revocation |
+| `auth.account_deletion_requested` | Account delete action |
+| `consent.intent` | SMS consent intent logged |
+| `transaction.create` | Transaction created |
+| `transaction.update` | Transaction updated |
+| `transaction.delete` | Transaction deleted |
+| `category.create` | Custom category created |
+| `category.update` | Custom category updated |
+| `category.delete` | Custom category deleted |
 
-Audit log stores request id and source IP for traceability.
+Each audit log entry stores `request_id` and `ip_address` for full request traceability.
 
 ## Sensitive Data Handling
 
-- Never log raw OTP to production logs.
-- Never persist full SMS payload in Sprint 1.1.
-- Keep secrets in environment variables.
-- Use `OTP_PROVIDER=resend` in production and disable debug OTP exposure.
+- Never log raw OTP values to production logs.
+- Never persist full SMS payload.
+- Secrets (database credentials, OTP hash secret, email API keys) must be stored in environment variables or a managed secret store — never committed to source control.
+- Use `OTP_PROVIDER=resend` in production to disable debug OTP console exposure.
 
 ## Production Hardening Checklist
 
-1. Replace development OTP provider with managed email provider.
-2. Rotate `OTP_HASH_SECRET` to a strong, unique secret.
-3. Enforce TLS termination at edge/load balancer.
-4. Configure secret manager for environment variables.
-5. Add request-level abuse monitoring and alerting.
-6. Scrape `/api/v1/metrics` and configure alerts for error rate/latency SLOs.
+1. Replace `OTP_PROVIDER=console` with a managed email provider (`resend`).
+2. Set `OTP_HASH_SECRET` to a strong, unique value (use `pnpm secrets:otp` to generate).
+3. Enforce TLS termination at edge/load balancer — never expose plain HTTP in production.
+4. Configure all secrets via a managed secret store, not `.env` files.
+5. Restrict database network ingress to app-tier only.
+6. Enable automated database backups with point-in-time recovery before first production release.
+7. Scrape `/api/v1/metrics` and configure alerts for error rate and latency SLOs.
+8. Add request-level abuse monitoring on auth endpoints.

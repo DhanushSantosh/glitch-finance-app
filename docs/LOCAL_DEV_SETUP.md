@@ -1,4 +1,4 @@
-# Local Dev Setup - Sprint 1.1 (Auth + Transactions + Budgets + Goals)
+# Local Dev Setup
 
 ## Quick start
 

@@ -1,4 +1,4 @@
-# API Reference (Sprint 1.1)
+# API Reference
 
 Base URL: `http://localhost:4000`
 
@@ -41,7 +41,7 @@ Returns app config and feature flags.
 
 Key guarantee:
 
-- `featureFlags.smsImportEnabledByDefault` is always `false` in Sprint 1.1.
+- `featureFlags.smsImportEnabledByDefault` is always `false` (SMS feature is disabled).
 
 ## Authentication
 
@@ -348,7 +348,7 @@ Behavior:
 
 - Logs user intent.
 - Returns `featureAvailable: false`.
-- Keeps `enabled: false` in Sprint 1.1.
+- Keeps `enabled: false` (SMS import is not active).
 
 ## Metrics
 

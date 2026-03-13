@@ -47,7 +47,7 @@ pnpm --filter @glitch/api test
 pnpm --filter @glitch/mobile test
 ```
 
-## Acceptance Scenarios (Sprint 1.1)
+## Acceptance Scenarios
 
 1. New user can request OTP, verify OTP, and get authenticated.
 2. Authenticated user can create, update, delete own transactions.

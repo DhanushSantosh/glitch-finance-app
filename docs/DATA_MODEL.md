@@ -1,4 +1,4 @@
-# Data Model (Sprint 1.1)
+# Data Model
 
 Database: PostgreSQL 16+
 

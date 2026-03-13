@@ -5,24 +5,24 @@ This folder is the source of truth for product and engineering documentation.
 ## Product and Scope
 
 - `SRS_v1.md` - Product requirements and long-term scope.
-- `SPRINT1_TRACEABILITY.md` - Mapping of Sprint 1.1 implementation to SRS requirements.
-- `WORKLIST_EXECUTION.md` - Completed execution checklist for current delivery batch.
-- `UI_STYLE_GUIDE.md` - Soft Aqua design system tokens, UX principles, and accessibility standards.
+- `SPRINT1_TRACEABILITY.md` - SRS requirement mapping and validation evidence for MVP delivery.
+- `WORKLIST_EXECUTION.md` - Completed execution checklist for the MVP delivery batch.
+- `UI_STYLE_GUIDE.md` - Glitch Midnight design system tokens, UX principles, and accessibility standards.
 - `UI_SCREEN_BLUEPRINTS.md` - Per-screen structure and component contracts for mobile flows.
 
 ## Engineering
 
-- `ARCHITECTURE.md` - System architecture, module boundaries, and runtime flows.
+- `ARCHITECTURE.md` - System architecture, module boundaries, routing model, and runtime flows.
 - `DATA_MODEL.md` - Database schema, relations, and migration process.
 - `API_REFERENCE.md` - Request/response contracts for all current API endpoints.
 
 ## Security and Compliance
 
-- `SECURITY_PRIVACY.md` - Auth, consent, SMS guardrails, and audit requirements.
+- `SECURITY_PRIVACY.md` - Auth, consent, SMS guardrails, audit logging, and production hardening.
 
 ## Quality and Validation
 
-- `TESTING.md` - Test strategy, automation commands, and acceptance criteria.
+- `TESTING.md` - Test strategy, automation commands, and acceptance scenarios.
 
 ## Development and Operations
 
@@ -36,3 +36,4 @@ This folder is the source of truth for product and engineering documentation.
 2. API changes must update `API_REFERENCE.md` and `TESTING.md` acceptance cases.
 3. Schema changes must update `DATA_MODEL.md` and include a migration.
 4. Security-sensitive changes must update `SECURITY_PRIVACY.md`.
+5. UI system changes must update `UI_STYLE_GUIDE.md`.
