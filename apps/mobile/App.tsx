@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Platform, StatusBar as NativeStatusBar, Text, View } from "react-native";
+import { ActivityIndicator, Alert, BackHandler, Platform, StatusBar as NativeStatusBar, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
@@ -134,6 +134,66 @@ export default function App() {
 
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") {
+      return undefined;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (isBooting) {
+        return true;
+      }
+
+      if (!isAuthenticated) {
+        if (pendingEmail.trim().length > 0) {
+          setPendingEmail("");
+          return true;
+        }
+        return false;
+      }
+
+      if (modalRoute.kind === "categoryForm") {
+        setEditingCategory(null);
+        setModalRoute({ kind: "categoryManager" });
+        return true;
+      }
+
+      if (modalRoute.kind === "transactionForm") {
+        setEditingTransaction(null);
+        setModalRoute(emptyModalRoute);
+        return true;
+      }
+
+      if (modalRoute.kind === "budgetForm") {
+        setEditingBudget(null);
+        setModalRoute(emptyModalRoute);
+        return true;
+      }
+
+      if (modalRoute.kind === "goalForm") {
+        setEditingGoal(null);
+        setModalRoute(emptyModalRoute);
+        return true;
+      }
+
+      if (modalRoute.kind === "categoryManager") {
+        setModalRoute(emptyModalRoute);
+        return true;
+      }
+
+      if (activeTab !== defaultTabRoute) {
+        setActiveTab(defaultTabRoute);
+        return true;
+      }
+
+      return false;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [activeTab, isAuthenticated, isBooting, modalRoute.kind, pendingEmail]);
 
   const fetchTransactions = async (
     sessionToken: string,
