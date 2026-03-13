@@ -12,7 +12,7 @@ type CardProps = PropsWithChildren<{
 const variantStyles: Record<CardVariant, ViewStyle> = {
   default: {
     backgroundColor: theme.color.surface,
-    borderColor: theme.color.borderSubtle
+    borderColor: "rgba(255, 255, 255, 0.08)"
   },
   muted: {
     backgroundColor: "transparent",
@@ -24,9 +24,9 @@ const variantStyles: Record<CardVariant, ViewStyle> = {
     borderColor: theme.color.actionPrimary
   },
   glass: {
-    backgroundColor: theme.color.surfaceMuted,
-    borderColor: theme.color.borderSubtle,
-    borderWidth: 1
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderWidth: 1.5
   }
 };
 

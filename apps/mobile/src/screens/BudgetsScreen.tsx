@@ -73,7 +73,12 @@ export const BudgetsScreen = ({
           />
         </View>
         <Button 
-          label={<><RefreshCw size={16} color={theme.color.textPrimary} style={{marginRight: 8}}/><Text style={{color: theme.color.textPrimary, fontWeight: '700'}}>SYNC DATA</Text></>} 
+          label={
+            <>
+              <RefreshCw size={16} color={theme.color.textPrimary} />
+              <Text style={{color: theme.color.textPrimary, fontWeight: '700'}}>SYNC DATA</Text>
+            </>
+          } 
           variant="secondary" 
           onPress={() => void onApplyMonth()} 
           style={styles.syncButton} 

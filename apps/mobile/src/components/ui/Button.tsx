@@ -59,6 +59,8 @@ const styles = createStyles(() => ({
     borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row", // Added for icon support
+    gap: theme.spacing.sm, // Added for icon support
     paddingHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.md,
     shadowColor: theme.color.actionPrimary,

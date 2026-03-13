@@ -34,13 +34,23 @@ export const SettingsScreen = ({ smsDisclosureVersion, onRequestEnable, onSignOu
 
         <View style={styles.actionRow}>
           <Button 
-            label={<><ShieldCheck size={16} color={theme.color.textPrimary} style={{marginRight: 8}}/><Text style={{color: theme.color.textPrimary, fontWeight: '700'}}>MAINTAIN OFFLINE</Text></>} 
+            label={
+              <>
+                <ShieldCheck size={16} color={theme.color.textPrimary} />
+                <Text style={{color: theme.color.textPrimary, fontWeight: '700'}}>MAINTAIN OFFLINE</Text>
+              </>
+            } 
             variant="ghost" 
             onPress={() => void onRequestEnable(false)} 
             style={styles.flexAction} 
           />
           <Button 
-            label={<><ShieldAlert size={16} color={theme.color.textInverse} style={{marginRight: 8}}/><Text style={{color: theme.color.textInverse, fontWeight: '800'}}>AUTHORIZE</Text></>} 
+            label={
+              <>
+                <ShieldAlert size={16} color={theme.color.textInverse} />
+                <Text style={{color: theme.color.textInverse, fontWeight: '800'}}>AUTHORIZE</Text>
+              </>
+            } 
             variant="primary" 
             onPress={() => void onRequestEnable(true)} 
             style={styles.flexAction} 

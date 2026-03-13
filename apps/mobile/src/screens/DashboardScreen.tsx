@@ -49,17 +49,17 @@ export const DashboardScreen = ({
   const isPositiveFlow = netFlow >= 0;
 
   // Chart Calculations
-  const chartHeight = 120;
-  const chartWidth = windowWidth - theme.spacing.xl * 2 - theme.spacing.lg * 2; // Screen padding + Card padding
+  const chartHeight = 140;
+  const chartWidth = windowWidth - theme.spacing.xl * 2 - theme.spacing.lg * 2; 
   const maxNet = Math.max(...latestSeries.map(d => d.net), 1);
   const minNet = Math.min(...latestSeries.map(d => d.net), 0);
   const range = maxNet - minNet || 1;
   
+  // Create more data points for a smoother curve if needed, but here we just use what we have
   const chartPoints = latestSeries.map((day, index) => {
     const x = (index / (Math.max(latestSeries.length - 1, 1))) * chartWidth;
-    // Invert Y axis (SVG 0,0 is top left) and add padding
-    const y = chartHeight - ((day.net - minNet) / range) * (chartHeight - 20) - 10;
-    return { x, y, net: day.net };
+    const y = chartHeight - ((day.net - minNet) / range) * (chartHeight - 40) - 20;
+    return { x, y };
   });
 
   const chartPath = createBezierPath(chartPoints);
@@ -68,64 +68,79 @@ export const DashboardScreen = ({
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <AppHeader
-        title="Overview"
-        subtitle="Financial telemetry."
-        rightSlot={<Button label="Log Entry" variant="primary" onPress={onOpenTransactions} style={{ minHeight: 40, paddingHorizontal: 20 }} />}
+        title="GLITCH"
+        subtitle="V1.0 Quantum Telemetry"
+        rightSlot={<Button label="+" variant="primary" onPress={onOpenTransactions} style={{ minHeight: 44, width: 44, borderRadius: 22, paddingHorizontal: 0 }} />}
       />
 
       <View style={styles.heroSection}>
         <View style={styles.netFlowContainer}>
-          <View style={styles.heroIconWrap}>
-            <Wallet size={24} color={theme.color.textMuted} />
-            <Text style={styles.netFlowLabel}>NET FLOW</Text>
-          </View>
+          <Text style={styles.netFlowLabel}>CURRENT LIQUIDITY</Text>
           <Text style={[styles.netFlowValue, isPositiveFlow ? styles.positive : styles.negative]}>
             {formatMoney(netFlow, currency)}
           </Text>
+          <View style={styles.heroBadge}>
+            <Activity size={12} color={isPositiveFlow ? theme.color.statusSuccess : theme.color.statusError} />
+            <Text style={[styles.heroBadgeText, { color: isPositiveFlow ? theme.color.statusSuccess : theme.color.statusError }]}>
+              {isPositiveFlow ? "OPTIMIZED" : "ATTENTION"}
+            </Text>
+          </View>
         </View>
       </View>
 
       <View style={styles.statGrid}>
-        <StatTile label="INFLOW" value={formatMoney(summary?.totals.income ?? 0, currency)} tone="positive" />
-        <StatTile label="OUTFLOW" value={formatMoney(summary?.totals.expense ?? 0, currency)} tone="negative" />
+        <StatTile 
+          label="INFLOW" 
+          value={formatMoney(summary?.totals.income ?? 0, currency)} 
+          tone="positive" 
+          icon={<ArrowUpRight size={14} color={theme.color.statusSuccess} />}
+        />
+        <StatTile 
+          label="OUTFLOW" 
+          value={formatMoney(summary?.totals.expense ?? 0, currency)} 
+          tone="negative" 
+          icon={<ArrowDownRight size={14} color={theme.color.statusError} />}
+        />
       </View>
 
       <Card variant="glass" style={styles.chartCard}>
         <View style={styles.sectionHeader}>
-          <View style={styles.titleRow}>
-            <Activity size={20} color={theme.color.actionPrimary} />
-            <Text style={styles.sectionTitle}>Activity Trend</Text>
-          </View>
-          <Text style={styles.sectionSubtitle}>Last 7 Days (Net)</Text>
+          <Text style={styles.sectionTitle}>Capital Flux</Text>
+          <Text style={styles.sectionSubtitle}>Last 7 Trading Days</Text>
         </View>
 
         {latestSeries.length < 2 ? (
           <EmptyState
-            title="Insufficient Data"
-            description="Log more days to generate the trend visualization."
+            title="NO DATA"
+            description="Log activity to initialize telemetry."
           />
         ) : (
           <View style={styles.chartContainer}>
             <Svg width={chartWidth} height={chartHeight}>
               <Defs>
                 <LinearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={theme.color.actionPrimary} stopOpacity="0.3" />
-                  <Stop offset="1" stopColor={theme.color.actionPrimary} stopOpacity="0.0" />
+                  <Stop offset="0" stopColor={theme.color.actionPrimary} stopOpacity="0.4" />
+                  <Stop offset="0.6" stopColor={theme.color.actionPrimary} stopOpacity="0.1" />
+                  <Stop offset="1" stopColor={theme.color.actionPrimary} stopOpacity="0" />
                 </LinearGradient>
               </Defs>
               <Path d={chartFillPath} fill="url(#gradient)" />
-              <Path d={chartPath} fill="none" stroke={theme.color.actionPrimary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              {chartPoints.map((p, i) => (
-                <Circle key={i} cx={p.x} cy={p.y} r="4" fill={theme.color.bgBase} stroke={theme.color.actionPrimary} strokeWidth="2" />
-              ))}
+              <Path d={chartPath} fill="none" stroke={theme.color.actionPrimary} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Glowing active point (latest) */}
+              <Circle 
+                cx={chartPoints[chartPoints.length - 1].x} 
+                cy={chartPoints[chartPoints.length - 1].y} 
+                r="6" 
+                fill={theme.color.actionPrimary} 
+              />
+              <Circle 
+                cx={chartPoints[chartPoints.length - 1].x} 
+                cy={chartPoints[chartPoints.length - 1].y} 
+                r="12" 
+                fill={theme.color.actionPrimary} 
+                fillOpacity="0.2" 
+              />
             </Svg>
-            <View style={styles.chartXAxis}>
-              {latestSeries.map((d, i) => (
-                <Text key={i} style={styles.chartLabel}>
-                  {d.date.split("-")[2]} {/* Just the day */}
-                </Text>
-              ))}
-            </View>
           </View>
         )}
       </Card>
@@ -199,16 +214,33 @@ const styles = createStyles(() => ({
   },
   netFlowLabel: {
     color: theme.color.textSecondary,
-    fontSize: theme.typography.label,
-    fontWeight: "700",
+    fontSize: 10,
+    fontWeight: "800",
     letterSpacing: 2
   },
   netFlowValue: {
     color: theme.color.textPrimary,
-    fontSize: 56,
+    fontSize: 64,
     fontWeight: "900",
-    letterSpacing: -2,
-    lineHeight: 60
+    letterSpacing: -3,
+    lineHeight: 72
+  },
+  heroBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 6,
+    marginTop: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)"
+  },
+  heroBadgeText: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1
   },
   statGrid: {
     flexDirection: "row",

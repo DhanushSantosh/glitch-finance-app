@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Platform, SafeAreaView, StatusBar as NativeStatusBar, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, StatusBar as NativeStatusBar, Text, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
 import { BottomTabBar, InlineMessage } from "./src/components/ui";
@@ -635,51 +636,57 @@ export default function App() {
 
   if (isBooting) {
     return (
-      <View style={styles.safeArea}>
-        <StatusBar style="light" translucent={false} backgroundColor={theme.color.bgBase} />
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.color.actionPrimary} />
-          <Text style={styles.loadingText}>Preparing your workspace...</Text>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.safeArea}>
+          <StatusBar style="light" />
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={theme.color.actionPrimary} />
+            <Text style={styles.loadingText}>Preparing your workspace...</Text>
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <View style={styles.safeArea}>
-        <StatusBar style="light" translucent={false} backgroundColor={theme.color.bgBase} />
-        <View style={styles.authShell}>
-          <View style={styles.authMetaWrap}>
-            <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
-          </View>
-          <View style={styles.flexFill}>
-            {authStage === "login" ? (
-              <LoginScreen onRequestOtp={handleRequestOtp} />
-            ) : (
-              <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
-            )}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.safeArea}>
+          <StatusBar style="light" />
+          <View style={styles.authShell}>
+            <View style={styles.authMetaWrap}>
+              <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
+            </View>
+            <View style={styles.flexFill}>
+              {authStage === "login" ? (
+                <LoginScreen onRequestOtp={handleRequestOtp} />
+              ) : (
+                <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
+              )}
+            </View>
           </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar style="light" translucent={false} backgroundColor={theme.color.bgBase} />
-      <View style={styles.appShell}>
-        <View style={styles.flexFill}>{renderActiveContent()}</View>
-        {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.safeArea}>
+        <StatusBar style="light" />
+        <View style={styles.appShell}>
+          <View style={styles.flexFill}>{renderActiveContent()}</View>
+          {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
+        </View>
       </View>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = createStyles(() => ({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.color.bgBase,
+    backgroundColor: "#000000", // Force true black for safe area
     paddingTop: Platform.OS === "android" ? (NativeStatusBar.currentHeight ?? 0) : 0
   },
   flexFill: {

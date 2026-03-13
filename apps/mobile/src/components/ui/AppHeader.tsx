@@ -31,32 +31,39 @@ export const AppHeader = ({ title, subtitle, rightSlot, style }: AppHeaderProps)
 
 const styles = createStyles(() => ({
   container: {
-    paddingBottom: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: theme.color.borderSubtle,
-    marginBottom: theme.spacing.xs
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    marginBottom: theme.spacing.sm,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center"
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    flex: 1,
     gap: theme.spacing.md
   },
   titleWrap: {
     flex: 1,
-    gap: 2
+    gap: 0
   },
   title: {
     color: theme.color.textPrimary,
     fontWeight: "900",
-    fontSize: theme.typography.display,
-    letterSpacing: -1
+    fontSize: 28,
+    letterSpacing: -1.5,
+    lineHeight: 32
   },
   subtitle: {
-    color: theme.color.textSecondary,
-    fontSize: theme.typography.bodySmall,
-    fontWeight: "500",
-    lineHeight: 18
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginTop: 2
   },
   right: {
     justifyContent: "center"

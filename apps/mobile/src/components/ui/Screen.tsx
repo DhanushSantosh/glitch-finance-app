@@ -70,14 +70,14 @@ const styles = createStyles(() => ({
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.xl,
-    paddingBottom: theme.spacing.xxl,
+    paddingBottom: 120, // Increased to clear floating tab bar
     gap: theme.spacing.xl
   },
   viewContent: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.xl,
-    paddingBottom: theme.spacing.xxl,
+    paddingBottom: 120, // Increased to clear floating tab bar
     gap: theme.spacing.xl
   }
 }));

@@ -14,6 +14,7 @@ type StatTileProps = {
 export const StatTile = ({ label, value, tone = "default", icon }: StatTileProps) => {
   return (
     <View style={[styles.tile, tone === "positive" ? styles.tilePositive : tone === "negative" ? styles.tileNegative : null]}>
+      <View style={[styles.accentLine, tone === "positive" ? styles.accentPositive : tone === "negative" ? styles.accentNegative : null]} />
       <View style={styles.headerRow}>
         {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
         <Text style={styles.label}>{label}</Text>
@@ -30,17 +31,34 @@ const styles = createStyles(() => ({
     flex: 1,
     minWidth: 140,
     borderRadius: theme.radius.sm,
-    backgroundColor: theme.color.surface,
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
     padding: theme.spacing.md,
+    paddingLeft: theme.spacing.lg, // Extra space for accent line
     gap: theme.spacing.sm,
     borderWidth: 1,
-    borderColor: theme.color.borderSubtle
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    position: "relative",
+    overflow: "hidden"
+  },
+  accentLine: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.1)"
+  },
+  accentPositive: {
+    backgroundColor: theme.color.statusSuccess
+  },
+  accentNegative: {
+    backgroundColor: theme.color.statusError
   },
   tilePositive: {
-    borderColor: "rgba(212, 255, 0, 0.2)"
+    borderColor: "rgba(212, 255, 0, 0.1)"
   },
   tileNegative: {
-    borderColor: "rgba(255, 51, 102, 0.2)"
+    borderColor: "rgba(255, 51, 102, 0.1)"
   },
   headerRow: {
     flexDirection: "row",
