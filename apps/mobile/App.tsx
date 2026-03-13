@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, BackHandler, Platform, StatusBar as NativeStatusBar, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, AppState, BackHandler, Platform, StatusBar as NativeStatusBar, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
@@ -56,6 +56,9 @@ const emptyTransactionPagination = {
   hasMore: false,
   nextPage: null as number | null
 };
+
+const BACKGROUND_SYNC_INTERVAL_MS = 15_000;
+const MUTATION_RECONCILE_DELAY_MS = 700;
 
 const dateTokenPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
@@ -131,6 +134,9 @@ export default function App() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const syncInFlightRef = useRef(false);
+  const syncQueuedRef = useRef(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
@@ -207,6 +213,77 @@ export default function App() {
     setTransactionPagination(response.pagination);
   };
 
+  const resolveCategoryName = useCallback(
+    (categoryId: string | null, fallbackName?: string | null): string | null => {
+      if (fallbackName && fallbackName.trim().length > 0) {
+        return fallbackName;
+      }
+      if (!categoryId) {
+        return null;
+      }
+      return categories.find((category) => category.id === categoryId)?.name ?? null;
+    },
+    [categories]
+  );
+
+  const syncLatestData = useCallback(
+    async (sessionToken: string, options?: { showRefreshing?: boolean }) => {
+      if (syncInFlightRef.current) {
+        syncQueuedRef.current = true;
+        return;
+      }
+
+      syncInFlightRef.current = true;
+      const showRefreshing = options?.showRefreshing ?? false;
+
+      if (showRefreshing) {
+        setRefreshing(true);
+      }
+
+      try {
+        const [categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
+          apiClient.getCategories(sessionToken),
+          apiClient.getTransactions(sessionToken, buildTransactionQuery(transactionFilters, 1)),
+          apiClient.getBudgets(sessionToken, budgetMonth),
+          apiClient.getGoals(sessionToken),
+          apiClient.getReportSummary(sessionToken, reportMonth)
+        ]);
+
+        setCategories(categoryItems);
+        setTransactions(transactionData.items);
+        setTransactionPagination(transactionData.pagination);
+        setBudgets(budgetData.items);
+        setBudgetTotals(budgetData.totals);
+        setGoals(goalItems);
+        setReportSummary(reportData);
+      } finally {
+        if (showRefreshing) {
+          setRefreshing(false);
+        }
+        syncInFlightRef.current = false;
+        if (syncQueuedRef.current) {
+          syncQueuedRef.current = false;
+          void syncLatestData(sessionToken);
+        }
+      }
+    },
+    [budgetMonth, reportMonth, transactionFilters]
+  );
+
+  const enqueueReconcileSync = useCallback(
+    (sessionToken: string, delayMs = MUTATION_RECONCILE_DELAY_MS) => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+
+      syncTimerRef.current = setTimeout(() => {
+        syncTimerRef.current = null;
+        void syncLatestData(sessionToken);
+      }, delayMs);
+    },
+    [syncLatestData]
+  );
+
   const loadAuthenticatedData = async (sessionToken: string, budgetMonthToken: string, reportMonthToken: string) => {
     const initialFilters = defaultTransactionFilters;
 
@@ -257,30 +334,41 @@ export default function App() {
     void bootstrapApp();
   }, []);
 
+  useEffect(
+    () => () => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+    },
+    []
+  );
+
   const refreshAll = async () => {
     if (!token) return;
-
-    setRefreshing(true);
-    try {
-      const [categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
-        apiClient.getCategories(token),
-        apiClient.getTransactions(token, buildTransactionQuery(transactionFilters, 1)),
-        apiClient.getBudgets(token, budgetMonth),
-        apiClient.getGoals(token),
-        apiClient.getReportSummary(token, reportMonth)
-      ]);
-
-      setCategories(categoryItems);
-      setTransactions(transactionData.items);
-      setTransactionPagination(transactionData.pagination);
-      setBudgets(budgetData.items);
-      setBudgetTotals(budgetData.totals);
-      setGoals(goalItems);
-      setReportSummary(reportData);
-    } finally {
-      setRefreshing(false);
-    }
+    await syncLatestData(token, { showRefreshing: true });
   };
+
+  useEffect(() => {
+    if (!token || !isAuthenticated) {
+      return undefined;
+    }
+
+    const runBackgroundSync = () => {
+      void syncLatestData(token);
+    };
+
+    const intervalId = setInterval(runBackgroundSync, BACKGROUND_SYNC_INTERVAL_MS);
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        runBackgroundSync();
+      }
+    });
+
+    return () => {
+      clearInterval(intervalId);
+      appStateSubscription.remove();
+    };
+  }, [isAuthenticated, syncLatestData, token]);
 
   const handleRequestOtp = async (email: string) => {
     const response = await apiClient.requestOtp(email);
@@ -312,7 +400,8 @@ export default function App() {
           void (async () => {
             try {
               await apiClient.deleteTransaction(token, transaction.id);
-              await fetchTransactions(token, transactionFilters, 1, false);
+              setTransactions((previous) => previous.filter((item) => item.id !== transaction.id));
+              enqueueReconcileSync(token);
             } catch (error) {
               Alert.alert("Unable to delete transaction", resolveErrorMessage(error, "Please try again."));
             }
@@ -357,31 +446,77 @@ export default function App() {
   }) => {
     if (!token) return;
 
+    const isFiltering =
+      transactionFilters.direction !== "all" ||
+      transactionFilters.categoryId !== "all" ||
+      transactionFilters.from.trim().length > 0 ||
+      transactionFilters.to.trim().length > 0 ||
+      transactionFilters.sortBy !== defaultTransactionFilters.sortBy ||
+      transactionFilters.sortOrder !== defaultTransactionFilters.sortOrder;
+
+    let saved: Transaction;
     if (modalRoute.kind === "transactionForm" && modalRoute.mode === "edit" && editingTransaction) {
-      await apiClient.updateTransaction(token, editingTransaction.id, payload);
+      saved = await apiClient.updateTransaction(token, editingTransaction.id, payload);
+      const resolved = {
+        ...saved,
+        categoryName: resolveCategoryName(saved.categoryId, saved.categoryName)
+      };
+      setTransactions((previous) => previous.map((item) => (item.id === resolved.id ? resolved : item)));
     } else {
-      await apiClient.createTransaction(token, payload);
+      saved = await apiClient.createTransaction(token, payload);
+      const resolved = {
+        ...saved,
+        categoryName: resolveCategoryName(saved.categoryId, saved.categoryName)
+      };
+      if (!isFiltering) {
+        setTransactions((previous) => [resolved, ...previous.filter((item) => item.id !== resolved.id)]);
+      }
     }
 
     setEditingTransaction(null);
     setModalRoute(emptyModalRoute);
     setActiveTab("transactions");
-    await fetchTransactions(token, transactionFilters, 1, false);
+    enqueueReconcileSync(token);
   };
 
   const handleSaveCategory = async (payload: { name: string; direction: "debit" | "credit" | "transfer" }) => {
     if (!token) return;
 
+    let savedCategory: Category;
     if (modalRoute.kind === "categoryForm" && modalRoute.mode === "edit" && editingCategory) {
-      await apiClient.updateCategory(token, editingCategory.id, payload);
+      savedCategory = await apiClient.updateCategory(token, editingCategory.id, payload);
+      setTransactions((previous) =>
+        previous.map((item) =>
+          item.categoryId === savedCategory.id
+            ? {
+                ...item,
+                categoryName: savedCategory.name
+              }
+            : item
+        )
+      );
+      setBudgets((previous) =>
+        previous.map((item) =>
+          item.categoryId === savedCategory.id
+            ? {
+                ...item,
+                categoryName: savedCategory.name
+              }
+            : item
+        )
+      );
     } else {
-      await apiClient.createCategory(token, payload);
+      savedCategory = await apiClient.createCategory(token, payload);
     }
 
-    const updatedCategories = await apiClient.getCategories(token);
-    setCategories(updatedCategories);
+    setCategories((previous) =>
+      [...previous.filter((item) => item.id !== savedCategory.id), savedCategory].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
+      )
+    );
     setEditingCategory(null);
     setModalRoute({ kind: "categoryManager" });
+    enqueueReconcileSync(token);
   };
 
   const handleDeleteCategory = async (category: Category) => {
@@ -397,7 +532,18 @@ export default function App() {
             try {
               await apiClient.deleteCategory(token, category.id);
               setCategories((previous) => previous.filter((item) => item.id !== category.id));
-              await fetchTransactions(token, transactionFilters, 1, false);
+              setTransactions((previous) =>
+                previous.map((item) =>
+                  item.categoryId === category.id
+                    ? {
+                        ...item,
+                        categoryId: null,
+                        categoryName: null
+                      }
+                    : item
+                )
+              );
+              enqueueReconcileSync(token);
             } catch (error) {
               Alert.alert("Unable to delete category", resolveErrorMessage(error, "Please try again."));
             }
@@ -439,19 +585,63 @@ export default function App() {
   const handleSaveBudget = async (payload: { categoryId: string; month: string; amount: number; currency: string }) => {
     if (!token) return;
 
+    const toOptimisticBudget = (item: {
+      id: string;
+      categoryId: string;
+      month: string;
+      amount: number;
+      currency: string;
+      createdAt: string;
+      updatedAt: string;
+    }): Budget => {
+      const matchedCategory = categories.find((category) => category.id === item.categoryId);
+      const fallbackSpent = editingBudget?.id === item.id ? editingBudget.spentAmount : 0;
+      const spentAmount = Number(fallbackSpent.toFixed(2));
+      const remainingAmount = Number((item.amount - spentAmount).toFixed(2));
+      const utilizationPercent = item.amount > 0 ? Number(((spentAmount / item.amount) * 100).toFixed(2)) : 0;
+
+      return {
+        id: item.id,
+        categoryId: item.categoryId,
+        categoryName: matchedCategory?.name ?? "Category",
+        month: item.month,
+        amount: item.amount,
+        spentAmount,
+        remainingAmount,
+        utilizationPercent,
+        currency: item.currency,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      };
+    };
+
+    let savedBudget: {
+      id: string;
+      categoryId: string;
+      month: string;
+      amount: number;
+      currency: string;
+      createdAt: string;
+      updatedAt: string;
+    };
     if (modalRoute.kind === "budgetForm" && modalRoute.mode === "edit" && editingBudget) {
-      await apiClient.updateBudget(token, editingBudget.id, payload);
+      savedBudget = await apiClient.updateBudget(token, editingBudget.id, payload);
     } else {
-      await apiClient.createBudget(token, payload);
+      savedBudget = await apiClient.createBudget(token, payload);
     }
+
+    const optimisticBudget = toOptimisticBudget(savedBudget);
+    setBudgets((previous) => {
+      const next = [optimisticBudget, ...previous.filter((item) => item.id !== optimisticBudget.id)];
+      setBudgetTotals(calculateBudgetTotals(next));
+      return next;
+    });
 
     setBudgetMonth(payload.month);
     setEditingBudget(null);
     setModalRoute(emptyModalRoute);
     setActiveTab("budgets");
-    const budgetData = await apiClient.getBudgets(token, payload.month);
-    setBudgets(budgetData.items);
-    setBudgetTotals(budgetData.totals);
+    enqueueReconcileSync(token);
   };
 
   const handleDeleteBudget = async (budget: Budget) => {
@@ -472,6 +662,7 @@ export default function App() {
                 setBudgetTotals(calculateBudgetTotals(next));
                 return next;
               });
+              enqueueReconcileSync(token);
             } catch (error) {
               Alert.alert("Unable to delete budget", resolveErrorMessage(error, "Please try again."));
             }
@@ -505,18 +696,20 @@ export default function App() {
     };
 
     if (modalRoute.kind === "goalForm" && modalRoute.mode === "edit" && editingGoal) {
-      await apiClient.updateGoal(token, editingGoal.id, {
+      const updatedGoal = await apiClient.updateGoal(token, editingGoal.id, {
         ...createPayload,
         targetDate: payload.targetDate
       });
+      setGoals((previous) => previous.map((item) => (item.id === updatedGoal.id ? updatedGoal : item)));
     } else {
-      await apiClient.createGoal(token, createPayload);
+      const createdGoal = await apiClient.createGoal(token, createPayload);
+      setGoals((previous) => [createdGoal, ...previous.filter((item) => item.id !== createdGoal.id)]);
     }
 
     setEditingGoal(null);
     setModalRoute(emptyModalRoute);
     setActiveTab("goals");
-    setGoals(await apiClient.getGoals(token));
+    enqueueReconcileSync(token);
   };
 
   const handleContributeGoal = async (goal: Goal, increment: number) => {
@@ -524,11 +717,12 @@ export default function App() {
 
     const nextCurrentAmount = Number((goal.currentAmount + increment).toFixed(2));
 
-    await apiClient.updateGoal(token, goal.id, {
+    const updatedGoal = await apiClient.updateGoal(token, goal.id, {
       currentAmount: nextCurrentAmount
     });
 
-    setGoals(await apiClient.getGoals(token));
+    setGoals((previous) => previous.map((item) => (item.id === updatedGoal.id ? updatedGoal : item)));
+    enqueueReconcileSync(token);
   };
 
   const handleDeleteGoal = async (goal: Goal) => {
@@ -544,6 +738,7 @@ export default function App() {
             try {
               await apiClient.deleteGoal(token, goal.id);
               setGoals((previous) => previous.filter((item) => item.id !== goal.id));
+              enqueueReconcileSync(token);
             } catch (error) {
               Alert.alert("Unable to delete goal", resolveErrorMessage(error, "Please try again."));
             }

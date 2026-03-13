@@ -255,24 +255,62 @@ export const apiClient = {
     });
   },
 
-  async createBudget(token: string, payload: { categoryId: string; month: string; amount: number; currency: string }): Promise<void> {
-    await request<{ item: unknown }>("/api/v1/budgets", {
+  async createBudget(token: string, payload: { categoryId: string; month: string; amount: number; currency: string }): Promise<{
+    id: string;
+    categoryId: string;
+    month: string;
+    amount: number;
+    currency: string;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    const result = await request<{
+      item: {
+        id: string;
+        categoryId: string;
+        month: string;
+        amount: number;
+        currency: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>("/api/v1/budgets", {
       method: "POST",
       token,
       body: payload
     });
+    return result.item;
   },
 
   async updateBudget(
     token: string,
     budgetId: string,
     payload: Partial<{ categoryId: string; month: string; amount: number; currency: string }>
-  ): Promise<void> {
-    await request<{ item: unknown }>(`/api/v1/budgets/${budgetId}`, {
+  ): Promise<{
+    id: string;
+    categoryId: string;
+    month: string;
+    amount: number;
+    currency: string;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    const result = await request<{
+      item: {
+        id: string;
+        categoryId: string;
+        month: string;
+        amount: number;
+        currency: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/v1/budgets/${budgetId}`, {
       method: "PATCH",
       token,
       body: payload
     });
+    return result.item;
   },
 
   async deleteBudget(token: string, budgetId: string): Promise<void> {
@@ -292,24 +330,26 @@ export const apiClient = {
   async createGoal(
     token: string,
     payload: { name: string; targetAmount: number; currentAmount: number; currency: string; targetDate?: string }
-  ): Promise<void> {
-    await request<{ item: Goal }>("/api/v1/goals", {
+  ): Promise<Goal> {
+    const result = await request<{ item: Goal }>("/api/v1/goals", {
       method: "POST",
       token,
       body: payload
     });
+    return result.item;
   },
 
   async updateGoal(
     token: string,
     goalId: string,
     payload: Partial<{ name: string; targetAmount: number; currentAmount: number; currency: string; targetDate: string | null }>
-  ): Promise<void> {
-    await request<{ item: Goal }>(`/api/v1/goals/${goalId}`, {
+  ): Promise<Goal> {
+    const result = await request<{ item: Goal }>(`/api/v1/goals/${goalId}`, {
       method: "PATCH",
       token,
       body: payload
     });
+    return result.item;
   },
 
   async deleteGoal(token: string, goalId: string): Promise<void> {
