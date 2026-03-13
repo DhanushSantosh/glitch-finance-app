@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { DbClient } from "../../db/client.js";
 import { categories, transactions } from "../../db/schema.js";
 
@@ -50,7 +50,7 @@ const resolveCategoryByName = async (
         or(eq(categories.userId, userId), isNull(categories.userId))
       )
     )
-    .orderBy(desc(categories.userId))
+    .orderBy(desc(categories.userId), asc(categories.id))
     .limit(5);
 
   if (!rows[0]) {

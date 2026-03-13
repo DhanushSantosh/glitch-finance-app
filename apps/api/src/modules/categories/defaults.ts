@@ -1,6 +1,5 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { DbClient } from "../../db/client.js";
-import { categories } from "../../db/schema.js";
 
 const defaultCategories: Array<{ name: string; direction: "debit" | "credit" | "transfer" }> = [
   { name: "Food & Dining", direction: "debit" },
@@ -16,18 +15,17 @@ const defaultCategories: Array<{ name: string; direction: "debit" | "credit" | "
 
 export const ensureDefaultCategories = async (db: DbClient): Promise<void> => {
   for (const category of defaultCategories) {
-    const existing = await db
-      .select({ id: categories.id })
-      .from(categories)
-      .where(and(eq(categories.name, category.name), eq(categories.direction, category.direction), isNull(categories.userId)))
-      .limit(1);
-
-    if (!existing[0]) {
-      await db.insert(categories).values({
-        name: category.name,
-        direction: category.direction,
-        userId: null
-      });
-    }
+    // Single atomic INSERT WHERE NOT EXISTS prevents duplicate rows when multiple
+    // app instances start concurrently (e.g. parallel integration test runs).
+    await db.execute(
+      sql`INSERT INTO categories (name, direction)
+          SELECT ${category.name}, ${category.direction}::transaction_direction
+          WHERE NOT EXISTS (
+            SELECT 1 FROM categories
+            WHERE name = ${category.name}
+              AND direction = ${category.direction}::transaction_direction
+              AND user_id IS NULL
+          )`
+    );
   }
 };
