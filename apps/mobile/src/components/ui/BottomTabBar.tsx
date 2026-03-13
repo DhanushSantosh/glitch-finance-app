@@ -133,8 +133,8 @@ export const BottomTabBar = ({ activeRoute, onChange }: BottomTabBarProps) => {
   return (
     <View style={styles.outerContainer} pointerEvents="box-none">
       <BlurView
-        intensity={Platform.OS === "ios" ? 65 : 100}
-        tint="dark"
+        intensity={100} 
+        tint="dark" 
         style={styles.wrapper}
       >
         <View style={styles.innerWrapper}>
@@ -174,9 +174,9 @@ export const BottomTabBar = ({ activeRoute, onChange }: BottomTabBarProps) => {
       </BlurView>
     </View>
   );
-};
+  };
 
-const styles = createStyles(() => ({
+  const styles = createStyles(() => ({
   outerContainer: {
     position: "absolute",
     bottom: 32,
@@ -187,16 +187,17 @@ const styles = createStyles(() => ({
   },
   wrapper: {
     width: "100%",
-    backgroundColor: "rgba(20, 20, 20, 0.45)", // Deeper base for more frosted diffusion
+    backgroundColor: "rgba(5, 5, 5, 0.75)", // Heavy dark opacity to hide text
     borderRadius: 32,
-    borderWidth: 1.5, // Thicker border for crystalline feel
-    borderColor: "rgba(255, 255, 255, 0.2)", // Sharper rim light
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.12)", // Subtle rim highlight
     overflow: "hidden",
     shadowColor: "#000000",
-    shadowOpacity: 0.6,
-    shadowRadius: 25,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.8,
+    shadowRadius: 40,
+    shadowOffset: { width: 0, height: 20 },
   },
+
   innerWrapper: {
     width: "100%",
     paddingHorizontal: theme.spacing.md,
