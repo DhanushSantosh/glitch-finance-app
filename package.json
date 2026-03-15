@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "dev": "concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm --filter @glitch/mobile dev\"",
-    "dev:android": "concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm android:fast\"",
-    "dev:api": "pnpm --filter @glitch/api dev",
+    "dev": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm --filter @glitch/mobile dev\"",
+    "dev:android": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm android:fast\"",
+    "dev:api": "pnpm db:up && pnpm db:wait && pnpm --filter @glitch/api dev",
     "dev:mobile": "pnpm --filter @glitch/mobile dev",
     "android:fast": "bash ./scripts/android-fast.sh",
     "android:emulator": "bash ./scripts/android-fast.sh --emulator-only",
@@ -16,6 +16,7 @@
     "secrets:otp": "bash ./scripts/ops/generate-otp-secret.sh",
     "backup:create": "bash ./scripts/backup/postgres-backup.sh",
     "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:wait": "docker compose -f infra/docker-compose.yml wait postgres",
     "db:down": "docker compose -f infra/docker-compose.yml down",
     "db:logs": "docker compose -f infra/docker-compose.yml logs -f"
   },

@@ -69,7 +69,7 @@ const isConnectionRefusedError = (error: unknown): boolean => collectErrorCodes(
 const waitForDatabase = async (
   sql: ReturnType<typeof createDbClient>["sql"],
   logger: FastifyBaseLogger,
-  maxAttempts = env.NODE_ENV === "development" ? 20 : 5,
+  maxAttempts = env.NODE_ENV === "development" ? 60 : 5,
   retryDelayMs = 1000
 ): Promise<void> => {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
