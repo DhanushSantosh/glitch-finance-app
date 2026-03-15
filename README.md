@@ -84,6 +84,7 @@ pnpm --filter @glitch/api db:migrate
 | `AUTH_OTP_TTL_SECONDS` | `300` | OTP code expiry window (5 minutes) |
 | `AUTH_MAX_OTP_ATTEMPTS` | `5` | Max verification attempts before OTP is invalidated |
 | `AUTH_SESSION_TTL_DAYS` | `30` | Session token lifetime |
+| `AUTH_MAX_ACTIVE_SESSIONS` | `5` | Maximum concurrently active sessions per user (oldest sessions are revoked on new login) |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `900` | Rate-limit sliding window (15 minutes) |
 | `AUTH_RATE_LIMIT_MAX_REQUEST_OTP` | `5` | Max OTP requests per window per email+IP |
 | `AUTH_RATE_LIMIT_MAX_VERIFY_OTP` | `10` | Max verify attempts per window per email+IP |

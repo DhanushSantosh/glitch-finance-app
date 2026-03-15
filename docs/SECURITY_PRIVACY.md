@@ -6,6 +6,7 @@
 - OTP values are generated server-side and stored only as a hash (`OTP_HASH_SECRET`-keyed HMAC).
 - Session token is issued to client and stored as hash in DB (`sessions.token_hash`).
 - Logout revokes session by setting `revoked_at`.
+- Active session count is capped per user (`AUTH_MAX_ACTIVE_SESSIONS`), automatically revoking oldest sessions when limit is exceeded.
 - Dedicated recovery OTP alias routes are available for account recovery flows.
 - Account deletion permanently removes the user and all cascaded owned records.
 

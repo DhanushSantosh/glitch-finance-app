@@ -87,6 +87,36 @@ describe("auth + transaction integration", () => {
     expect(meAfterLogout.statusCode).toBe(401);
   });
 
+  it("enforces max active sessions per user", async () => {
+    const email = `session-cap-${randomUUID()}@example.com`;
+    const issuedTokens: string[] = [];
+
+    for (let index = 0; index < 6; index += 1) {
+      const auth = await authViaOtp(app, email);
+      issuedTokens.push(auth.token);
+    }
+
+    const oldestTokenResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: {
+        authorization: `Bearer ${issuedTokens[0]}`
+      }
+    });
+
+    expect(oldestTokenResponse.statusCode).toBe(401);
+
+    const newestTokenResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: {
+        authorization: `Bearer ${issuedTokens[issuedTokens.length - 1]}`
+      }
+    });
+
+    expect(newestTokenResponse.statusCode).toBe(200);
+  });
+
   it("supports transaction CRUD with user isolation and filtering", async () => {
     const userA = await authViaOtp(app, `alpha-${randomUUID()}@example.com`);
     const userB = await authViaOtp(app, `beta-${randomUUID()}@example.com`);

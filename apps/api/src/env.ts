@@ -18,6 +18,7 @@ const envSchema = z
     AUTH_OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(1800).default(300),
     AUTH_MAX_OTP_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
     AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+    AUTH_MAX_ACTIVE_SESSIONS: z.coerce.number().int().min(1).max(20).default(5),
     AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
     AUTH_RATE_LIMIT_MAX_REQUEST_OTP: z.coerce.number().int().min(1).max(20).default(5),
     AUTH_RATE_LIMIT_MAX_VERIFY_OTP: z.coerce.number().int().min(1).max(30).default(10),

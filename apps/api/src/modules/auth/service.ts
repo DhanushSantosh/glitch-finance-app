@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { DbClient } from "../../db/client.js";
 import { authOtps, sessions, users } from "../../db/schema.js";
 import { AppEnv } from "../../env.js";
@@ -51,6 +51,27 @@ export class AuthService {
     return hashValue(token, this.deps.env.OTP_HASH_SECRET);
   }
 
+  private async enforceActiveSessionLimit(userId: string): Promise<void> {
+    const maxActiveSessions = this.deps.env.AUTH_MAX_ACTIVE_SESSIONS;
+
+    const activeSessions = await this.deps.db
+      .select({ id: sessions.id })
+      .from(sessions)
+      .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt), gt(sessions.expiresAt, new Date())))
+      .orderBy(desc(sessions.createdAt));
+
+    if (activeSessions.length <= maxActiveSessions) {
+      return;
+    }
+
+    const sessionIdsToRevoke = activeSessions.slice(maxActiveSessions).map((session) => session.id);
+
+    await this.deps.db
+      .update(sessions)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(sessions.userId, userId), inArray(sessions.id, sessionIdsToRevoke), isNull(sessions.revokedAt)));
+  }
+
   async requestOtp(input: RequestOtpInput): Promise<{ message: string; debugOtpCode?: string }> {
     const email = this.normalizeEmail(input.email);
     const window = this.deps.env.AUTH_RATE_LIMIT_WINDOW_SECONDS;
@@ -72,16 +93,35 @@ export class AuthService {
     const codeHash = this.hashOtp(email, otpCode);
     const expiresAt = calculateOtpExpiry(new Date(), this.deps.env.AUTH_OTP_TTL_SECONDS);
 
-    await this.deps.db.insert(authOtps).values({
-      email,
-      codeHash,
-      expiresAt,
-      attempts: 0,
-      maxAttempts: this.deps.env.AUTH_MAX_OTP_ATTEMPTS,
-      requestIp: input.ipAddress
-    });
+    const insertedOtp = (
+      await this.deps.db
+        .insert(authOtps)
+        .values({
+          email,
+          codeHash,
+          expiresAt,
+          attempts: 0,
+          maxAttempts: this.deps.env.AUTH_MAX_OTP_ATTEMPTS,
+          requestIp: input.ipAddress
+        })
+        .returning({ id: authOtps.id })
+    )[0];
 
-    await this.deps.otpProvider.sendOtp(email, otpCode);
+    try {
+      await this.deps.otpProvider.sendOtp(email, otpCode);
+    } catch {
+      await this.deps.db.delete(authOtps).where(eq(authOtps.id, insertedOtp.id));
+
+      await this.deps.auditService.log({
+        action: "auth.otp_delivery_failed",
+        entityType: "auth_otp",
+        metadata: { email },
+        requestId: input.requestId,
+        ipAddress: input.ipAddress
+      });
+
+      throw new AppError(503, "OTP_DELIVERY_FAILED", "Unable to send OTP right now. Please try again.");
+    }
 
     await this.deps.auditService.log({
       action: "auth.otp_requested",
@@ -141,7 +181,15 @@ export class AuthService {
       throw new AppError(401, "INVALID_OTP", "OTP is invalid or expired.");
     }
 
-    await this.deps.db.update(authOtps).set({ usedAt: new Date() }).where(eq(authOtps.id, otpRow.id));
+    const consumedOtpRows = await this.deps.db
+      .update(authOtps)
+      .set({ usedAt: new Date() })
+      .where(and(eq(authOtps.id, otpRow.id), isNull(authOtps.usedAt)))
+      .returning({ id: authOtps.id });
+
+    if (!consumedOtpRows[0]) {
+      throw new AppError(401, "INVALID_OTP", "OTP is invalid or expired.");
+    }
 
     const existingUserRows = await this.deps.db.select().from(users).where(eq(users.email, email)).limit(1);
     const user =
@@ -165,6 +213,8 @@ export class AuthService {
         expiresAt
       })
       .returning({ id: sessions.id });
+
+    await this.enforceActiveSessionLimit(user.id);
 
     await this.deps.auditService.log({
       userId: user.id,
