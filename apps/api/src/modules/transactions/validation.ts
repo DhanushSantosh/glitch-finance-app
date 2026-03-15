@@ -33,7 +33,8 @@ export const listQuerySchema = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   sortBy: z.enum(["occurredAt", "amount"]).default("occurredAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc")
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  search: z.string().trim().max(200).optional()
 });
 
 export const normalizeTransactionPayload = (input: {

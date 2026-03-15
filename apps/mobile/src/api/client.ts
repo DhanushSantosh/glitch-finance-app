@@ -183,7 +183,8 @@ export const apiClient = {
       from: query.from,
       to: query.to,
       sortBy: query.sortBy,
-      sortOrder: query.sortOrder
+      sortOrder: query.sortOrder,
+      search: query.search
     });
 
     const result = await request<TransactionListResponse>(`/api/v1/transactions${queryString}`, {

@@ -12,6 +12,7 @@ type TransactionFilters = {
   to: string;
   sortBy: "occurredAt" | "amount";
   sortOrder: "asc" | "desc";
+  search: string;
 };
 
 type TransactionsScreenProps = {
@@ -75,6 +76,14 @@ export const TransactionsScreen = ({
           <Text style={styles.filterTitle}>Parameters</Text>
         </View>
         
+        <TextField
+          label="SEARCH"
+          placeholder="Counterparty or note..."
+          value={filters.search}
+          onChangeText={(value) => onFilterChange({ search: value })}
+          returnKeyType="search"
+        />
+
         <SegmentedControl
           label="DIRECTION"
           options={[

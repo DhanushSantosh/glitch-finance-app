@@ -39,6 +39,7 @@ type TransactionFilters = {
   sortBy: "occurredAt" | "amount";
   sortOrder: "asc" | "desc";
   pageSize: number;
+  search: string;
 };
 
 const defaultTransactionFilters: TransactionFilters = {
@@ -48,7 +49,8 @@ const defaultTransactionFilters: TransactionFilters = {
   to: "",
   sortBy: "occurredAt",
   sortOrder: "desc",
-  pageSize: 20
+  pageSize: 20,
+  search: ""
 };
 
 const emptyTransactionPagination = {
@@ -99,7 +101,8 @@ const buildTransactionQuery = (filters: TransactionFilters, page: number): Trans
     ...(filters.direction !== "all" ? { direction: filters.direction } : {}),
     ...(filters.categoryId !== "all" ? { categoryId: filters.categoryId } : {}),
     ...(fromDate ? { from: fromDate.toISOString() } : {}),
-    ...(toDate ? { to: toDate.toISOString() } : {})
+    ...(toDate ? { to: toDate.toISOString() } : {}),
+    ...(filters.search.trim().length > 0 ? { search: filters.search.trim() } : {})
   };
 };
 
@@ -111,7 +114,8 @@ const buildTransactionFilterSignature = (filters: TransactionFilters): string =>
     to: filters.to.trim(),
     sortBy: filters.sortBy,
     sortOrder: filters.sortOrder,
-    pageSize: filters.pageSize
+    pageSize: filters.pageSize,
+    search: filters.search.trim()
   });
 
 const resolveErrorMessage = (error: unknown, fallback: string): string => {
@@ -534,7 +538,8 @@ export default function App() {
       transactionFilters.from.trim().length > 0 ||
       transactionFilters.to.trim().length > 0 ||
       transactionFilters.sortBy !== defaultTransactionFilters.sortBy ||
-      transactionFilters.sortOrder !== defaultTransactionFilters.sortOrder;
+      transactionFilters.sortOrder !== defaultTransactionFilters.sortOrder ||
+      transactionFilters.search.trim().length > 0;
 
     let saved: Transaction;
     if (modalRoute.kind === "transactionForm" && modalRoute.mode === "edit" && editingTransaction) {

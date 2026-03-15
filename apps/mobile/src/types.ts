@@ -35,6 +35,7 @@ export type TransactionListQuery = {
   to?: string;
   sortBy?: "occurredAt" | "amount";
   sortOrder?: "asc" | "desc";
+  search?: string;
 };
 
 export type TransactionListResponse = {

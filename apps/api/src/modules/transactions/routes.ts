@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, isNull, lte, or } from "drizzle-orm";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { AppContext } from "../../context.js";
@@ -85,6 +85,10 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
     }
     if (query.to) {
       conditions.push(lte(transactions.occurredAt, query.to));
+    }
+    if (query.search) {
+      const pattern = `%${query.search}%`;
+      conditions.push(or(ilike(transactions.counterparty, pattern), ilike(transactions.note, pattern))!);
     }
 
     const primaryOrder =
