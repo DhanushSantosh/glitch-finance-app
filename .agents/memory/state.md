@@ -31,6 +31,10 @@ updated_at: 2026-03-16
 - docker-compose for local Postgres + Redis
 - Render blueprints: staging.yaml + production.yaml
 - `pnpm dev` auto-starts + waits for DB before API
+- Expo account connected, project linked to GitHub (EAS available)
+  - `eas build` available for dev builds, preview, and production
+  - `eas submit` available for App Store / Play Store submission
+  - GitHub → Expo connection means EAS can trigger builds on push
 
 ### Docs
 - All docs renamed to kebab-case in docs/
