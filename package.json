@@ -16,7 +16,7 @@
     "secrets:otp": "bash ./scripts/ops/generate-otp-secret.sh",
     "backup:create": "bash ./scripts/backup/postgres-backup.sh",
     "db:up": "docker compose -f infra/docker-compose.yml up -d",
-    "db:wait": "docker compose -f infra/docker-compose.yml wait postgres",
+    "db:wait": "until docker exec glitch-postgres pg_isready -U glitch -d glitch -q; do sleep 1; done",
     "db:down": "docker compose -f infra/docker-compose.yml down",
     "db:logs": "docker compose -f infra/docker-compose.yml logs -f"
   },
