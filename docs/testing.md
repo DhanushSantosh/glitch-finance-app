@@ -51,6 +51,8 @@ From repo root:
 pnpm typecheck
 pnpm --filter @glitch/api test
 pnpm --filter @glitch/mobile test
+pnpm smoke:staging
+pnpm smoke:perf
 ```
 
 ## Acceptance Scenarios
@@ -71,4 +73,4 @@ pnpm --filter @glitch/mobile test
 
 1. Add UI component tests for screen rendering and interaction events.
 2. Add end-to-end mobile flow tests on emulator.
-3. Add API performance smoke tests for transactions list/write endpoints.
+3. Add scheduled smoke execution against staging with trend history retention.

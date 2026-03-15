@@ -32,6 +32,7 @@ API (`apps/api/.env`):
 - `OTP_HASH_SECRET`
 - `OTP_PROVIDER` (`console` or `resend`)
 - `OTP_EMAIL_FROM`
+- `OTP_PROVIDER_REQUEST_TIMEOUT_MS` (outbound OTP provider request timeout)
 - `RESEND_API_KEY` (required when `OTP_PROVIDER=resend`)
 - `ALERTS_WEBHOOK_URL` (optional but recommended for staging/production)
 - `ALERTS_COOLDOWN_SECONDS`
@@ -68,6 +69,26 @@ curl http://localhost:4000/api/v1/metrics
 `/api/v1/status` includes dependency health signals:
 - `dependencies.databaseHealthy`
 - `dependencies.redisHealthy`
+- `otpDelivery.provider`
+- `otpDelivery.ready`
+- `otpDelivery.requestTimeoutMs`
+
+## Staging and Perf Smoke Commands
+
+```bash
+API_BASE_URL=https://staging-api.example.com \
+SMOKE_TEST_EMAIL=smoke-check@example.com \
+SMOKE_BEARER_TOKEN=<token_if_resend_has_no_debug_otp> \
+pnpm smoke:staging
+```
+
+```bash
+API_BASE_URL=https://staging-api.example.com \
+PERF_BEARER_TOKEN=<token> \
+PERF_ITERATIONS=20 \
+PERF_P95_THRESHOLD_MS=300 \
+pnpm smoke:perf
+```
 
 ## Common Troubleshooting
 
@@ -156,3 +177,4 @@ It validates:
 Additional workflows:
 1. `/.github/workflows/cd-image.yml` - builds and pushes API container image to GHCR.
 2. `/.github/workflows/dr-drill.yml` - manual backup/restore disaster recovery drill.
+3. `/.github/workflows/ops-smoke.yml` - manual staging smoke and optional performance smoke checks.

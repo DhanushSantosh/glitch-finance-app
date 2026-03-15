@@ -1,5 +1,4 @@
----
-updated_by: Claude
+updated_by: Codex
 updated_at: 2026-03-16
 ---
 
@@ -11,6 +10,9 @@ updated_at: 2026-03-16
 - Fastify v5 REST API fully implemented and tested
 - Modules: auth (OTP + session), categories, transactions, budgets, goals, reports (summary + export), imports (SMS), consents, audit, alerts, SLO monitor, metrics
 - 136 tests passing (unit + integration)
+- Idempotent mutation protection implemented for authenticated write routes (transactions, budgets, goals, categories, consent intent)
+- New persistence table for idempotency records: `idempotency_keys`
+- Error normalization improved: Fastify JSON parser + Postgres constraint errors now map to stable 4xx envelopes where applicable
 - Auth hardening: active session cap (AUTH_MAX_ACTIVE_SESSIONS=5), recovery OTP path, rate limiting
 - AlertsService wired to webhook (ALERTS_WEBHOOK_URL)
 - SLO monitor with rolling-window evaluation
@@ -25,6 +27,7 @@ updated_at: 2026-03-16
 - BottomTabBar: liquid glass floating pill with BlurView + animated spring
 - 35 mobile tests passing
 - metro.config.js wired for pnpm monorepo (iOS + Android working)
+- iOS safe-area handling fixed at app shell (`SafeAreaProvider` + `SafeAreaView`) to prevent top notification-bar overlap
 
 ### Infrastructure
 - pnpm monorepo workspaces
@@ -42,7 +45,7 @@ updated_at: 2026-03-16
 - Root README.md is concise with links to full docs
 
 ## What's In Progress
-- Nothing currently active
+- Memory sync complete; awaiting next feature thread.
 
 ## Recent Fixes
 - ECONNREFUSED on stack restart (IPv6 + AggregateError retry logic)
@@ -51,3 +54,5 @@ updated_at: 2026-03-16
 - Audit event name mismatch in docs
 - Dockerfile stale node_modules COPY
 - ensureDefaultCategories TOCTOU race condition
+- DELETE-with-empty-JSON parser errors now return explicit 400 envelopes (no accidental 500)
+- Mutation retry safety improved via idempotency key replay behavior

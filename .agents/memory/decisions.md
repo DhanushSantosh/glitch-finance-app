@@ -1,5 +1,4 @@
----
-updated_by: Claude
+updated_by: Codex
 updated_at: 2026-03-16
 ---
 
@@ -25,6 +24,8 @@ updated_at: 2026-03-16
 | Audit log | Immutable append-only table | Tamper-resistant, compliance |
 | Report export | CSV + PDF from same data | Two formats, one endpoint |
 | Transaction direction | debit / credit / transfer enum | Clear, no ambiguity |
+| Mutation retry safety | Header-based idempotency (`Idempotency-Key`) + response replay cache | Prevent duplicate writes on network retries |
+| Client error normalization | Map Fastify parser and common Postgres constraint errors to stable 4xx envelopes | Avoid unexpected 500s for client/input faults |
 
 ## Mobile
 
@@ -34,6 +35,7 @@ updated_at: 2026-03-16
 | Sync strategy | Optimistic updates + reconcile after 700ms | Snappy UX, eventual consistency |
 | Background sync | 15s interval + AppState listener | Fresh data without hammering API |
 | BottomTabBar | BlurView + spring-animated pill | Premium feel, "Glitch Midnight" brand |
+| Safe area handling | Global `SafeAreaProvider` + top/side `SafeAreaView` in app shell | Prevent iOS notch/status-bar overlap across flows |
 
 ## Infrastructure
 

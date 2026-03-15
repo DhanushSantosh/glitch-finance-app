@@ -1,5 +1,4 @@
----
-updated_by: Claude
+updated_by: Codex
 updated_at: 2026-03-16
 ---
 
@@ -17,23 +16,20 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-16
 
 **Done:**
-- Set up three-agent collaboration system (Claude + Codex + Gemini)
-- Created `.claude/AGENTS.md` — roles, routing, decision authority
-- Created `.agents/memory/` — shared memory system (this directory)
-- Created root `AGENTS.md` — Codex reads this automatically
-- 171 tests passing (136 API + 35 mobile) — full TDD audit complete
-- Fixed 2 rate limiter bugs (off-by-one, window boundary)
-- Fixed ECONNREFUSED on stack restart (IPv6 + AggregateError)
-- Fixed CI NODE_ENV missing
-- All docs renamed to kebab-case
+- Added API idempotency layer for authenticated mutations (`Idempotency-Key`) with replay support and conflict protection.
+- Added DB migration/table for idempotency storage (`idempotency_keys`).
+- Hardened API error mapping for Fastify parser errors and common Postgres constraint errors so expected client failures stay 4xx.
+- Added resilience integration test suite (idempotency replay/conflict + parser/constraint mapping checks).
+- Fixed mobile iOS safe-area overlap using `react-native-safe-area-context` at app shell.
+- Verified baseline remains green: 136 API tests + 35 mobile tests + workspace typecheck.
+- Updated memory docs to reflect current code and conventions.
 
 **Open threads:**
-- None — project is clean and stable
+- None.
 
 **Next session should:**
-- Read `.agents/memory/state.md` for current project state
-- Check `git log --oneline -5` for recent commits
-- Run `pnpm typecheck` if touching types
+- If continuing backend hardening, extend idempotency support to additional write routes if any new ones are added.
+- Continue Sprint work from updated `state.md`.
 
 ---
 

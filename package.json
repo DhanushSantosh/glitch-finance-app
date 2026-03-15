@@ -14,6 +14,8 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "db:check": "bash ./scripts/ops/check-migration-drift.sh",
+    "smoke:staging": "node ./scripts/ops/staging-smoke.mjs",
+    "smoke:perf": "node ./scripts/ops/perf-smoke.mjs",
     "secrets:otp": "bash ./scripts/ops/generate-otp-secret.sh",
     "secrets:validate": "bash ./scripts/ops/validate-runtime-secrets.sh",
     "backup:create": "bash ./scripts/backup/postgres-backup.sh",

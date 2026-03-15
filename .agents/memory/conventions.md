@@ -1,5 +1,4 @@
----
-updated_by: Claude
+updated_by: Codex
 updated_at: 2026-03-16
 ---
 
@@ -19,10 +18,11 @@ apps/api/src/modules/<name>/
 ```
 
 ### Route Patterns
-- All routes registered via `fastify.register()` with prefix `/api/v1/`
-- Auth middleware: `fastify.addHook('preHandler', ctx.authService.resolveAuth)`
-- Response shape: `{ item: T }` for single, `{ items: T[] }` for list, `{ items, total, page, pageSize, hasMore }` for paginated
-- Error shape: `{ error: { code: string, message: string } }`
+- Routes are declared directly on the Fastify app instance (`app.get/post/patch/delete`) using full `/api/v1/...` paths.
+- Auth is resolved in global `onRequest` hook; handlers use `requireAuth(request)` for protected routes.
+- Response shape: `{ item: T }` for single, `{ items: T[] }` for list, pagination is `{ items, pagination: { page, pageSize, hasMore, nextPage } }`.
+- Error shape: `{ error: { code: string, message: string, details? }, requestId }`.
+- Authenticated mutation routes should support `Idempotency-Key` via shared `executeIdempotent(...)` utility.
 
 ### Validation
 - All inputs validated with Zod schemas defined in `validation.ts`
@@ -31,7 +31,7 @@ apps/api/src/modules/<name>/
 
 ### Database
 - ORM: Drizzle — always use typed queries, never raw SQL except in `db.execute(sql\`...\`)`
-- Migrations in `apps/api/src/db/migrations/`
+- Migrations in `apps/api/drizzle/`
 - Run `pnpm --filter @glitch/api db:generate` after schema changes
 - Never modify existing migration files
 

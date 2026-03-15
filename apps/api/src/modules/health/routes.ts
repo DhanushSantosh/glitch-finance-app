@@ -28,10 +28,19 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
       }
     }
 
+    const otpProvider = ctx.env.OTP_PROVIDER;
+    const otpProviderReady =
+      otpProvider === "resend" ? Boolean(ctx.env.RESEND_API_KEY && ctx.env.OTP_EMAIL_FROM) : ctx.env.NODE_ENV !== "production";
+
     return {
       message: "Glitch API is running",
       databaseUrlSet: Boolean(ctx.env.DATABASE_URL),
       redisUrlSet: Boolean(ctx.env.REDIS_URL),
+      otpDelivery: {
+        provider: otpProvider,
+        ready: otpProviderReady,
+        requestTimeoutMs: ctx.env.OTP_PROVIDER_REQUEST_TIMEOUT_MS
+      },
       dependencies: {
         databaseHealthy,
         redisHealthy

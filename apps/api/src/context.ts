@@ -141,6 +141,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
       ? new ResendOtpProvider({
           apiKey: env.RESEND_API_KEY ?? "",
           fromEmail: env.OTP_EMAIL_FROM,
+          requestTimeoutMs: env.OTP_PROVIDER_REQUEST_TIMEOUT_MS,
           logger
         })
       : new ConsoleOtpProvider(logger);

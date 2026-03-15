@@ -53,6 +53,14 @@ Returns API liveness.
 
 Returns runtime status, dependency configuration flags, and live dependency health.
 
+Response includes:
+
+- `dependencies.databaseHealthy`
+- `dependencies.redisHealthy`
+- `otpDelivery.provider` (`console|resend`)
+- `otpDelivery.ready` (`boolean`)
+- `otpDelivery.requestTimeoutMs` (`number`)
+
 ### `GET /api/v1/bootstrap`
 
 Returns app config and feature flags.

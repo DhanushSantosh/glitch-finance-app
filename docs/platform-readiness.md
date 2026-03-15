@@ -65,6 +65,7 @@ Current state:
 - Development uses console OTP delivery.
 - Production and staging manifests are configured for Resend (`OTP_PROVIDER=resend`).
 - API now fails OTP request safely with `503 OTP_DELIVERY_FAILED` on provider outages.
+- Outbound OTP provider calls are timeout-bounded via `OTP_PROVIDER_REQUEST_TIMEOUT_MS`.
 
 Production readiness requirement:
 1. Configure `RESEND_API_KEY` through managed secrets.
@@ -96,6 +97,11 @@ Dashboards:
 - Service health dashboard (uptime + dependency health)
 - Auth funnel dashboard (request OTP -> verify OTP success)
 - Transaction write/read performance dashboard
+
+Operational smoke tooling:
+- Staging smoke script: `scripts/ops/staging-smoke.mjs` (`pnpm smoke:staging`)
+- Performance smoke script: `scripts/ops/perf-smoke.mjs` (`pnpm smoke:perf`)
+- Manual workflow for both: `.github/workflows/ops-smoke.yml`
 
 ## Backup, Restore, and DR Drill
 

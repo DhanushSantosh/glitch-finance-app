@@ -34,6 +34,7 @@ const envSchema = z
     OTP_HASH_SECRET: z.string().min(16).default("change-me-in-production-otp-secret"),
     OTP_PROVIDER: z.enum(["console", "resend"]).default("console"),
     OTP_EMAIL_FROM: z.string().min(3).default("Glitch Finance <noreply@glitch.local>"),
+    OTP_PROVIDER_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000),
     RESEND_API_KEY: z.string().min(1).optional(),
     ALERTS_WEBHOOK_URL: z.string().url().optional(),
     ALERTS_COOLDOWN_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),

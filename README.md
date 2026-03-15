@@ -92,6 +92,7 @@ Key variables to configure in `apps/api/.env`:
 | `REDIS_URL` | `redis://127.0.0.1:6379` | Optional — falls back to in-memory |
 | `OTP_HASH_SECRET` | `change-me-in-production-otp-secret` | **Must change in production** |
 | `OTP_PROVIDER` | `console` | `console` or `resend` |
+| `OTP_PROVIDER_REQUEST_TIMEOUT_MS` | `10000` | Outbound OTP provider timeout in milliseconds |
 | `RESEND_API_KEY` | _(empty)_ | Required when `OTP_PROVIDER=resend` |
 | `ALERTS_WEBHOOK_URL` | _(empty)_ | Recommended in staging/production for operational alerts |
 | `ALERTS_COOLDOWN_SECONDS` | `60` | Cooldown for duplicate alert fingerprints |
@@ -129,6 +130,8 @@ pnpm --filter @glitch/mobile test        # mobile unit tests
 pnpm secrets:otp                         # generate a secure OTP_HASH_SECRET
 pnpm secrets:validate                    # validate production-required secrets
 pnpm backup:create                       # Postgres backup
+pnpm smoke:staging                       # staging/API smoke checks
+pnpm smoke:perf                          # API p95 smoke checks for transactions
 ```
 
 ---
@@ -148,6 +151,7 @@ Full contracts: [`docs/api-reference.md`](./docs/api-reference.md)
 - **CI** (`ci.yml`) — lint → typecheck → migration drift check → API tests → mobile tests. Runs on every push and PR to `main`.
 - **CD** (`cd-image.yml`) — builds and pushes the API Docker image to GHCR on merge to `main`.
 - **DR drill** (`dr-drill.yml`) — manual workflow: restores a Postgres backup and runs smoke tests.
+- **Ops smoke** (`ops-smoke.yml`) — manual workflow for staging smoke checks and optional perf smoke checks.
 
 ---
 

@@ -43,7 +43,7 @@ describe("health, status, bootstrap and metrics", () => {
   // GET /api/v1/status
   // ---------------------------------------------------------------------------
 
-  it("GET /api/v1/status returns 200 with db and redis health flags", async () => {
+  it("GET /api/v1/status returns 200 with dependency and otp delivery flags", async () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/v1/status"
@@ -52,10 +52,17 @@ describe("health, status, bootstrap and metrics", () => {
     expect(response.statusCode).toBe(200);
 
     const body = response.json() as {
+      otpDelivery: {
+        provider: "console" | "resend";
+        ready: boolean;
+        requestTimeoutMs: number;
+      };
       dependencies: { databaseHealthy: boolean; redisHealthy: boolean };
     };
 
-    // The body must include the dependency health flags (booleans)
+    expect(["console", "resend"]).toContain(body.otpDelivery.provider);
+    expect(typeof body.otpDelivery.ready).toBe("boolean");
+    expect(typeof body.otpDelivery.requestTimeoutMs).toBe("number");
     expect(typeof body.dependencies.databaseHealthy).toBe("boolean");
     expect(typeof body.dependencies.redisHealthy).toBe("boolean");
   });
