@@ -13,7 +13,7 @@ Provisioning manifests:
    - `RESEND_API_KEY`
    - `OTP_HASH_SECRET`
    - `ALERTS_WEBHOOK_URL` (recommended for staging/production)
-4. Configure auth policy env vars explicitly (TTL, max attempts, session lifetime, active session cap, rate limits).
+4. Configure auth + SLO policy env vars explicitly (TTL, max attempts, session lifetime, active session cap, rate limits, SLO thresholds).
 5. Apply blueprint and verify service health at `/api/v1/status`.
 
 ## Notes

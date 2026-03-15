@@ -21,6 +21,7 @@ export const createApp = async (): Promise<FastifyInstance> => {
   });
 
   const ctx = await createAppContext(app.log);
+  ctx.sloMonitorService.start();
 
   app.decorateRequest("auth", null);
 
@@ -31,6 +32,10 @@ export const createApp = async (): Promise<FastifyInstance> => {
 
   app.addHook("onRequest", async (request) => {
     request.auth = await ctx.authService.resolveAuth(request.headers.authorization);
+  });
+
+  app.addHook("onResponse", async (_, reply) => {
+    ctx.sloMonitorService.observeHttpResponse(reply.statusCode);
   });
 
   app.setErrorHandler((error, request, reply) => {

@@ -3,6 +3,26 @@ import { z } from "zod";
 
 dotenv.config({ path: process.env.ENV_FILE ?? ".env" });
 
+const booleanFromEnv = z.preprocess((value) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return value;
+}, z.boolean());
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -17,6 +37,12 @@ const envSchema = z
     RESEND_API_KEY: z.string().min(1).optional(),
     ALERTS_WEBHOOK_URL: z.string().url().optional(),
     ALERTS_COOLDOWN_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),
+    SLO_MONITOR_ENABLED: booleanFromEnv.default(false),
+    SLO_MONITOR_WINDOW_SECONDS: z.coerce.number().int().min(60).max(3600).default(300),
+    SLO_MONITOR_EVALUATION_SECONDS: z.coerce.number().int().min(10).max(300).default(30),
+    SLO_HTTP_5XX_RATE_THRESHOLD_PERCENT: z.coerce.number().min(0.1).max(100).default(2),
+    SLO_HTTP_5XX_MIN_REQUESTS: z.coerce.number().int().min(1).max(10000).default(100),
+    SLO_OTP_DELIVERY_FAILURE_THRESHOLD: z.coerce.number().int().min(1).max(1000).default(5),
     AUTH_OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(1800).default(300),
     AUTH_MAX_OTP_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
     AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),

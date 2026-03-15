@@ -42,7 +42,7 @@ Session token persisted with `AsyncStorage`.
 | Login | pre-auth (`authStage = login`) |
 | OTP Verify | pre-auth (`authStage = otpVerify`) |
 
-**UI system**: Glitch Midnight dark theme — true black backgrounds, chartreuse (`#D4FF00`) accent, `expo-blur` liquid glass BottomTabBar with animated spring pill. See `docs/UI_STYLE_GUIDE.md` for full token reference.
+**UI system**: Glitch Midnight dark theme — true black backgrounds, chartreuse (`#D4FF00`) accent, `expo-blur` liquid glass BottomTabBar with animated spring pill. See `docs/ui-style-guide.md` for full token reference.
 
 ### API (`apps/api`)
 
@@ -65,6 +65,7 @@ Redis-backed rate limiting with in-memory fallback.
 | `audit` | (internal service) | Immutable audit event writes, called from other modules |
 | `metrics` | `/api/v1/metrics` | Prometheus-compatible scrape endpoint |
 | `alerts` | (internal service) | Webhook alerts for OTP delivery failures and unhandled 5xx errors |
+| `slo` | (internal service) | Rolling-window SLO evaluation and threshold-based alert routing |
 
 ## Request Lifecycle
 

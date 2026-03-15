@@ -7,6 +7,7 @@ import { RateLimiter } from "../../rate-limit/rate-limiter.js";
 import { generateOtpCode, generateSessionToken, hashValue } from "../../utils/crypto.js";
 import { AuditService } from "../audit/service.js";
 import { AlertsService } from "../alerts/service.js";
+import { SloMonitorService } from "../slo/service.js";
 import { OtpDeliveryProvider } from "./provider.js";
 import { calculateOtpExpiry, isOtpAttemptAllowed, isOtpExpired } from "./otp-policy.js";
 
@@ -35,6 +36,7 @@ type AuthServiceDeps = {
   rateLimiter: RateLimiter;
   auditService: AuditService;
   alertsService: AlertsService;
+  sloMonitorService: SloMonitorService;
   otpProvider: OtpDeliveryProvider;
 };
 
@@ -145,6 +147,7 @@ export class AuthService {
           email: maskEmail(email)
         }
       });
+      this.deps.sloMonitorService.observeOtpDeliveryFailure();
 
       throw new AppError(503, "OTP_DELIVERY_FAILED", "Unable to send OTP right now. Please try again.");
     }

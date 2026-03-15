@@ -8,6 +8,7 @@ import { AlertsService } from "./modules/alerts/service.js";
 import { ConsoleOtpProvider, OtpDeliveryProvider, ResendOtpProvider } from "./modules/auth/provider.js";
 import { AuthService } from "./modules/auth/service.js";
 import { ensureDefaultCategories } from "./modules/categories/defaults.js";
+import { SloMonitorService } from "./modules/slo/service.js";
 
 export type AppContext = {
   env: AppEnv;
@@ -17,6 +18,7 @@ export type AppContext = {
   rateLimiter: RateLimiter;
   auditService: AuditService;
   alertsService: AlertsService;
+  sloMonitorService: SloMonitorService;
   authService: AuthService;
 };
 
@@ -124,6 +126,16 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     serviceName: "glitch-api",
     environment: env.NODE_ENV
   });
+  const sloMonitorService = new SloMonitorService({
+    logger,
+    alertsService,
+    enabled: env.SLO_MONITOR_ENABLED,
+    evaluationIntervalMs: env.SLO_MONITOR_EVALUATION_SECONDS * 1000,
+    windowMs: env.SLO_MONITOR_WINDOW_SECONDS * 1000,
+    http5xxRateThresholdPercent: env.SLO_HTTP_5XX_RATE_THRESHOLD_PERCENT,
+    http5xxMinRequests: env.SLO_HTTP_5XX_MIN_REQUESTS,
+    otpDeliveryFailureThreshold: env.SLO_OTP_DELIVERY_FAILURE_THRESHOLD
+  });
   const otpProvider: OtpDeliveryProvider =
     env.OTP_PROVIDER === "resend"
       ? new ResendOtpProvider({
@@ -139,6 +151,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     rateLimiter,
     auditService,
     alertsService,
+    sloMonitorService,
     otpProvider
   });
 
@@ -150,11 +163,13 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     rateLimiter,
     auditService,
     alertsService,
+    sloMonitorService,
     authService
   };
 };
 
 export const closeAppContext = async (ctx: AppContext): Promise<void> => {
+  ctx.sloMonitorService.stop();
   await ctx.sql.end({ timeout: 5 });
   if (ctx.redis) {
     await ctx.redis.quit();

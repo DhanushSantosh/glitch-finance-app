@@ -37,6 +37,18 @@ services:
         sync: false
       - key: ALERTS_COOLDOWN_SECONDS
         value: "60"
+      - key: SLO_MONITOR_ENABLED
+        value: "true"
+      - key: SLO_MONITOR_WINDOW_SECONDS
+        value: "300"
+      - key: SLO_MONITOR_EVALUATION_SECONDS
+        value: "30"
+      - key: SLO_HTTP_5XX_RATE_THRESHOLD_PERCENT
+        value: "2"
+      - key: SLO_HTTP_5XX_MIN_REQUESTS
+        value: "100"
+      - key: SLO_OTP_DELIVERY_FAILURE_THRESHOLD
+        value: "5"
       - key: AUTH_OTP_TTL_SECONDS
         value: "300"
       - key: AUTH_MAX_OTP_ATTEMPTS

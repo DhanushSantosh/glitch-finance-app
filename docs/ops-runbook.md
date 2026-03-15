@@ -35,6 +35,12 @@ API (`apps/api/.env`):
 - `RESEND_API_KEY` (required when `OTP_PROVIDER=resend`)
 - `ALERTS_WEBHOOK_URL` (optional but recommended for staging/production)
 - `ALERTS_COOLDOWN_SECONDS`
+- `SLO_MONITOR_ENABLED`
+- `SLO_MONITOR_WINDOW_SECONDS`
+- `SLO_MONITOR_EVALUATION_SECONDS`
+- `SLO_HTTP_5XX_RATE_THRESHOLD_PERCENT`
+- `SLO_HTTP_5XX_MIN_REQUESTS`
+- `SLO_OTP_DELIVERY_FAILURE_THRESHOLD`
 - `AUTH_OTP_TTL_SECONDS`
 - `AUTH_MAX_OTP_ATTEMPTS`
 - `AUTH_SESSION_TTL_DAYS`
@@ -121,6 +127,7 @@ OTP_HASH_SECRET=... \
 OTP_PROVIDER=resend \
 OTP_EMAIL_FROM="Glitch Finance <noreply@app.example.com>" \
 ALERTS_WEBHOOK_URL=https://alerts.example.com/glitch \
+SLO_MONITOR_ENABLED=true \
 RESEND_API_KEY=... \
 pnpm secrets:validate
 ```

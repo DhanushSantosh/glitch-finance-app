@@ -48,6 +48,7 @@ Secrets that must be managed centrally:
 - `OTP_HASH_SECRET`
 - Email OTP provider secrets (for production provider)
 - `ALERTS_WEBHOOK_URL`
+- SLO monitor policy values (`SLO_MONITOR_*`)
 
 Implemented tooling:
 - Secret generation helper: `scripts/ops/generate-otp-secret.sh`
@@ -83,6 +84,7 @@ Implemented telemetry endpoints:
 - `GET /api/v1/status` for dependency health
 - `GET /api/v1/metrics` for Prometheus scrape metrics
 - Webhook alerting service for unhandled API 5xx errors and OTP delivery failures (`ALERTS_WEBHOOK_URL`)
+- Rolling-window SLO monitor for 5xx rate and OTP delivery failure thresholds (`SLO_MONITOR_ENABLED=true`)
 
 Alert thresholds (initial):
 - 5xx error rate > 2% for 5 minutes

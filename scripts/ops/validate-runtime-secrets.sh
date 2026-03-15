@@ -41,4 +41,12 @@ if [[ "${deployment_env}" == "production" && -z "${ALERTS_WEBHOOK_URL:-}" ]]; th
   exit 1
 fi
 
+if [[ "${deployment_env}" == "production" ]]; then
+  slo_enabled="$(printf '%s' "${SLO_MONITOR_ENABLED:-}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "${slo_enabled}" != "1" && "${slo_enabled}" != "true" && "${slo_enabled}" != "yes" && "${slo_enabled}" != "on" ]]; then
+    echo "Production requires SLO_MONITOR_ENABLED=true." >&2
+    exit 1
+  fi
+fi
+
 echo "Runtime secrets validation passed for ${deployment_env}."

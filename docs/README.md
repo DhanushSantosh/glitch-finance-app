@@ -1,39 +1,42 @@
-# Glitch Documentation Hub
+# Glitch Docs
 
-This folder is the source of truth for product and engineering documentation.
+All files use lowercase kebab-case names. Update docs in the same PR as the code change.
 
-## Product and Scope
+## Product
 
-- `SRS_v1.md` - Product requirements and long-term scope.
-- `SPRINT1_TRACEABILITY.md` - SRS requirement mapping and validation evidence for MVP delivery.
-- `WORKLIST_EXECUTION.md` - Completed execution checklist for the MVP delivery batch.
-- `UI_STYLE_GUIDE.md` - Glitch Midnight design system tokens, UX principles, and accessibility standards.
-- `UI_SCREEN_BLUEPRINTS.md` - Per-screen structure and component contracts for mobile flows.
+| File | What's in it |
+|---|---|
+| [requirements.md](./requirements.md) | Product requirements and feature scope |
+| [traceability.md](./traceability.md) | SRS → implementation mapping and MVP validation |
+
+## Design
+
+| File | What's in it |
+|---|---|
+| [ui-style-guide.md](./ui-style-guide.md) | Glitch Midnight tokens, typography, motion, and component patterns |
+| [ui-screens.md](./ui-screens.md) | Per-screen structure and component contracts |
 
 ## Engineering
 
-- `ARCHITECTURE.md` - System architecture, module boundaries, routing model, and runtime flows.
-- `DATA_MODEL.md` - Database schema, relations, and migration process.
-- `API_REFERENCE.md` - Request/response contracts for all current API endpoints.
+| File | What's in it |
+|---|---|
+| [architecture.md](./architecture.md) | Module map, request lifecycle, routing and data flow |
+| [api-reference.md](./api-reference.md) | Full request/response contracts for every endpoint |
+| [data-model.md](./data-model.md) | DB schema, relations, indexes, and migration workflow |
 
-## Security and Compliance
+## Operations
 
-- `SECURITY_PRIVACY.md` - Auth, consent, SMS guardrails, audit logging, and production hardening.
+| File | What's in it |
+|---|---|
+| [dev-setup.md](./dev-setup.md) | First-time local setup for API and mobile |
+| [ops-runbook.md](./ops-runbook.md) | Env vars, startup, backup/restore, secrets rotation, troubleshooting |
+| [platform-readiness.md](./platform-readiness.md) | CI/CD pipeline, infra provisioning, monitoring, and DR baseline |
+| [security.md](./security.md) | Auth controls, audit logging, data isolation, production hardening |
+| [testing.md](./testing.md) | Test strategy, coverage map, and acceptance scenarios |
 
-## Quality and Validation
+## Standards
 
-- `TESTING.md` - Test strategy, automation commands, and acceptance scenarios.
-
-## Development and Operations
-
-- `LOCAL_DEV_SETUP.md` - Local setup for mobile and backend development.
-- `OPERATIONS_RUNBOOK.md` - Environment config, runbook steps, and troubleshooting.
-- `PLATFORM_READINESS.md` - CI/CD, infra provisioning, secrets, monitoring, and DR baseline.
-
-## Documentation Standards
-
-1. Update docs in the same PR as behavior or contract changes.
-2. API changes must update `API_REFERENCE.md` and `TESTING.md` acceptance cases.
-3. Schema changes must update `DATA_MODEL.md` and include a migration.
-4. Security-sensitive changes must update `SECURITY_PRIVACY.md`.
-5. UI system changes must update `UI_STYLE_GUIDE.md`.
+- API changes → update `api-reference.md` + `testing.md`
+- Schema changes → update `data-model.md` + include a migration
+- Security-sensitive changes → update `security.md`
+- UI system changes → update `ui-style-guide.md`
