@@ -8,9 +8,11 @@ Implemented:
 - Trigger: push to `main` and pull requests
 - Stages:
   1. Install dependencies
-  2. Workspace typecheck
-  3. API test suite (includes migrations)
-  4. Mobile test suite
+  2. Workspace lint
+  3. Workspace typecheck
+  4. Migration drift check (`pnpm db:check`)
+  5. API test suite (includes migrations)
+  6. Mobile test suite
 
 Quality gate:
 - Merge to `main` should be blocked unless CI is green.
@@ -59,13 +61,14 @@ Rotation policy:
 
 Current state:
 - Development uses console OTP delivery.
-- Production-ready provider integration implemented for Resend (`OTP_PROVIDER=resend`).
+- Production and staging manifests are configured for Resend (`OTP_PROVIDER=resend`).
+- API now fails OTP request safely with `503 OTP_DELIVERY_FAILED` on provider outages.
 
 Production readiness requirement:
-1. Enable a real email OTP provider implementation via existing provider abstraction.
+1. Configure `RESEND_API_KEY` through managed secrets.
 2. Add delivery monitoring (send success rate and latency).
-3. Add fallback behavior and alerting for provider outage.
-4. Disable debug OTP exposure in all non-development deployments.
+3. Alert on elevated `OTP_DELIVERY_FAILED` rates.
+4. Keep debug OTP exposure disabled in non-development deployments.
 
 ## Monitoring and Alerting Baseline
 

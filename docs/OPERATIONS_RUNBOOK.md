@@ -104,9 +104,22 @@ pnpm backup:create
 
 ```bash
 pnpm secrets:otp
+pnpm secrets:validate
 ```
 
 Use generated value for `OTP_HASH_SECRET` in staging and production secret stores.
+
+Validate deployment env before release:
+
+```bash
+DATABASE_URL=... \
+REDIS_URL=... \
+OTP_HASH_SECRET=... \
+OTP_PROVIDER=resend \
+OTP_EMAIL_FROM="Glitch Finance <noreply@app.example.com>" \
+RESEND_API_KEY=... \
+pnpm secrets:validate
+```
 
 ## Release Readiness Checklist
 
@@ -122,9 +135,11 @@ GitHub Actions pipeline is defined in:
 `/.github/workflows/ci.yml`
 
 It validates:
-1. Workspace typecheck
-2. API tests
-3. Mobile tests
+1. Workspace lint
+2. Workspace typecheck
+3. Migration drift check
+4. API tests
+5. Mobile tests
 
 Additional workflows:
 1. `/.github/workflows/cd-image.yml` - builds and pushes API container image to GHCR.

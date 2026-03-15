@@ -12,6 +12,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -27,12 +28,22 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 15
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
 
     env:
       DATABASE_URL: postgresql://glitch:glitch@127.0.0.1:5432/glitch
       REDIS_URL: redis://127.0.0.1:6379
       OTP_HASH_SECRET: test-secret-at-least-16
       MOBILE_APP_ORIGIN: http://localhost:8081
+      AUTH_MAX_ACTIVE_SESSIONS: 5
 
     steps:
       - name: Checkout
@@ -52,8 +63,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Migration drift check
+        run: pnpm db:check
 
       - name: API tests
         run: pnpm --filter @glitch/api test

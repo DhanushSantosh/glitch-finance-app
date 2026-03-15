@@ -165,6 +165,7 @@ pnpm db:down                                      # stop containers
 pnpm db:logs                                      # tail container logs
 pnpm --filter @glitch/api db:migrate              # apply pending migrations
 pnpm --filter @glitch/api db:generate             # generate migration from schema changes
+pnpm db:check                                     # fail if schema changes are missing committed migrations
 ```
 
 ### Testing and type-checking
@@ -179,6 +180,7 @@ pnpm --filter @glitch/mobile test                 # mobile unit tests
 
 ```bash
 pnpm secrets:otp                                  # generate a high-entropy OTP_HASH_SECRET value
+pnpm secrets:validate                             # validate required runtime secrets (uses current env)
 pnpm backup:create                                # create a Postgres backup (requires DATABASE_URL set)
 ./scripts/backup/postgres-restore.sh <file.dump>  # restore from a backup file
 ```
@@ -282,9 +284,11 @@ curl http://localhost:4000/api/v1/metrics     # Prometheus metrics
 Runs on every push and pull request to `main`:
 
 1. Install dependencies
-2. Workspace typecheck
-3. API test suite (runs migrations against test DB)
-4. Mobile test suite
+2. Workspace lint
+3. Workspace typecheck
+4. Migration drift check (`pnpm db:check`)
+5. API test suite (runs migrations against test DB)
+6. Mobile test suite
 
 Merges to `main` are expected to be green.
 

@@ -32,6 +32,20 @@ services:
         sync: false
       - key: OTP_HASH_SECRET
         sync: false
+      - key: AUTH_OTP_TTL_SECONDS
+        value: "300"
+      - key: AUTH_MAX_OTP_ATTEMPTS
+        value: "5"
+      - key: AUTH_SESSION_TTL_DAYS
+        value: "30"
+      - key: AUTH_MAX_ACTIVE_SESSIONS
+        value: "5"
+      - key: AUTH_RATE_LIMIT_WINDOW_SECONDS
+        value: "900"
+      - key: AUTH_RATE_LIMIT_MAX_REQUEST_OTP
+        value: "5"
+      - key: AUTH_RATE_LIMIT_MAX_VERIFY_OTP
+        value: "10"
       - key: SMS_DISCLOSURE_VERSION
         value: sms_disclosure_v1
       - key: APP_CURRENCY
@@ -45,4 +59,3 @@ databases:
     plan: starter
     databaseName: glitch
     user: glitch
-

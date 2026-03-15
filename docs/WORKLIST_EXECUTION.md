@@ -25,11 +25,15 @@ This file tracks the requested implementation batch and completion state.
   - `OTP_PROVIDER=console|resend`.
   - Resend delivery provider with env-driven config.
 - [x] CI/CD extension:
-  - Existing quality CI retained.
+  - CI quality gates: lint + typecheck + migration drift + API tests + mobile tests.
   - API image build/publish workflow (`cd-image.yml`) added.
 - [x] Staging/production provisioning artifacts:
   - Render blueprints for staging and production.
+  - Explicit auth/env policy values added to both manifests.
   - API Dockerfile for deployment.
+- [x] Managed secrets controls:
+  - Runtime secret validation script (`pnpm secrets:validate`).
+  - Rotation helper retained (`pnpm secrets:otp`).
 - [x] Monitoring baseline:
   - Prometheus metrics endpoint (`/api/v1/metrics`).
 - [x] Backup/restore automation + DR drill:
@@ -42,5 +46,5 @@ This file tracks the requested implementation batch and completion state.
 
 - [x] Workspace typecheck passes.
 - [x] API tests pass.
+- [x] API contract integration tests cover auth, transactions, budgets, and goals envelopes.
 - [x] Mobile tests pass.
-
