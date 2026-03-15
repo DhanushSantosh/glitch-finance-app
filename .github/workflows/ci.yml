@@ -39,9 +39,11 @@ jobs:
           --health-retries 15
 
     env:
+      NODE_ENV: test
       DATABASE_URL: postgresql://glitch:glitch@127.0.0.1:5432/glitch
       REDIS_URL: redis://127.0.0.1:6379
       OTP_HASH_SECRET: test-secret-at-least-16
+      OTP_PROVIDER: console
       MOBILE_APP_ORIGIN: http://localhost:8081
       AUTH_MAX_ACTIVE_SESSIONS: 5
 

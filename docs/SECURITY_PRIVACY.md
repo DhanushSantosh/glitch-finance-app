@@ -44,7 +44,7 @@ Audit events are captured for all security and mutation actions via `AuditServic
 |---|---|
 | `auth.login` | Successful OTP verification |
 | `auth.logout` | Session revocation |
-| `auth.account_deletion_requested` | Account delete action |
+| `auth.account_delete_requested` | Account delete action |
 | `consent.intent` | SMS consent intent logged |
 | `transaction.create` | Transaction created |
 | `transaction.update` | Transaction updated |
