@@ -131,24 +131,20 @@ export const GoalFormScreen = ({ initial, onCancel, onSubmit }: GoalFormScreenPr
           </View>
         </View>
 
-        <View style={styles.splitRow}>
-          <TextField 
-            label="CURRENT BALANCE" 
-            value={currentAmount} 
-            onChangeText={setCurrentAmount} 
-            keyboardType="decimal-pad" 
-            placeholder="0" 
-            containerStyle={styles.flexField}
-          />
-          <TextField
-            label="DEADLINE (OPTIONAL)"
-            value={targetDate}
-            onChangeText={setTargetDate}
-            autoCapitalize="none"
-            placeholder="YYYY-MM-DD"
-            containerStyle={styles.flexField}
-          />
-        </View>
+        <TextField 
+          label="CURRENT BALANCE" 
+          value={currentAmount} 
+          onChangeText={setCurrentAmount} 
+          keyboardType="decimal-pad" 
+          placeholder="0" 
+        />
+        <TextField
+          label="DEADLINE (OPTIONAL)"
+          value={targetDate}
+          onChangeText={setTargetDate}
+          autoCapitalize="none"
+          placeholder="YYYY-MM-DD"
+        />
       </Card>
 
       <View style={styles.actionRow}>
@@ -209,7 +205,7 @@ const styles = createStyles(() => ({
     alignItems: "flex-end"
   },
   amountField: {
-    flex: 2,
+    flex: 3,
     marginBottom: 0
   },
   currencyField: {
@@ -227,13 +223,6 @@ const styles = createStyles(() => ({
     fontWeight: "800",
     letterSpacing: 2,
     minHeight: 64
-  },
-  splitRow: {
-    flexDirection: "row",
-    gap: theme.spacing.md
-  },
-  flexField: {
-    flex: 1
   },
   actionRow: {
     flexDirection: "row",

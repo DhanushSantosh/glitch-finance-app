@@ -88,7 +88,11 @@ export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDel
                   {quickContributeIncrements.map((increment) => (
                     <Button
                       key={`${item.id}-${increment}`}
-                      label={`+${formatMoney(increment, item.currency)}`}
+                      label={
+                        <Text style={styles.quickActionText}>
+                          +{formatMoney(increment, item.currency)}
+                        </Text>
+                      }
                       variant="ghost"
                       onPress={() => void onContribute(item, increment)}
                       style={styles.quickAction}
@@ -99,8 +103,18 @@ export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDel
             ) : null}
 
             <View style={styles.actionRow}>
-              <Button label="Modify" variant="ghost" onPress={() => onEdit(item)} style={styles.smallAction} />
-              <Button label="Clear" variant="ghost" onPress={() => void onDelete(item)} style={[styles.smallAction, { backgroundColor: "rgba(255, 51, 102, 0.1)" }]} />
+              <Button 
+                label="Modify" 
+                variant="ghost" 
+                onPress={() => onEdit(item)} 
+                style={styles.smallAction} 
+              />
+              <Button 
+                label={<Text style={{ color: theme.color.actionDanger, fontWeight: "700" }}>Clear</Text>} 
+                variant="ghost" 
+                onPress={() => void onDelete(item)} 
+                style={styles.smallActionDanger} 
+              />
             </View>
           </ListItem>
         ))}
@@ -150,15 +164,15 @@ const styles = createStyles(() => ({
     color: theme.color.statusSuccess
   },
   progressTrack: {
-    height: 6,
+    height: 8,
     backgroundColor: theme.color.borderSubtle,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: "hidden",
     marginTop: theme.spacing.xs
   },
   progressFill: {
     height: "100%",
-    borderRadius: 3
+    borderRadius: 4
   },
   fillInfo: { backgroundColor: theme.color.actionPrimary },
   fillSuccess: { backgroundColor: theme.color.statusSuccess },
@@ -199,15 +213,25 @@ const styles = createStyles(() => ({
   },
   quickRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm
   },
   quickAction: {
     flex: 1,
+    minWidth: '30%',
     minHeight: 36,
     paddingVertical: 0,
-    backgroundColor: theme.color.bgElevated, // Slightly raised vs surface
+    paddingHorizontal: theme.spacing.xs,
+    backgroundColor: theme.color.surfaceMuted,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.color.borderSubtle
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.color.textPrimary,
+    letterSpacing: 0.5
   },
   actionRow: {
     flexDirection: "row",
@@ -219,7 +243,17 @@ const styles = createStyles(() => ({
   },
   smallAction: {
     flex: 1,
-    minHeight: 36,
-    paddingVertical: 0
+    minHeight: 40,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle
+  },
+  smallActionDanger: {
+    flex: 1,
+    minHeight: 40,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: theme.color.actionDanger,
+    backgroundColor: "transparent"
   }
 }));

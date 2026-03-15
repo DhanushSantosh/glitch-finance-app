@@ -1,4 +1,4 @@
-updated_by: Codex
+updated_by: Gemini
 updated_at: 2026-03-16
 ---
 
@@ -28,6 +28,8 @@ updated_at: 2026-03-16
 - 35 mobile tests passing
 - metro.config.js wired for pnpm monorepo (iOS + Android working)
 - iOS safe-area handling fixed at app shell (`SafeAreaProvider` + `SafeAreaView`) to prevent top notification-bar overlap
+- Fixed UI congestion on `GoalFormScreen` by adjusting field layouts and flex ratios for a cleaner aesthetic
+- Updated UI on `GoalsScreen` objectives cards: improved Quick Inject layout to flex-wrap with refined pill buttons, thickened progress bars, and restyled Clear/Modify buttons for better visual hierarchy and adherence to design tokens
 
 ### Infrastructure
 - pnpm monorepo workspaces
