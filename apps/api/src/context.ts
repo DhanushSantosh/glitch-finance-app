@@ -28,11 +28,18 @@ const collectErrorCodes = (error: unknown): string[] => {
     return [];
   }
 
-  const current = error as { code?: string; cause?: unknown };
+  const current = error as { code?: string; cause?: unknown; errors?: unknown[] };
   const codes: string[] = [];
 
   if (typeof current.code === "string") {
     codes.push(current.code);
+  }
+
+  // AggregateError (thrown by postgres.js when all resolved addresses fail)
+  // stores sub-errors directly on `error.errors`, not in `error.cause`.
+  const errorLists: unknown[] = [];
+  if (Array.isArray(current.errors)) {
+    errorLists.push(...current.errors);
   }
 
   if (current.cause && typeof current.cause === "object") {
@@ -40,15 +47,16 @@ const collectErrorCodes = (error: unknown): string[] => {
     if (typeof cause.code === "string") {
       codes.push(cause.code);
     }
-
     if (Array.isArray(cause.errors)) {
-      for (const nested of cause.errors) {
-        if (nested && typeof nested === "object") {
-          const nestedError = nested as { code?: string };
-          if (typeof nestedError.code === "string") {
-            codes.push(nestedError.code);
-          }
-        }
+      errorLists.push(...cause.errors);
+    }
+  }
+
+  for (const nested of errorLists) {
+    if (nested && typeof nested === "object") {
+      const nestedError = nested as { code?: string };
+      if (typeof nestedError.code === "string") {
+        codes.push(nestedError.code);
       }
     }
   }
