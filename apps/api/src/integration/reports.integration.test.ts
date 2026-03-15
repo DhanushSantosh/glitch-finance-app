@@ -233,6 +233,101 @@ describe("reports integration", () => {
     expect(summaryJson.totals.transactionCount).toBe(1);
   });
 
+  it("GET /api/v1/reports/export returns 401 when unauthenticated", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03&format=csv"
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("GET /api/v1/reports/export?format=invalid returns 400", async () => {
+    const user = await authViaOtp(app, `reports-invalid-fmt-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03&format=invalid",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("GET /api/v1/reports/export without format defaults to csv and returns 200", async () => {
+    const user = await authViaOtp(app, `reports-no-fmt-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toContain("text/csv");
+  });
+
+  it("GET /api/v1/reports/export?format=csv returns 200 with correct headers and CSV body", async () => {
+    const user = await authViaOtp(app, `reports-csv-check-${randomUUID()}@example.com`);
+
+    const categoriesResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/categories",
+      headers: { authorization: `Bearer ${user.token}` }
+    });
+    const categoryJson = categoriesResponse.json() as { items: Array<{ id: string; direction: string }> };
+    const debitCategory = categoryJson.items.find((item) => item.direction === "debit");
+    expect(debitCategory).toBeDefined();
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: { authorization: `Bearer ${user.token}` },
+      payload: {
+        direction: "debit",
+        amount: 150,
+        currency: "INR",
+        categoryId: debitCategory?.id,
+        counterparty: "Test Merchant",
+        occurredAt: "2026-03-10T10:00:00.000Z"
+      }
+    });
+    expect(createResponse.statusCode).toBe(200);
+
+    const csvResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03&format=csv",
+      headers: { authorization: `Bearer ${user.token}` }
+    });
+
+    expect(csvResponse.statusCode).toBe(200);
+    expect(csvResponse.headers["content-type"]).toContain("text/csv");
+    expect(csvResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.csv");
+    // body is valid CSV with a header row
+    const lines = csvResponse.body.trim().split("\n");
+    expect(lines.length).toBeGreaterThanOrEqual(1);
+    expect(lines[0]).toContain(",");
+  });
+
+  it("GET /api/v1/reports/export?format=pdf returns 200 with application/pdf and non-empty buffer", async () => {
+    const user = await authViaOtp(app, `reports-pdf-check-${randomUUID()}@example.com`);
+
+    const pdfResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/export?month=2026-03&format=pdf",
+      headers: { authorization: `Bearer ${user.token}` }
+    });
+
+    expect(pdfResponse.statusCode).toBe(200);
+    expect(pdfResponse.headers["content-type"]).toContain("application/pdf");
+    expect(pdfResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.pdf");
+    expect(pdfResponse.rawPayload.length).toBeGreaterThan(0);
+  });
+
   it("exports report summary as csv and pdf", async () => {
     const user = await authViaOtp(app, `reports-export-${randomUUID()}@example.com`);
 

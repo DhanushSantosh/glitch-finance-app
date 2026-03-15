@@ -26,11 +26,14 @@ export class RateLimiter {
     }
 
     const existing = this.memoryStore.get(key);
-    if (!existing || existing.expiresAt < now) {
+    if (!existing || existing.expiresAt <= now) {
       this.memoryStore.set(key, {
         count: 1,
         expiresAt: now + windowSeconds * 1000
       });
+      if (1 > maxRequests) {
+        throw new AppError(429, "RATE_LIMITED", "Too many requests. Please try again shortly.");
+      }
       return;
     }
 

@@ -484,6 +484,140 @@ describe("auth + transaction integration", () => {
     expect(deleteCategory.statusCode).toBe(200);
   });
 
+  it("DELETE /api/v1/account returns 401 when unauthenticated", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/account"
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("DELETE /api/v1/account deletes account and invalidates all sessions immediately", async () => {
+    const email = `delete-sessions-${randomUUID()}@example.com`;
+
+    // Issue two separate sessions for the same user
+    const sessionA = await authViaOtp(app, email);
+    const sessionB = await authViaOtp(app, email);
+
+    // Both sessions should be valid before deletion
+    const meA = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: { authorization: `Bearer ${sessionA.token}` }
+    });
+    expect(meA.statusCode).toBe(200);
+
+    const meB = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: { authorization: `Bearer ${sessionB.token}` }
+    });
+    expect(meB.statusCode).toBe(200);
+
+    // Delete account using sessionA
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/account",
+      headers: { authorization: `Bearer ${sessionA.token}` }
+    });
+    expect(deleteResponse.statusCode).toBe(200);
+    const deleteJson = deleteResponse.json() as { success: boolean };
+    expect(deleteJson.success).toBe(true);
+
+    // sessionA should now be invalid
+    const meAfterDeleteA = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: { authorization: `Bearer ${sessionA.token}` }
+    });
+    expect(meAfterDeleteA.statusCode).toBe(401);
+
+    // sessionB (different session, same user) should also be invalid due to cascade
+    const meAfterDeleteB = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: { authorization: `Bearer ${sessionB.token}` }
+    });
+    expect(meAfterDeleteB.statusCode).toBe(401);
+  });
+
+  it("DELETE /api/v1/account cascades deletion of owned transactions, budgets, and goals", async () => {
+    const email = `delete-cascade-${randomUUID()}@example.com`;
+    const auth = await authViaOtp(app, email);
+
+    // Get a debit category to use
+    const categoriesResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/categories",
+      headers: { authorization: `Bearer ${auth.token}` }
+    });
+    expect(categoriesResponse.statusCode).toBe(200);
+    const categoriesJson = categoriesResponse.json() as { items: Array<{ id: string; direction: string }> };
+    const debitCategory = categoriesJson.items.find((item) => item.direction === "debit");
+    expect(debitCategory).toBeDefined();
+
+    // Create a transaction
+    const txResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: { authorization: `Bearer ${auth.token}` },
+      payload: {
+        direction: "debit",
+        amount: 100,
+        currency: "INR",
+        categoryId: debitCategory?.id,
+        counterparty: "Test Merchant",
+        occurredAt: new Date().toISOString()
+      }
+    });
+    expect(txResponse.statusCode).toBe(200);
+
+    // Create a budget
+    const budgetResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/budgets",
+      headers: { authorization: `Bearer ${auth.token}` },
+      payload: {
+        categoryId: debitCategory?.id,
+        month: "2026-03",
+        amount: 5000,
+        currency: "INR"
+      }
+    });
+    expect(budgetResponse.statusCode).toBe(200);
+
+    // Create a goal
+    const goalResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/goals",
+      headers: { authorization: `Bearer ${auth.token}` },
+      payload: {
+        name: "Test Goal",
+        targetAmount: 10000,
+        currentAmount: 0,
+        currency: "INR"
+      }
+    });
+    expect(goalResponse.statusCode).toBe(200);
+
+    // Delete the account
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/account",
+      headers: { authorization: `Bearer ${auth.token}` }
+    });
+    expect(deleteResponse.statusCode).toBe(200);
+
+    // Token is now invalid — all data was deleted via cascade
+    const meAfterDelete = await app.inject({
+      method: "GET",
+      url: "/api/v1/me",
+      headers: { authorization: `Bearer ${auth.token}` }
+    });
+    expect(meAfterDelete.statusCode).toBe(401);
+  });
+
   it("supports recovery OTP aliases and account deletion", async () => {
     const email = `recovery-${randomUUID()}@example.com`;
 
