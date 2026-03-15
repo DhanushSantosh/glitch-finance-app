@@ -2,7 +2,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { ZodError } from "zod";
 import { createAppContext, closeAppContext } from "./context.js";
-import { AppError } from "./errors.js";
+import { AppError, toClientAppError } from "./errors.js";
 import { registerHealthRoutes } from "./modules/health/routes.js";
 import { registerAuthRoutes } from "./modules/auth/routes.js";
 import { registerCategoryRoutes } from "./modules/categories/routes.js";
@@ -62,21 +62,13 @@ export const createApp = async (): Promise<FastifyInstance> => {
       });
     }
 
-    const httpStatusCode =
-      typeof (error as { statusCode?: unknown }).statusCode === "number"
-        ? (error as { statusCode: number }).statusCode
-        : undefined;
-    const errorCode = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : undefined;
-    const errorMessage =
-      typeof (error as { message?: unknown }).message === "string"
-        ? (error as { message: string }).message
-        : "Invalid request.";
-
-    if (httpStatusCode && httpStatusCode >= 400 && httpStatusCode < 500) {
-      return reply.status(httpStatusCode).send({
+    const clientError = toClientAppError(error);
+    if (clientError) {
+      return reply.status(clientError.statusCode).send({
         error: {
-          code: errorCode ?? "BAD_REQUEST",
-          message: errorMessage
+          code: clientError.code,
+          message: clientError.message,
+          details: clientError.details
         },
         requestId: request.id
       });

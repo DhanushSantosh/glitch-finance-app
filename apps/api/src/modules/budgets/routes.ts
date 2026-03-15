@@ -4,6 +4,7 @@ import { AppContext } from "../../context.js";
 import { budgetPlans, categories, transactions } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
+import { executeIdempotent } from "../../utils/idempotency.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import {
   budgetCreateSchema,
@@ -112,174 +113,198 @@ export const registerBudgetRoutes = async (app: FastifyInstance, ctx: AppContext
     };
   });
 
-  app.post("/api/v1/budgets", async (request) => {
+  app.post("/api/v1/budgets", async (request, reply) => {
     const identity = requireAuth(request);
-    const body = parseOrThrow(budgetCreateSchema, request.body);
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
+      userId: identity.userId,
+      execute: async () => {
+        const body = parseOrThrow(budgetCreateSchema, request.body);
 
-    const categoryRows = await ctx.db
-      .select({ id: categories.id, direction: categories.direction })
-      .from(categories)
-      .where(and(eq(categories.id, body.categoryId), or(eq(categories.userId, identity.userId), isNull(categories.userId))))
-      .limit(1);
+        const categoryRows = await ctx.db
+          .select({ id: categories.id, direction: categories.direction })
+          .from(categories)
+          .where(and(eq(categories.id, body.categoryId), or(eq(categories.userId, identity.userId), isNull(categories.userId))))
+          .limit(1);
 
-    const category = categoryRows[0];
-    if (!category) {
-      throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
-    }
-
-    if (category.direction !== "debit") {
-      throw new AppError(400, "INVALID_BUDGET_CATEGORY", "Budgets can only be set for debit categories.");
-    }
-
-    const rows = await ctx.db
-      .insert(budgetPlans)
-      .values({
-        userId: identity.userId,
-        categoryId: body.categoryId,
-        month: body.month,
-        amount: body.amount.toFixed(2),
-        currency: body.currency.toUpperCase(),
-        updatedAt: new Date()
-      })
-      .onConflictDoUpdate({
-        target: [budgetPlans.userId, budgetPlans.categoryId, budgetPlans.month],
-        set: {
-          amount: body.amount.toFixed(2),
-          currency: body.currency.toUpperCase(),
-          updatedAt: new Date()
+        const category = categoryRows[0];
+        if (!category) {
+          throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
         }
-      })
-      .returning({
-        id: budgetPlans.id,
-        categoryId: budgetPlans.categoryId,
-        month: budgetPlans.month,
-        amount: budgetPlans.amount,
-        currency: budgetPlans.currency,
-        createdAt: budgetPlans.createdAt,
-        updatedAt: budgetPlans.updatedAt
-      });
 
-    await ctx.auditService.log({
-      userId: identity.userId,
-      action: "budget.upsert",
-      entityType: "budget",
-      entityId: rows[0].id,
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+        if (category.direction !== "debit") {
+          throw new AppError(400, "INVALID_BUDGET_CATEGORY", "Budgets can only be set for debit categories.");
+        }
 
-    return {
-      item: {
-        id: rows[0].id,
-        categoryId: rows[0].categoryId,
-        month: rows[0].month,
-        amount: parseMoney(rows[0].amount),
-        currency: rows[0].currency,
-        createdAt: rows[0].createdAt.toISOString(),
-        updatedAt: rows[0].updatedAt.toISOString()
+        const rows = await ctx.db
+          .insert(budgetPlans)
+          .values({
+            userId: identity.userId,
+            categoryId: body.categoryId,
+            month: body.month,
+            amount: body.amount.toFixed(2),
+            currency: body.currency.toUpperCase(),
+            updatedAt: new Date()
+          })
+          .onConflictDoUpdate({
+            target: [budgetPlans.userId, budgetPlans.categoryId, budgetPlans.month],
+            set: {
+              amount: body.amount.toFixed(2),
+              currency: body.currency.toUpperCase(),
+              updatedAt: new Date()
+            }
+          })
+          .returning({
+            id: budgetPlans.id,
+            categoryId: budgetPlans.categoryId,
+            month: budgetPlans.month,
+            amount: budgetPlans.amount,
+            currency: budgetPlans.currency,
+            createdAt: budgetPlans.createdAt,
+            updatedAt: budgetPlans.updatedAt
+          });
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "budget.upsert",
+          entityType: "budget",
+          entityId: rows[0].id,
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return {
+          item: {
+            id: rows[0].id,
+            categoryId: rows[0].categoryId,
+            month: rows[0].month,
+            amount: parseMoney(rows[0].amount),
+            currency: rows[0].currency,
+            createdAt: rows[0].createdAt.toISOString(),
+            updatedAt: rows[0].updatedAt.toISOString()
+          }
+        };
       }
-    };
+    });
   });
 
-  app.patch("/api/v1/budgets/:id", async (request) => {
+  app.patch("/api/v1/budgets/:id", async (request, reply) => {
     const identity = requireAuth(request);
-    const params = parseOrThrow(idParamSchema, request.params);
-    const body = parseOrThrow(budgetUpdateSchema, request.body);
-
-    const existingRows = await ctx.db
-      .select()
-      .from(budgetPlans)
-      .where(and(eq(budgetPlans.id, params.id), eq(budgetPlans.userId, identity.userId)))
-      .limit(1);
-
-    const existing = existingRows[0];
-    if (!existing) {
-      throw new AppError(404, "BUDGET_NOT_FOUND", "Budget not found.");
-    }
-
-    const nextCategoryId = body.categoryId ?? existing.categoryId;
-
-    if (body.categoryId) {
-      const categoryRows = await ctx.db
-        .select({ id: categories.id, direction: categories.direction })
-        .from(categories)
-        .where(and(eq(categories.id, body.categoryId), or(eq(categories.userId, identity.userId), isNull(categories.userId))))
-        .limit(1);
-
-      const category = categoryRows[0];
-      if (!category) {
-        throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
-      }
-
-      if (category.direction !== "debit") {
-        throw new AppError(400, "INVALID_BUDGET_CATEGORY", "Budgets can only be set for debit categories.");
-      }
-    }
-
-    const rows = await ctx.db
-      .update(budgetPlans)
-      .set({
-        categoryId: nextCategoryId,
-        month: body.month ?? existing.month,
-        amount: body.amount ? body.amount.toFixed(2) : existing.amount,
-        currency: body.currency ? body.currency.toUpperCase() : existing.currency,
-        updatedAt: new Date()
-      })
-      .where(and(eq(budgetPlans.id, params.id), eq(budgetPlans.userId, identity.userId)))
-      .returning({
-        id: budgetPlans.id,
-        categoryId: budgetPlans.categoryId,
-        month: budgetPlans.month,
-        amount: budgetPlans.amount,
-        currency: budgetPlans.currency,
-        createdAt: budgetPlans.createdAt,
-        updatedAt: budgetPlans.updatedAt
-      });
-
-    await ctx.auditService.log({
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
       userId: identity.userId,
-      action: "budget.update",
-      entityType: "budget",
-      entityId: params.id,
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+      execute: async () => {
+        const params = parseOrThrow(idParamSchema, request.params);
+        const body = parseOrThrow(budgetUpdateSchema, request.body);
 
-    return {
-      item: {
-        id: rows[0].id,
-        categoryId: rows[0].categoryId,
-        month: rows[0].month,
-        amount: parseMoney(rows[0].amount),
-        currency: rows[0].currency,
-        createdAt: rows[0].createdAt.toISOString(),
-        updatedAt: rows[0].updatedAt.toISOString()
+        const existingRows = await ctx.db
+          .select()
+          .from(budgetPlans)
+          .where(and(eq(budgetPlans.id, params.id), eq(budgetPlans.userId, identity.userId)))
+          .limit(1);
+
+        const existing = existingRows[0];
+        if (!existing) {
+          throw new AppError(404, "BUDGET_NOT_FOUND", "Budget not found.");
+        }
+
+        const nextCategoryId = body.categoryId ?? existing.categoryId;
+
+        if (body.categoryId) {
+          const categoryRows = await ctx.db
+            .select({ id: categories.id, direction: categories.direction })
+            .from(categories)
+            .where(and(eq(categories.id, body.categoryId), or(eq(categories.userId, identity.userId), isNull(categories.userId))))
+            .limit(1);
+
+          const category = categoryRows[0];
+          if (!category) {
+            throw new AppError(400, "INVALID_CATEGORY", "Category does not belong to the user.");
+          }
+
+          if (category.direction !== "debit") {
+            throw new AppError(400, "INVALID_BUDGET_CATEGORY", "Budgets can only be set for debit categories.");
+          }
+        }
+
+        const rows = await ctx.db
+          .update(budgetPlans)
+          .set({
+            categoryId: nextCategoryId,
+            month: body.month ?? existing.month,
+            amount: body.amount ? body.amount.toFixed(2) : existing.amount,
+            currency: body.currency ? body.currency.toUpperCase() : existing.currency,
+            updatedAt: new Date()
+          })
+          .where(and(eq(budgetPlans.id, params.id), eq(budgetPlans.userId, identity.userId)))
+          .returning({
+            id: budgetPlans.id,
+            categoryId: budgetPlans.categoryId,
+            month: budgetPlans.month,
+            amount: budgetPlans.amount,
+            currency: budgetPlans.currency,
+            createdAt: budgetPlans.createdAt,
+            updatedAt: budgetPlans.updatedAt
+          });
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "budget.update",
+          entityType: "budget",
+          entityId: params.id,
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return {
+          item: {
+            id: rows[0].id,
+            categoryId: rows[0].categoryId,
+            month: rows[0].month,
+            amount: parseMoney(rows[0].amount),
+            currency: rows[0].currency,
+            createdAt: rows[0].createdAt.toISOString(),
+            updatedAt: rows[0].updatedAt.toISOString()
+          }
+        };
       }
-    };
+    });
   });
 
-  app.delete("/api/v1/budgets/:id", async (request) => {
+  app.delete("/api/v1/budgets/:id", async (request, reply) => {
     const identity = requireAuth(request);
-    const params = parseOrThrow(idParamSchema, request.params);
-
-    const rows = await ctx.db
-      .delete(budgetPlans)
-      .where(and(eq(budgetPlans.id, params.id), eq(budgetPlans.userId, identity.userId)))
-      .returning({ id: budgetPlans.id });
-
-    if (!rows[0]) {
-      throw new AppError(404, "BUDGET_NOT_FOUND", "Budget not found.");
-    }
-
-    await ctx.auditService.log({
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
       userId: identity.userId,
-      action: "budget.delete",
-      entityType: "budget",
-      entityId: params.id,
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+      execute: async () => {
+        const params = parseOrThrow(idParamSchema, request.params);
 
-    return { success: true };
+        const rows = await ctx.db
+          .delete(budgetPlans)
+          .where(and(eq(budgetPlans.id, params.id), eq(budgetPlans.userId, identity.userId)))
+          .returning({ id: budgetPlans.id });
+
+        if (!rows[0]) {
+          throw new AppError(404, "BUDGET_NOT_FOUND", "Budget not found.");
+        }
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "budget.delete",
+          entityType: "budget",
+          entityId: params.id,
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return { success: true };
+      }
+    });
   });
 };

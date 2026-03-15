@@ -182,4 +182,32 @@ export const auditLogs = pgTable(
   })
 );
 
+export const idempotencyKeys = pgTable(
+  "idempotency_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    requestMethod: varchar("request_method", { length: 10 }).notNull(),
+    requestRoute: varchar("request_route", { length: 200 }).notNull(),
+    key: varchar("key", { length: 128 }).notNull(),
+    requestHash: varchar("request_hash", { length: 64 }).notNull(),
+    responseStatus: integer("response_status"),
+    responseBody: jsonb("response_body").$type<unknown>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true })
+  },
+  (table) => ({
+    idempotencyUnique: uniqueIndex("idempotency_user_method_route_key_unique").on(
+      table.userId,
+      table.requestMethod,
+      table.requestRoute,
+      table.key
+    ),
+    idempotencyExpiresAtIndex: index("idempotency_expires_at_idx").on(table.expiresAt)
+  })
+);
+
 export type TransactionDirection = (typeof transactionDirectionEnum.enumValues)[number];

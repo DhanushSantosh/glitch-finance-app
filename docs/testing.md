@@ -30,6 +30,9 @@
 - SMS scan route remains disabled by default.
 - Bootstrap policy checks for SMS disabled default.
 - Recovery OTP alias flow and account deletion lifecycle.
+- Idempotent mutation replay and key-conflict behavior for transaction create/update/delete.
+- Fastify JSON parser client-error envelope mapping (`FST_ERR_CTP_EMPTY_JSON_BODY`).
+- Database unique-constraint conflicts mapped to 409 (no accidental 5xx).
 
 ### Mobile Unit Tests
 

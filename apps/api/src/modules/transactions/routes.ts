@@ -5,6 +5,7 @@ import { AppContext } from "../../context.js";
 import { categories, transactions } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
+import { executeIdempotent } from "../../utils/idempotency.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import { suggestCategoryIdForTransaction } from "./auto-categorize.js";
 import { listQuerySchema, normalizeTransactionPayload, transactionInputSchema, transactionUpdateSchema } from "./validation.js";
@@ -132,175 +133,199 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
     };
   });
 
-  app.post("/api/v1/transactions", async (request) => {
+  app.post("/api/v1/transactions", async (request, reply) => {
     const identity = requireAuth(request);
-    const body = parseOrThrow(transactionInputSchema, request.body);
-    const normalizedPayload = normalizeTransactionPayload(body);
-    let resolvedCategoryId = normalizedPayload.categoryId;
-
-    if (!resolvedCategoryId) {
-      resolvedCategoryId = await suggestCategoryIdForTransaction({
-        db: ctx.db,
-        userId: identity.userId,
-        direction: normalizedPayload.direction,
-        counterparty: normalizedPayload.counterparty,
-        note: normalizedPayload.note
-      });
-    }
-
-    if (resolvedCategoryId) {
-      await resolveCategoryForTransaction(ctx, {
-        userId: identity.userId,
-        categoryId: resolvedCategoryId,
-        transactionDirection: normalizedPayload.direction
-      });
-    }
-
-    const inserted = await ctx.db
-      .insert(transactions)
-      .values({
-        userId: identity.userId,
-        categoryId: resolvedCategoryId,
-        direction: normalizedPayload.direction,
-        source: "manual",
-        amount: normalizedPayload.amount,
-        currency: normalizedPayload.currency,
-        counterparty: normalizedPayload.counterparty,
-        note: normalizedPayload.note,
-        occurredAt: normalizedPayload.occurredAt,
-        updatedAt: new Date()
-      })
-      .returning({
-        id: transactions.id,
-        categoryId: transactions.categoryId,
-        direction: transactions.direction,
-        amount: transactions.amount,
-        currency: transactions.currency,
-        counterparty: transactions.counterparty,
-        note: transactions.note,
-        occurredAt: transactions.occurredAt,
-        createdAt: transactions.createdAt,
-        updatedAt: transactions.updatedAt
-      });
-
-    await ctx.auditService.log({
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
       userId: identity.userId,
-      action: "transaction.create",
-      entityType: "transaction",
-      entityId: inserted[0].id,
-      metadata: { source: "manual" },
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+      execute: async () => {
+        const body = parseOrThrow(transactionInputSchema, request.body);
+        const normalizedPayload = normalizeTransactionPayload(body);
+        let resolvedCategoryId = normalizedPayload.categoryId;
 
-    return {
-      item: {
-        ...toApiTransaction({ ...inserted[0], categoryName: null })
+        if (!resolvedCategoryId) {
+          resolvedCategoryId = await suggestCategoryIdForTransaction({
+            db: ctx.db,
+            userId: identity.userId,
+            direction: normalizedPayload.direction,
+            counterparty: normalizedPayload.counterparty,
+            note: normalizedPayload.note
+          });
+        }
+
+        if (resolvedCategoryId) {
+          await resolveCategoryForTransaction(ctx, {
+            userId: identity.userId,
+            categoryId: resolvedCategoryId,
+            transactionDirection: normalizedPayload.direction
+          });
+        }
+
+        const inserted = await ctx.db
+          .insert(transactions)
+          .values({
+            userId: identity.userId,
+            categoryId: resolvedCategoryId,
+            direction: normalizedPayload.direction,
+            source: "manual",
+            amount: normalizedPayload.amount,
+            currency: normalizedPayload.currency,
+            counterparty: normalizedPayload.counterparty,
+            note: normalizedPayload.note,
+            occurredAt: normalizedPayload.occurredAt,
+            updatedAt: new Date()
+          })
+          .returning({
+            id: transactions.id,
+            categoryId: transactions.categoryId,
+            direction: transactions.direction,
+            amount: transactions.amount,
+            currency: transactions.currency,
+            counterparty: transactions.counterparty,
+            note: transactions.note,
+            occurredAt: transactions.occurredAt,
+            createdAt: transactions.createdAt,
+            updatedAt: transactions.updatedAt
+          });
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "transaction.create",
+          entityType: "transaction",
+          entityId: inserted[0].id,
+          metadata: { source: "manual" },
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return {
+          item: {
+            ...toApiTransaction({ ...inserted[0], categoryName: null })
+          }
+        };
       }
-    };
+    });
   });
 
-  app.patch("/api/v1/transactions/:id", async (request) => {
+  app.patch("/api/v1/transactions/:id", async (request, reply) => {
     const identity = requireAuth(request);
-    const params = parseOrThrow(idParamSchema, request.params);
-    const body = parseOrThrow(transactionUpdateSchema, request.body);
-
-    const existingRows = await ctx.db
-      .select()
-      .from(transactions)
-      .where(and(eq(transactions.id, params.id), eq(transactions.userId, identity.userId)))
-      .limit(1);
-
-    const existing = existingRows[0];
-    if (!existing) {
-      throw new AppError(404, "TRANSACTION_NOT_FOUND", "Transaction not found.");
-    }
-
-    const nextDirection = body.direction ?? existing.direction;
-    const hasCategoryPatch = Object.prototype.hasOwnProperty.call(body, "categoryId");
-
-    const nextCategoryId = hasCategoryPatch ? body.categoryId ?? null : existing.categoryId;
-
-    if (nextCategoryId) {
-      await resolveCategoryForTransaction(ctx, {
-        userId: identity.userId,
-        categoryId: nextCategoryId,
-        transactionDirection: nextDirection
-      });
-    }
-
-    const normalizedUpdate = normalizeTransactionPayload({
-      categoryId: nextCategoryId,
-      direction: nextDirection,
-      amount: body.amount ?? Number(existing.amount),
-      currency: body.currency ?? existing.currency,
-      counterparty: body.counterparty ?? existing.counterparty ?? undefined,
-      note: body.note ?? existing.note ?? undefined,
-      occurredAt: body.occurredAt ?? existing.occurredAt
-    });
-
-    const updatedRows = await ctx.db
-      .update(transactions)
-      .set({
-        categoryId: normalizedUpdate.categoryId,
-        direction: normalizedUpdate.direction,
-        amount: normalizedUpdate.amount,
-        currency: normalizedUpdate.currency,
-        counterparty: normalizedUpdate.counterparty ?? null,
-        note: normalizedUpdate.note ?? null,
-        occurredAt: normalizedUpdate.occurredAt,
-        updatedAt: new Date()
-      })
-      .where(and(eq(transactions.id, params.id), eq(transactions.userId, identity.userId)))
-      .returning({
-        id: transactions.id,
-        categoryId: transactions.categoryId,
-        direction: transactions.direction,
-        amount: transactions.amount,
-        currency: transactions.currency,
-        counterparty: transactions.counterparty,
-        note: transactions.note,
-        occurredAt: transactions.occurredAt,
-        createdAt: transactions.createdAt,
-        updatedAt: transactions.updatedAt
-      });
-
-    await ctx.auditService.log({
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
       userId: identity.userId,
-      action: "transaction.update",
-      entityType: "transaction",
-      entityId: params.id,
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+      execute: async () => {
+        const params = parseOrThrow(idParamSchema, request.params);
+        const body = parseOrThrow(transactionUpdateSchema, request.body);
 
-    return {
-      item: toApiTransaction({ ...updatedRows[0], categoryName: null })
-    };
+        const existingRows = await ctx.db
+          .select()
+          .from(transactions)
+          .where(and(eq(transactions.id, params.id), eq(transactions.userId, identity.userId)))
+          .limit(1);
+
+        const existing = existingRows[0];
+        if (!existing) {
+          throw new AppError(404, "TRANSACTION_NOT_FOUND", "Transaction not found.");
+        }
+
+        const nextDirection = body.direction ?? existing.direction;
+        const hasCategoryPatch = Object.prototype.hasOwnProperty.call(body, "categoryId");
+
+        const nextCategoryId = hasCategoryPatch ? body.categoryId ?? null : existing.categoryId;
+
+        if (nextCategoryId) {
+          await resolveCategoryForTransaction(ctx, {
+            userId: identity.userId,
+            categoryId: nextCategoryId,
+            transactionDirection: nextDirection
+          });
+        }
+
+        const normalizedUpdate = normalizeTransactionPayload({
+          categoryId: nextCategoryId,
+          direction: nextDirection,
+          amount: body.amount ?? Number(existing.amount),
+          currency: body.currency ?? existing.currency,
+          counterparty: body.counterparty ?? existing.counterparty ?? undefined,
+          note: body.note ?? existing.note ?? undefined,
+          occurredAt: body.occurredAt ?? existing.occurredAt
+        });
+
+        const updatedRows = await ctx.db
+          .update(transactions)
+          .set({
+            categoryId: normalizedUpdate.categoryId,
+            direction: normalizedUpdate.direction,
+            amount: normalizedUpdate.amount,
+            currency: normalizedUpdate.currency,
+            counterparty: normalizedUpdate.counterparty ?? null,
+            note: normalizedUpdate.note ?? null,
+            occurredAt: normalizedUpdate.occurredAt,
+            updatedAt: new Date()
+          })
+          .where(and(eq(transactions.id, params.id), eq(transactions.userId, identity.userId)))
+          .returning({
+            id: transactions.id,
+            categoryId: transactions.categoryId,
+            direction: transactions.direction,
+            amount: transactions.amount,
+            currency: transactions.currency,
+            counterparty: transactions.counterparty,
+            note: transactions.note,
+            occurredAt: transactions.occurredAt,
+            createdAt: transactions.createdAt,
+            updatedAt: transactions.updatedAt
+          });
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "transaction.update",
+          entityType: "transaction",
+          entityId: params.id,
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return {
+          item: toApiTransaction({ ...updatedRows[0], categoryName: null })
+        };
+      }
+    });
   });
 
-  app.delete("/api/v1/transactions/:id", async (request) => {
+  app.delete("/api/v1/transactions/:id", async (request, reply) => {
     const identity = requireAuth(request);
-    const params = parseOrThrow(idParamSchema, request.params);
-
-    const deletedRows = await ctx.db
-      .delete(transactions)
-      .where(and(eq(transactions.id, params.id), eq(transactions.userId, identity.userId)))
-      .returning({ id: transactions.id });
-
-    if (!deletedRows[0]) {
-      throw new AppError(404, "TRANSACTION_NOT_FOUND", "Transaction not found.");
-    }
-
-    await ctx.auditService.log({
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
       userId: identity.userId,
-      action: "transaction.delete",
-      entityType: "transaction",
-      entityId: params.id,
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+      execute: async () => {
+        const params = parseOrThrow(idParamSchema, request.params);
 
-    return { success: true };
+        const deletedRows = await ctx.db
+          .delete(transactions)
+          .where(and(eq(transactions.id, params.id), eq(transactions.userId, identity.userId)))
+          .returning({ id: transactions.id });
+
+        if (!deletedRows[0]) {
+          throw new AppError(404, "TRANSACTION_NOT_FOUND", "Transaction not found.");
+        }
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "transaction.delete",
+          entityType: "transaction",
+          entityId: params.id,
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return { success: true };
+      }
+    });
   });
 };

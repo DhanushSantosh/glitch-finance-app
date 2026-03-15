@@ -56,6 +56,12 @@ Audit events are captured for all security and mutation actions via `AuditServic
 
 Each audit log entry stores `request_id` and `ip_address` for full request traceability.
 
+## Idempotent Mutation Guardrail
+
+- Authenticated mutation routes support `Idempotency-Key` to prevent duplicate writes during retries.
+- Idempotency records are scoped by user + method + route + key and expire automatically.
+- Reusing a key with a different payload is blocked with `409 IDEMPOTENCY_KEY_CONFLICT`.
+
 ## Sensitive Data Handling
 
 - Never log raw OTP values to production logs.

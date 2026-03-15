@@ -31,6 +31,7 @@ Sprint delivery reference: Sprint 1.1 through MVP completion.
 
 - **NFR-030**: Modular Fastify backend with strict TypeScript typing throughout.
 - **NFR-024** (partial): Consent and mutation audit logging for auth events and all finance mutations (transactions, categories).
+- **NFR-012** (partial): Idempotency-key protection for authenticated mutation retries (create/update/delete finance writes).
 
 ## Partially Implemented (Deliberate Deferrals)
 

@@ -105,6 +105,22 @@ Unique: `(user_id, consent_key)`
 - `metadata` (jsonb)
 - `request_id`, `ip_address`, `created_at`
 
+### `idempotency_keys`
+
+- `id` (uuid, pk)
+- `user_id` -> `users.id`
+- `request_method`, `request_route`
+- `key` (idempotency key value)
+- `request_hash` (hashed params/query/body fingerprint)
+- `response_status` nullable
+- `response_body` nullable jsonb
+- `created_at`, `expires_at`, `completed_at`
+
+Indexes and constraints:
+
+- Unique: `(user_id, request_method, request_route, key)`
+- Index: `(expires_at)`
+
 ## Migration Workflow
 
 From repo root:

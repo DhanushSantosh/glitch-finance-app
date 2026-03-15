@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AppContext } from "../../context.js";
 import { consents } from "../../db/schema.js";
 import { requireAuth } from "../../utils/auth.js";
+import { executeIdempotent } from "../../utils/idempotency.js";
 import { parseOrThrow } from "../../utils/validation.js";
 
 const intentSchema = z.object({
@@ -31,47 +32,55 @@ export const registerConsentRoutes = async (app: FastifyInstance, ctx: AppContex
     };
   });
 
-  app.post("/api/v1/consents/sms-import-intent", async (request) => {
+  app.post("/api/v1/consents/sms-import-intent", async (request, reply) => {
     const identity = requireAuth(request);
-    const body = parseOrThrow(intentSchema, request.body);
-
-    await ctx.db
-      .insert(consents)
-      .values({
-        userId: identity.userId,
-        consentKey: "sms_import",
-        enabled: false,
-        legalTextVersion: ctx.env.SMS_DISCLOSURE_VERSION,
-        capturedAt: new Date()
-      })
-      .onConflictDoUpdate({
-        target: [consents.userId, consents.consentKey],
-        set: {
-          enabled: false,
-          legalTextVersion: ctx.env.SMS_DISCLOSURE_VERSION,
-          capturedAt: new Date()
-        }
-      });
-
-    await ctx.auditService.log({
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
       userId: identity.userId,
-      action: "consent.sms_import_intent",
-      entityType: "consent",
-      entityId: "sms_import",
-      metadata: {
-        requestedEnabled: body.enabled,
-        featureAvailable: false
-      },
-      requestId: request.id,
-      ipAddress: request.ip
-    });
+      execute: async () => {
+        const body = parseOrThrow(intentSchema, request.body);
 
-    return {
-      acknowledged: true,
-      featureAvailable: false,
-      enabled: false,
-      requestedEnabled: body.enabled,
-      legalTextVersion: ctx.env.SMS_DISCLOSURE_VERSION
-    };
+        await ctx.db
+          .insert(consents)
+          .values({
+            userId: identity.userId,
+            consentKey: "sms_import",
+            enabled: false,
+            legalTextVersion: ctx.env.SMS_DISCLOSURE_VERSION,
+            capturedAt: new Date()
+          })
+          .onConflictDoUpdate({
+            target: [consents.userId, consents.consentKey],
+            set: {
+              enabled: false,
+              legalTextVersion: ctx.env.SMS_DISCLOSURE_VERSION,
+              capturedAt: new Date()
+            }
+          });
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "consent.sms_import_intent",
+          entityType: "consent",
+          entityId: "sms_import",
+          metadata: {
+            requestedEnabled: body.enabled,
+            featureAvailable: false
+          },
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        return {
+          acknowledged: true,
+          featureAvailable: false,
+          enabled: false,
+          requestedEnabled: body.enabled,
+          legalTextVersion: ctx.env.SMS_DISCLOSURE_VERSION
+        };
+      }
+    });
   });
 };

@@ -25,6 +25,24 @@ Authorization: Bearer <session_token>
 }
 ```
 
+### Idempotency (Mutation Safety)
+
+For authenticated mutation endpoints (`POST`, `PATCH`, `DELETE`), clients can send:
+
+```http
+Idempotency-Key: <8-128-char-visible-ascii>
+```
+
+Behavior:
+
+- First request with a key executes normally and stores the response for 24 hours.
+- Retry with the same key and identical payload returns the original response with header:
+  - `x-idempotent-replay: true`
+- Reusing the same key with a different payload returns:
+  - `409 IDEMPOTENCY_KEY_CONFLICT`
+- If a keyed request is still processing, API returns:
+  - `409 IDEMPOTENCY_IN_PROGRESS`
+
 ## Health and Bootstrap
 
 ### `GET /health`

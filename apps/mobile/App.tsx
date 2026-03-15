@@ -1,7 +1,8 @@
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, AppState, BackHandler, Platform, StatusBar as NativeStatusBar, Text, View } from "react-native";
+import { ActivityIndicator, Alert, AppState, BackHandler, Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
 import { BottomTabBar, InlineMessage } from "./src/components/ui";
@@ -1082,60 +1083,60 @@ export default function App() {
     );
   };
 
-  if (isBooting) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.safeArea}>
-          <StatusBar style="light" />
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={theme.color.actionPrimary} />
-            <Text style={styles.loadingText}>Preparing your workspace...</Text>
-          </View>
+  const renderShellContent = () => {
+    if (isBooting) {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.color.actionPrimary} />
+          <Text style={styles.loadingText}>Preparing your workspace...</Text>
         </View>
-      </GestureHandlerRootView>
-    );
-  }
+      );
+    }
 
-  if (!isAuthenticated) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.safeArea}>
-          <StatusBar style="light" />
-          <View style={styles.authShell}>
-            <View style={styles.authMetaWrap}>
-              <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
-            </View>
-            <View style={styles.flexFill}>
-              {authStage === "login" ? (
-                <LoginScreen onRequestOtp={handleRequestOtp} />
-              ) : (
-                <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
-              )}
-            </View>
+    if (!isAuthenticated) {
+      return (
+        <View style={styles.authShell}>
+          <View style={styles.authMetaWrap}>
+            <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
+          </View>
+          <View style={styles.flexFill}>
+            {authStage === "login" ? (
+              <LoginScreen onRequestOtp={handleRequestOtp} />
+            ) : (
+              <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
+            )}
           </View>
         </View>
-      </GestureHandlerRootView>
+      );
+    }
+
+    return (
+      <View style={styles.appShell}>
+        <View style={styles.flexFill}>{renderActiveContent()}</View>
+        {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
+      </View>
     );
-  }
+  };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.safeArea}>
-        <StatusBar style="light" />
-        <View style={styles.appShell}>
-          <View style={styles.flexFill}>{renderActiveContent()}</View>
-          {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
-        </View>
-      </View>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+          <StatusBar style="light" />
+          {renderShellContent()}
+        </SafeAreaView>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
 const styles = createStyles(() => ({
+  root: {
+    flex: 1
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: "#000000", // Force true black for safe area
-    paddingTop: Platform.OS === "android" ? (NativeStatusBar.currentHeight ?? 0) : 0
+    backgroundColor: "#000000" // Force true black for safe area
   },
   flexFill: {
     flex: 1
