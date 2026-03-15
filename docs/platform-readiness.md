@@ -71,6 +71,7 @@ Production readiness requirement:
 2. Add delivery monitoring (send success rate and latency).
 3. Alert on elevated `OTP_DELIVERY_FAILED` rates.
 4. Keep debug OTP exposure disabled in non-development deployments.
+5. Keep `SMS_IMPORT_SCAN_ENABLED=false` until explicit rollout approval.
 
 ## Monitoring and Alerting Baseline
 

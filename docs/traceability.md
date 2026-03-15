@@ -25,6 +25,7 @@ Sprint delivery reference: Sprint 1.1 through MVP completion.
 
 - **FR-020**: SMS detection disabled by default.
 - **FR-021, FR-022** (partial): Consent intent path and disclosure version surfaced via bootstrap and settings.
+- **FR-023, FR-025** (partial): Explicit-trigger SMS scan API and minimal-field extraction service implemented, gated by consent + disabled-by-default feature flag.
 
 ### Non-Functional
 
@@ -39,7 +40,7 @@ Sprint delivery reference: Sprint 1.1 through MVP completion.
 
 ## Deferred Beyond MVP
 
-- SMS parsing and extraction pipeline (FR-023, FR-024, FR-025, FR-027).
+- SMS auto-read ingestion and stored import lifecycle (FR-024, FR-027).
 - AI insight generation.
 - Subscription entitlement enforcement.
 - Full managed cloud backup policy per production environment.
@@ -63,6 +64,8 @@ Sprint delivery reference: Sprint 1.1 through MVP completion.
 | `apps/api/src/integration/auth-transactions.integration.test.ts` | OTP lifecycle, transaction CRUD, category CRUD, auto-categorization, account deletion, recovery flow |
 | `apps/api/src/integration/reports.integration.test.ts` | Report summary correctness, export contracts, cross-user isolation |
 | `apps/api/src/integration/budgets-goals.integration.test.ts` | Budget/goal CRUD, spend aggregation, cross-user isolation |
+| `apps/api/src/integration/contracts.integration.test.ts` | Strict response/error envelope contract checks |
+| `apps/api/src/integration/imports.integration.test.ts` | SMS scan endpoint default-disable guardrail |
 
 ### Mobile Unit Tests
 

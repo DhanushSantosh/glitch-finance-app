@@ -32,7 +32,8 @@
 ## SMS Guardrails (Critical Policy)
 
 - SMS detection is disabled by default.
-- No raw SMS content is ingested, parsed, or stored.
+- No background SMS ingestion is active.
+- Explicit scan payloads (when feature-flag enabled) are parsed transiently for minimal fields only; raw SMS body is not persisted.
 - Settings action records intent only via the consent endpoint.
 - API bootstrap explicitly exposes the disabled default flag (`featureFlags.smsImportEnabledByDefault = false`).
 

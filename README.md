@@ -93,6 +93,15 @@ Key variables to configure in `apps/api/.env`:
 | `OTP_HASH_SECRET` | `change-me-in-production-otp-secret` | **Must change in production** |
 | `OTP_PROVIDER` | `console` | `console` or `resend` |
 | `RESEND_API_KEY` | _(empty)_ | Required when `OTP_PROVIDER=resend` |
+| `ALERTS_WEBHOOK_URL` | _(empty)_ | Recommended in staging/production for operational alerts |
+| `ALERTS_COOLDOWN_SECONDS` | `60` | Cooldown for duplicate alert fingerprints |
+| `SLO_MONITOR_ENABLED` | `false` | Enables rolling-window SLO alert checks |
+| `SLO_MONITOR_WINDOW_SECONDS` | `300` | SLO window size in seconds |
+| `SLO_MONITOR_EVALUATION_SECONDS` | `30` | SLO evaluation interval in seconds |
+| `SLO_HTTP_5XX_RATE_THRESHOLD_PERCENT` | `2` | 5xx rate threshold percentage for SLO alert |
+| `SLO_HTTP_5XX_MIN_REQUESTS` | `100` | Minimum request volume before 5xx SLO alerting |
+| `SLO_OTP_DELIVERY_FAILURE_THRESHOLD` | `5` | OTP delivery failure threshold within SLO window |
+| `SMS_IMPORT_SCAN_ENABLED` | `false` | Keeps SMS scan service disabled unless explicitly enabled |
 
 Mobile: set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env`. Use `http://10.0.2.2:4000` for Android emulator, `http://<LAN-IP>:4000` for a physical device.
 
@@ -128,7 +137,7 @@ pnpm backup:create                       # Postgres backup
 
 Base URL: `http://localhost:4000`. All protected routes require `Authorization: Bearer <token>`.
 
-Modules: `auth`, `categories`, `transactions`, `budgets`, `goals`, `reports`, `consents`, `account`, `metrics`
+Modules: `auth`, `categories`, `transactions`, `budgets`, `goals`, `reports`, `consents`, `imports`, `account`, `metrics`
 
 Full contracts: [`docs/api-reference.md`](./docs/api-reference.md)
 

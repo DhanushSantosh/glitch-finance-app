@@ -350,6 +350,34 @@ Behavior:
 - Returns `featureAvailable: false`.
 - Keeps `enabled: false` (SMS import is not active).
 
+## SMS Imports (Guarded Service)
+
+### `POST /api/v1/imports/sms/scan`
+
+Requires auth.
+
+Request body:
+
+```json
+{
+  "messages": [
+    {
+      "messageId": "msg-1",
+      "body": "Rs 1250 debited from A/c to UPI MERCHANT. Ref UTR123456.",
+      "sender": "VK-BANK",
+      "receivedAt": "2026-03-15T10:20:00.000Z"
+    }
+  ]
+}
+```
+
+Guardrails:
+
+- Disabled by default in all environments (`SMS_IMPORT_SCAN_ENABLED=false`).
+- Requires explicit user consent (`consentKey = sms_import`, `enabled = true`).
+- Extracts only minimal transaction fields.
+- Does not persist raw SMS content in database.
+
 ## Metrics
 
 ### `GET /api/v1/metrics`

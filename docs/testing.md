@@ -5,6 +5,7 @@
 ### API Unit Tests
 
 - OTP expiry and attempt policy logic.
+- SMS banking-message parser field extraction guardrails.
 - Transaction validation and normalization rules.
 - Budget validation rules:
   - `YYYY-MM` month format
@@ -17,6 +18,7 @@
 ### API Integration Tests
 
 - OTP request/verify/login/logout lifecycle.
+- API contract envelope checks across auth, transactions, budgets, and goals.
 - Transaction CRUD and user isolation.
 - Transaction list sorting and pagination semantics.
 - Custom category CRUD with ownership and conflict guardrails.
@@ -25,6 +27,7 @@
 - Report export (CSV/PDF) contract checks.
 - Budget CRUD, per-month spend aggregation, and cross-user isolation.
 - Savings goals CRUD and cross-user isolation.
+- SMS scan route remains disabled by default.
 - Bootstrap policy checks for SMS disabled default.
 - Recovery OTP alias flow and account deletion lifecycle.
 

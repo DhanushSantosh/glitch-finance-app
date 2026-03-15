@@ -50,6 +50,7 @@ const envSchema = z
     AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
     AUTH_RATE_LIMIT_MAX_REQUEST_OTP: z.coerce.number().int().min(1).max(20).default(5),
     AUTH_RATE_LIMIT_MAX_VERIFY_OTP: z.coerce.number().int().min(1).max(30).default(10),
+    SMS_IMPORT_SCAN_ENABLED: booleanFromEnv.default(false),
     SMS_DISCLOSURE_VERSION: z.string().default("sms_disclosure_v1"),
     APP_CURRENCY: z.string().length(3).default("INR")
   })

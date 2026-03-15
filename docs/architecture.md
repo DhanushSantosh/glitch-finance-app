@@ -62,6 +62,7 @@ Redis-backed rate limiting with in-memory fallback.
 | `budgets` | `/api/v1/budgets` | Monthly per-category budget plans with live spend aggregation |
 | `goals` | `/api/v1/goals` | Savings goals with progress and completion state |
 | `consents` | `/api/v1/consents/*` | SMS import consent state and intent logging |
+| `imports` | `/api/v1/imports/sms/scan` | Explicit-trigger SMS field extraction with guardrails |
 | `audit` | (internal service) | Immutable audit event writes, called from other modules |
 | `metrics` | `/api/v1/metrics` | Prometheus-compatible scrape endpoint |
 | `alerts` | (internal service) | Webhook alerts for OTP delivery failures and unhandled 5xx errors |
@@ -105,6 +106,7 @@ Controlled via `OTP_PROVIDER=console|resend` environment variable.
 - Default categories (`user_id = null`) are immutable — user CRUD operations are blocked on them.
 - Account deletion removes all user-owned data via Postgres cascade constraints.
 - SMS detection remains disabled by default — no SMS payload is ingested or stored.
+- SMS scan endpoint is disabled by default (`SMS_IMPORT_SCAN_ENABLED=false`) and requires explicit prior consent even when enabled.
 
 ## Report Module Structure
 

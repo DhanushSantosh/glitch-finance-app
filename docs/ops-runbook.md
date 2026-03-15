@@ -48,6 +48,7 @@ API (`apps/api/.env`):
 - `AUTH_RATE_LIMIT_WINDOW_SECONDS`
 - `AUTH_RATE_LIMIT_MAX_REQUEST_OTP`
 - `AUTH_RATE_LIMIT_MAX_VERIFY_OTP`
+- `SMS_IMPORT_SCAN_ENABLED` (must remain `false` unless explicitly approved)
 - `SMS_DISCLOSURE_VERSION`
 - `APP_CURRENCY`
 
