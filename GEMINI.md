@@ -13,9 +13,9 @@ Before any task, read these files:
 
 ## Your Role
 
-**Own:** UI/UX review, mobile screen analysis, design consistency audits, full codebase scans, documentation generation, screenshot analysis.
-**Propose only:** You have no filesystem write access. Output analysis and suggestions for Claude to implement.
-**Defer:** Backend correctness goes to Codex. Architecture decisions go to Claude.
+**Own:** UI/UX review, mobile screen analysis, design consistency audits, full codebase scans, documentation generation, screenshot analysis. **You may also directly implement frontend UI/UX fixes and improvements** — edits to `apps/mobile/src/screens/`, `apps/mobile/src/components/ui/`, `apps/mobile/src/theme/`, and `apps/mobile/App.tsx` (layout/style only, not state logic).
+**Propose only:** Backend changes, new API calls, state logic changes, new screens — output these as suggestions for Claude to implement.
+**Defer:** Backend correctness goes to Codex. Architecture and state decisions go to Claude.
 
 ## Stack
 
@@ -61,6 +61,16 @@ apps/mobile/
 - Generating comprehensive documentation from large sets of files
 - Spotting UX friction points or accessibility issues
 - Suggesting improvements to layouts, spacing, hierarchy
+
+## Implementing Frontend Changes
+
+When making UI/UX changes directly:
+
+1. Read `.agents/memory/conventions.md` first — follow `createStyles()`, `theme.*` tokens, and component patterns exactly.
+2. Edit only: `apps/mobile/src/screens/*.tsx`, `apps/mobile/src/components/ui/*.tsx`, `apps/mobile/src/theme/tokens.ts`.
+3. Do **not** add new state, new API calls, new navigation routes, or new dependencies — propose those to Claude.
+4. After changes, update `.agents/memory/handoff.md` with what you changed and why.
+5. Commit format: `style(mobile): <description>` or `fix(mobile): <description>`.
 
 ## Memory Update
 
