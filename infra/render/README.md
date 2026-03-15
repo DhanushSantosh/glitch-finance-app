@@ -12,6 +12,7 @@ Provisioning manifests:
 3. Provide secret values:
    - `RESEND_API_KEY`
    - `OTP_HASH_SECRET`
+   - `ALERTS_WEBHOOK_URL` (recommended for staging/production)
 4. Configure auth policy env vars explicitly (TTL, max attempts, session lifetime, active session cap, rate limits).
 5. Apply blueprint and verify service health at `/api/v1/status`.
 

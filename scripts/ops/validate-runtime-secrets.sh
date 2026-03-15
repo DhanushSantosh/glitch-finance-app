@@ -36,4 +36,9 @@ if [[ "${deployment_env}" == "production" && "${OTP_PROVIDER}" != "resend" ]]; t
   exit 1
 fi
 
+if [[ "${deployment_env}" == "production" && -z "${ALERTS_WEBHOOK_URL:-}" ]]; then
+  echo "Production requires ALERTS_WEBHOOK_URL for operational alert delivery." >&2
+  exit 1
+fi
+
 echo "Runtime secrets validation passed for ${deployment_env}."

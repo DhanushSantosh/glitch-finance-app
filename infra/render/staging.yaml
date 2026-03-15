@@ -32,6 +32,10 @@ services:
         sync: false
       - key: OTP_HASH_SECRET
         sync: false
+      - key: ALERTS_WEBHOOK_URL
+        sync: false
+      - key: ALERTS_COOLDOWN_SECONDS
+        value: "60"
       - key: AUTH_OTP_TTL_SECONDS
         value: "300"
       - key: AUTH_MAX_OTP_ATTEMPTS

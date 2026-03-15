@@ -77,6 +77,18 @@ export const createApp = async (): Promise<FastifyInstance> => {
     }
 
     request.log.error({ err: error }, "Unhandled request error");
+    void ctx.alertsService.notify({
+      severity: "error",
+      title: "Unhandled API error",
+      message: "A request failed with an unhandled server error.",
+      fingerprint: `http_5xx:${request.method}:${request.routeOptions.url ?? request.url}`,
+      metadata: {
+        requestId: request.id,
+        method: request.method,
+        route: request.routeOptions.url ?? request.url,
+        statusCode: 500
+      }
+    });
     return reply.status(500).send({
       error: {
         code: "INTERNAL_SERVER_ERROR",

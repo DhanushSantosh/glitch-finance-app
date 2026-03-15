@@ -64,6 +64,7 @@ Redis-backed rate limiting with in-memory fallback.
 | `consents` | `/api/v1/consents/*` | SMS import consent state and intent logging |
 | `audit` | (internal service) | Immutable audit event writes, called from other modules |
 | `metrics` | `/api/v1/metrics` | Prometheus-compatible scrape endpoint |
+| `alerts` | (internal service) | Webhook alerts for OTP delivery failures and unhandled 5xx errors |
 
 ## Request Lifecycle
 
@@ -73,7 +74,8 @@ Redis-backed rate limiting with in-memory fallback.
 4. Route-level Zod validation enforces typed input boundaries via `parseOrThrow`.
 5. Module executes DB operations with `user_id` ownership checks.
 6. Audit events are persisted for mutations and security-relevant actions.
-7. Unified error handler in `app.ts` returns structured error envelope; stack traces are never leaked.
+7. `AlertsService` emits throttled webhook notifications for unhandled 5xx failures.
+8. Unified error handler in `app.ts` returns structured error envelope; stack traces are never leaked.
 
 ## Auto-Categorization
 

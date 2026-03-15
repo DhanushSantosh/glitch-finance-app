@@ -4,6 +4,7 @@ import { createDbClient } from "./db/client.js";
 import { env, AppEnv } from "./env.js";
 import { RateLimiter } from "./rate-limit/rate-limiter.js";
 import { AuditService } from "./modules/audit/service.js";
+import { AlertsService } from "./modules/alerts/service.js";
 import { ConsoleOtpProvider, OtpDeliveryProvider, ResendOtpProvider } from "./modules/auth/provider.js";
 import { AuthService } from "./modules/auth/service.js";
 import { ensureDefaultCategories } from "./modules/categories/defaults.js";
@@ -15,6 +16,7 @@ export type AppContext = {
   redis: Redis | null;
   rateLimiter: RateLimiter;
   auditService: AuditService;
+  alertsService: AlertsService;
   authService: AuthService;
 };
 
@@ -114,6 +116,14 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
 
   const rateLimiter = new RateLimiter(redis);
   const auditService = new AuditService(db);
+  const alertsService = new AlertsService({
+    logger,
+    enabled: Boolean(env.ALERTS_WEBHOOK_URL),
+    webhookUrl: env.ALERTS_WEBHOOK_URL,
+    cooldownMs: env.ALERTS_COOLDOWN_SECONDS * 1000,
+    serviceName: "glitch-api",
+    environment: env.NODE_ENV
+  });
   const otpProvider: OtpDeliveryProvider =
     env.OTP_PROVIDER === "resend"
       ? new ResendOtpProvider({
@@ -128,6 +138,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     env,
     rateLimiter,
     auditService,
+    alertsService,
     otpProvider
   });
 
@@ -138,6 +149,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     redis,
     rateLimiter,
     auditService,
+    alertsService,
     authService
   };
 };

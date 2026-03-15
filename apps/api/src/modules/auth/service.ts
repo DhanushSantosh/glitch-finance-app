@@ -6,6 +6,7 @@ import { AppError } from "../../errors.js";
 import { RateLimiter } from "../../rate-limit/rate-limiter.js";
 import { generateOtpCode, generateSessionToken, hashValue } from "../../utils/crypto.js";
 import { AuditService } from "../audit/service.js";
+import { AlertsService } from "../alerts/service.js";
 import { OtpDeliveryProvider } from "./provider.js";
 import { calculateOtpExpiry, isOtpAttemptAllowed, isOtpExpired } from "./otp-policy.js";
 
@@ -33,7 +34,21 @@ type AuthServiceDeps = {
   env: AppEnv;
   rateLimiter: RateLimiter;
   auditService: AuditService;
+  alertsService: AlertsService;
   otpProvider: OtpDeliveryProvider;
+};
+
+const maskEmail = (email: string): string => {
+  const [localPart, domainPart] = email.split("@");
+  if (!localPart || !domainPart) {
+    return "unknown";
+  }
+
+  if (localPart.length === 1) {
+    return `${localPart}***@${domainPart}`;
+  }
+
+  return `${localPart[0]}***${localPart[localPart.length - 1]}@${domainPart}`;
 };
 
 export class AuthService {
@@ -118,6 +133,17 @@ export class AuthService {
         metadata: { email },
         requestId: input.requestId,
         ipAddress: input.ipAddress
+      });
+
+      void this.deps.alertsService.notify({
+        severity: "critical",
+        title: "OTP delivery failed",
+        message: "OTP provider request failed and OTP was rolled back.",
+        fingerprint: `otp_delivery_failed:${email}`,
+        metadata: {
+          requestId: input.requestId,
+          email: maskEmail(email)
+        }
       });
 
       throw new AppError(503, "OTP_DELIVERY_FAILED", "Unable to send OTP right now. Please try again.");

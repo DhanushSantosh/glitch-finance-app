@@ -33,6 +33,8 @@ API (`apps/api/.env`):
 - `OTP_PROVIDER` (`console` or `resend`)
 - `OTP_EMAIL_FROM`
 - `RESEND_API_KEY` (required when `OTP_PROVIDER=resend`)
+- `ALERTS_WEBHOOK_URL` (optional but recommended for staging/production)
+- `ALERTS_COOLDOWN_SECONDS`
 - `AUTH_OTP_TTL_SECONDS`
 - `AUTH_MAX_OTP_ATTEMPTS`
 - `AUTH_SESSION_TTL_DAYS`
@@ -90,7 +92,8 @@ Restart Expo after update.
 
 1. Set `OTP_PROVIDER=resend`.
 2. Set `OTP_EMAIL_FROM` and `RESEND_API_KEY`.
-3. Restart API and verify `/api/v1/auth/request-otp`.
+3. Set `ALERTS_WEBHOOK_URL` for delivery failure alerts.
+4. Restart API and verify `/api/v1/auth/request-otp`.
 
 ## Backup and Restore Scripts
 
@@ -117,6 +120,7 @@ REDIS_URL=... \
 OTP_HASH_SECRET=... \
 OTP_PROVIDER=resend \
 OTP_EMAIL_FROM="Glitch Finance <noreply@app.example.com>" \
+ALERTS_WEBHOOK_URL=https://alerts.example.com/glitch \
 RESEND_API_KEY=... \
 pnpm secrets:validate
 ```

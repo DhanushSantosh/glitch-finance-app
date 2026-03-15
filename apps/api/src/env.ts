@@ -15,6 +15,8 @@ const envSchema = z
     OTP_PROVIDER: z.enum(["console", "resend"]).default("console"),
     OTP_EMAIL_FROM: z.string().min(3).default("Glitch Finance <noreply@glitch.local>"),
     RESEND_API_KEY: z.string().min(1).optional(),
+    ALERTS_WEBHOOK_URL: z.string().url().optional(),
+    ALERTS_COOLDOWN_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),
     AUTH_OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(1800).default(300),
     AUTH_MAX_OTP_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(5),
     AUTH_SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),

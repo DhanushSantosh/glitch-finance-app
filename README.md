@@ -81,6 +81,8 @@ pnpm --filter @glitch/api db:migrate
 | `OTP_PROVIDER` | `console` | OTP delivery mode: `console` (logs to terminal) or `resend` (real email) |
 | `OTP_EMAIL_FROM` | `Glitch Finance <noreply@example.com>` | Sender address used by Resend provider |
 | `RESEND_API_KEY` | _(empty)_ | Required when `OTP_PROVIDER=resend` |
+| `ALERTS_WEBHOOK_URL` | _(empty)_ | Optional webhook URL for server error/OTP delivery alerts |
+| `ALERTS_COOLDOWN_SECONDS` | `60` | Minimum repeat interval for identical alerts |
 | `AUTH_OTP_TTL_SECONDS` | `300` | OTP code expiry window (5 minutes) |
 | `AUTH_MAX_OTP_ATTEMPTS` | `5` | Max verification attempts before OTP is invalidated |
 | `AUTH_SESSION_TTL_DAYS` | `30` | Session token lifetime |
@@ -180,7 +182,7 @@ pnpm --filter @glitch/mobile test                 # mobile unit tests
 
 ```bash
 pnpm secrets:otp                                  # generate a high-entropy OTP_HASH_SECRET value
-pnpm secrets:validate                             # validate required runtime secrets (uses current env)
+pnpm secrets:validate                             # validate required runtime secrets (production requires ALERTS_WEBHOOK_URL)
 pnpm backup:create                                # create a Postgres backup (requires DATABASE_URL set)
 ./scripts/backup/postgres-restore.sh <file.dump>  # restore from a backup file
 ```

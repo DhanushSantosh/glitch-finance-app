@@ -36,6 +36,7 @@ This file tracks the requested implementation batch and completion state.
   - Rotation helper retained (`pnpm secrets:otp`).
 - [x] Monitoring baseline:
   - Prometheus metrics endpoint (`/api/v1/metrics`).
+  - Webhook alert service for unhandled 5xx + OTP delivery failure events.
 - [x] Backup/restore automation + DR drill:
   - Backup and restore scripts.
   - Manual DR drill GitHub workflow.
