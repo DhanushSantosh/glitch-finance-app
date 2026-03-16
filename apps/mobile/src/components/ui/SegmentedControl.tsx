@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Pressable, Text, View, LayoutChangeEvent } from "react-native";
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring,
-  interpolateColor
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
 } from "react-native-reanimated";
 import { createStyles, theme } from "../../theme";
 
@@ -69,7 +68,7 @@ export const SegmentedControl = <T extends string>({ options, selected, onSelect
         {layoutReady && (
           <Animated.View style={[styles.activePill, animatedPillStyle]} />
         )}
-        {options.map((option, index) => {
+        {options.map((option) => {
           const active = option.value === selected;
           return (
             <Pressable
