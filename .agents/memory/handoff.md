@@ -16,6 +16,7 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-16
 
 **Done:**
+- Standardized card action buttons (Edit/Modify and Delete/Clear/Remove) across `BudgetsScreen`, `CategoryManagerScreen`, and `TransactionsScreen` to match the refined styles from `GoalsScreen`.
 - Updated UI on `GoalsScreen` objectives cards: removed hardcoded colors, enhanced progress bar visibility, refined tap targets/borders for secondary actions, and fixed cramped Quick Inject layout with flex-wrap pill buttons.
 - Fixed UI congestion on `GoalFormScreen` (removed split view on balance/deadline, adjusted flex ratios on capital target row).
 - Added API idempotency layer for authenticated mutations (`Idempotency-Key`) with replay support and conflict protection.

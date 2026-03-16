@@ -151,8 +151,18 @@ export const BudgetsScreen = ({
               </View>
 
               <View style={styles.actionRow}>
-                <Button label="Modify" variant="ghost" onPress={() => onEdit(item)} style={styles.smallAction} />
-                <Button label="Clear" variant="ghost" onPress={() => void onDelete(item)} style={[styles.smallAction, { backgroundColor: "rgba(255, 51, 102, 0.1)" }]} />
+                <Button 
+                  label="Modify" 
+                  variant="ghost" 
+                  onPress={() => onEdit(item)} 
+                  style={styles.smallAction} 
+                />
+                <Button 
+                  label={<Text style={{ color: theme.color.actionDanger, fontWeight: "700" }}>Clear</Text>} 
+                  variant="ghost" 
+                  onPress={() => void onDelete(item)} 
+                  style={styles.smallActionDanger} 
+                />
               </View>
             </ListItem>
           );
@@ -276,8 +286,18 @@ const styles = createStyles(() => ({
   },
   smallAction: {
     flex: 1,
-    minHeight: 36,
-    paddingVertical: 0
+    minHeight: 40,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle
+  },
+  smallActionDanger: {
+    flex: 1,
+    minHeight: 40,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: theme.color.actionDanger,
+    backgroundColor: "transparent"
   },
   positive: { color: theme.color.statusSuccess },
   negative: { color: theme.color.statusError },

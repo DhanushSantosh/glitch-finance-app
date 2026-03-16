@@ -52,8 +52,18 @@ export const CategoryManagerScreen = ({
                 }
               >
                 <View style={styles.actionRow}>
-                  <Button label="Edit" variant="ghost" onPress={() => onEdit(item)} style={styles.smallAction} />
-                  <Button label="Delete" variant="danger" onPress={() => void onDelete(item)} style={styles.smallAction} />
+                  <Button 
+                    label="Edit" 
+                    variant="ghost" 
+                    onPress={() => onEdit(item)} 
+                    style={styles.smallAction} 
+                  />
+                  <Button 
+                    label={<Text style={{ color: theme.color.actionDanger, fontWeight: "700" }}>Delete</Text>} 
+                    variant="ghost" 
+                    onPress={() => void onDelete(item)} 
+                    style={styles.smallActionDanger} 
+                  />
                 </View>
               </ListItem>
             ))}
@@ -99,11 +109,26 @@ const styles = createStyles(() => ({
   },
   actionRow: {
     flexDirection: "row",
-    gap: theme.spacing.sm
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.color.borderSubtle,
+    paddingTop: theme.spacing.sm
   },
   smallAction: {
     flex: 1,
-    minHeight: 42
+    minHeight: 40,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle
+  },
+  smallActionDanger: {
+    flex: 1,
+    minHeight: 40,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: theme.color.actionDanger,
+    backgroundColor: "transparent"
   },
   pill: {
     backgroundColor: theme.color.bgElevated,
