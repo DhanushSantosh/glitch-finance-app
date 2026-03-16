@@ -1,0 +1,93 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: "🚀 Features"
+    labels:
+      - feature
+      - feat
+    collapse-after: 10
+  - title: "🐛 Bug Fixes"
+    labels:
+      - fix
+      - bugfix
+      - bug
+    collapse-after: 10
+  - title: "🎨 UI / Style"
+    labels:
+      - style
+      - ui
+    collapse-after: 10
+  - title: "♻️ Refactoring"
+    labels:
+      - refactor
+    collapse-after: 10
+  - title: "🏎️ Performance"
+    labels:
+      - perf
+  - title: "🔒 Security"
+    labels:
+      - security
+  - title: "📦 Dependencies"
+    labels:
+      - chore
+      - deps
+    collapse-after: 5
+  - title: "📝 Documentation"
+    labels:
+      - docs
+    collapse-after: 5
+
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: '\<*_&'
+
+autolabeler:
+  - label: feat
+    title:
+      - "/^feat/i"
+  - label: fix
+    title:
+      - "/^fix/i"
+  - label: style
+    title:
+      - "/^style/i"
+  - label: refactor
+    title:
+      - "/^refactor/i"
+  - label: perf
+    title:
+      - "/^perf/i"
+  - label: docs
+    title:
+      - "/^docs/i"
+  - label: chore
+    title:
+      - "/^chore/i"
+
+version-resolver:
+  major:
+    labels:
+      - breaking-change
+      - major
+  minor:
+    labels:
+      - feat
+      - feature
+  patch:
+    labels:
+      - fix
+      - bugfix
+      - bug
+      - style
+      - refactor
+      - perf
+      - docs
+      - chore
+  default: patch
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: $PREVIOUS_TAG...v$RESOLVED_VERSION

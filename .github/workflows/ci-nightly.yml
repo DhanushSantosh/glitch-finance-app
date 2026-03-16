@@ -1,0 +1,77 @@
+name: CI - Nightly Health Check
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 01:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: glitch
+          POSTGRES_PASSWORD: glitch
+          POSTGRES_DB: glitch
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U glitch -d glitch"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://glitch:glitch@127.0.0.1:5432/glitch
+      REDIS_URL: redis://127.0.0.1:6379
+      OTP_HASH_SECRET: test-secret-at-least-16
+      OTP_PROVIDER: console
+      MOBILE_APP_ORIGIN: http://localhost:8081
+      AUTH_MAX_ACTIVE_SESSIONS: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Migration drift check
+        run: pnpm db:check
+
+      - name: API tests
+        run: pnpm --filter @glitch/api test
+
+      - name: Mobile tests
+        run: pnpm --filter @glitch/mobile test
