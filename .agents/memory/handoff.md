@@ -17,6 +17,7 @@ This file is updated at the END of every work session. It captures exactly what 
 
 **Done:**
 - Created a custom `SelectField` component for the mobile UI and updated `ProfileScreen` to use it for Timezone, Locale, and Currency inputs. Generated an exhaustive list of Intl-supported timezones and currencies via a Node script to populate these dropdowns.
+- Upgraded the regional settings form with a searchable Country -> City cascading dropdown system that smartly defaults the timezone, locale, and currency based on the country selection.
 - Added a dynamic, rotating greeting message with the user's name to the `DashboardScreen` that updates periodically.
 - Removed the manual Profile Picture URL text input field from `ProfileScreen` to encourage standard file/gallery uploads.
 - Replaced the 'Settings' icon in the `BottomTabBar` with a 'User' icon, and implemented dynamic rendering of the user's custom profile picture if available.

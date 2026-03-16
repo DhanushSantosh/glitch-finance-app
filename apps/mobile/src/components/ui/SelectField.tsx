@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { View, Text, Modal, FlatList, Pressable, SafeAreaView } from "react-native";
+import { useState, useMemo } from "react";
+import { View, Text, Modal, FlatList, Pressable, SafeAreaView, TextInput } from "react-native";
 import { createStyles, theme } from "../../theme";
-import { ChevronDown, Check, X } from "lucide-react-native";
+import { ChevronDown, Check, X, Search } from "lucide-react-native";
 import { TextField } from "./TextField";
 
 type Option = {
@@ -15,16 +15,27 @@ type SelectFieldProps = {
   options: Option[];
   onSelect: (value: string) => void;
   placeholder?: string;
+  searchable?: boolean;
 };
 
-export const SelectField = ({ label, value, options, onSelect, placeholder }: SelectFieldProps) => {
+export const SelectField = ({ label, value, options, onSelect, placeholder, searchable = false }: SelectFieldProps) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
   const selectedOption = options.find((opt) => opt.value === value);
   const displayValue = selectedOption ? selectedOption.label : value;
 
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchQuery.trim()) return options;
+    const query = searchQuery.toLowerCase().trim();
+    return options.filter((opt) => 
+      opt.label.toLowerCase().includes(query) || opt.value.toLowerCase().includes(query)
+    );
+  }, [options, searchable, searchQuery]);
+
   return (
     <>
-      <Pressable onPress={() => setModalVisible(true)}>
+      <Pressable onPress={() => { setSearchQuery(""); setModalVisible(true); }}>
         <View pointerEvents="none">
           <TextField
             label={label}
@@ -48,9 +59,29 @@ export const SelectField = ({ label, value, options, onSelect, placeholder }: Se
                 <X size={24} color={theme.color.textPrimary} />
               </Pressable>
             </View>
+            
+            {searchable && (
+              <View style={styles.searchContainer}>
+                <Search size={18} color={theme.color.textMuted} style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder={`Search ${label}...`}
+                  placeholderTextColor={theme.color.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
+
             <FlatList
-              data={options}
+              data={filteredOptions}
               keyExtractor={(item) => item.value}
+              keyboardShouldPersistTaps="handled"
+              initialNumToRender={20}
+              maxToRenderPerBatch={20}
+              windowSize={5}
               renderItem={({ item }) => (
                 <Pressable
                   style={styles.optionRow}
@@ -66,6 +97,11 @@ export const SelectField = ({ label, value, options, onSelect, placeholder }: Se
                 </Pressable>
               )}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No results found.</Text>
+                </View>
+              )}
             />
           </SafeAreaView>
         </View>
@@ -89,7 +125,7 @@ const styles = createStyles(() => ({
     backgroundColor: theme.color.bgBase,
     borderTopLeftRadius: theme.radius.lg,
     borderTopRightRadius: theme.radius.lg,
-    maxHeight: "80%",
+    maxHeight: "85%",
     minHeight: "50%",
   },
   modalHeader: {
@@ -108,6 +144,27 @@ const styles = createStyles(() => ({
   },
   closeButton: {
     padding: theme.spacing.xs,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.color.surfaceMuted,
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle,
+  },
+  searchIcon: {
+    marginRight: theme.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    height: 44,
+    color: theme.color.textPrimary,
+    fontSize: theme.typography.body,
   },
   optionRow: {
     flexDirection: "row",
@@ -128,4 +185,12 @@ const styles = createStyles(() => ({
     backgroundColor: theme.color.borderSubtle,
     marginLeft: theme.spacing.lg,
   },
+  emptyContainer: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: theme.color.textMuted,
+    fontSize: theme.typography.body,
+  }
 }));

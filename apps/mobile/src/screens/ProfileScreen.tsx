@@ -7,6 +7,7 @@ import { AppHeader, Button, Card, InlineMessage, Screen, TextField, SelectField 
 import { createStyles, theme } from "../theme";
 import { UserProfile } from "../types";
 import { timeZoneOptions, currencyOptions, localeOptions } from "../utils/regionalOptions";
+import { smartCountryData, countryOptions } from "../utils/smartRegions";
 
 type AvatarUploadPayload = {
   uri: string;
@@ -88,6 +89,12 @@ const prepareAvatarForUpload = async (uri: string): Promise<AvatarUploadPayload>
   };
 };
 
+// Map existing full country names to ISO codes if needed
+const getCountryCodeFromName = (name: string) => {
+  const match = Object.entries(smartCountryData).find(([_, data]) => data.name === name);
+  return match ? match[0] : "";
+};
+
 export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemoveAvatar }: ProfileScreenProps) => {
   const [firstName, setFirstName] = useState(profile.firstName ?? "");
   const [lastName, setLastName] = useState(profile.lastName ?? "");
@@ -95,11 +102,15 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   const [phoneNumber, setPhoneNumber] = useState(profile.phoneNumber ?? "");
   const [dateOfBirth, setDateOfBirth] = useState(profile.dateOfBirth ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? "");
+  
+  // Try to map existing country back to code, or fallback to empty
+  const [countryCode, setCountryCode] = useState(getCountryCodeFromName(profile.country ?? "") || "");
   const [city, setCity] = useState(profile.city ?? "");
-  const [country, setCountry] = useState(profile.country ?? "");
+  
   const [timezone, setTimezone] = useState(profile.timezone);
   const [locale, setLocale] = useState(profile.locale);
   const [currency, setCurrency] = useState(profile.currency);
+  
   const [occupation, setOccupation] = useState(profile.occupation ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
 
@@ -114,6 +125,27 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   const [removingAvatar, setRemovingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Derived city options based on selected country
+  const cityOptions = useMemo(() => {
+    if (!countryCode || !smartCountryData[countryCode]) return [];
+    return smartCountryData[countryCode].cities.map(c => ({ value: c, label: c }));
+  }, [countryCode]);
+
+  const handleCountrySelect = (newCode: string) => {
+    setCountryCode(newCode);
+    const data = smartCountryData[newCode];
+    if (data) {
+      setCity(""); // Reset city since country changed
+      setTimezone(data.timezone);
+      setLocale(data.locale);
+      setCurrency(data.currency);
+      // Optional: auto-select first city
+      if (data.cities.length > 0) {
+        setCity(data.cities[0]);
+      }
+    }
+  };
 
   const avatarPreview = useMemo(() => {
     const normalized = avatarUrl.trim();
@@ -146,50 +178,42 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   };
 
   const handleChooseFromGallery = async () => {
-    try {
-      setError(null);
+    setError(null);
 
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setError("Gallery permission is required to choose a profile picture.");
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-        aspect: [1, 1]
-      });
-
-      if (result.canceled || !result.assets[0]) {
-        return;
-      }
-
-      await uploadAvatarFromUri(result.assets[0].uri);
-    } catch (pickerError) {
-      setError(pickerError instanceof Error ? pickerError.message : "Unable to open gallery right now.");
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError("Gallery permission is required to choose a profile picture.");
+      return;
     }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+      aspect: [1, 1]
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    await uploadAvatarFromUri(result.assets[0].uri);
   };
 
   const handleChooseFromFiles = async () => {
-    try {
-      setError(null);
+    setError(null);
 
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "image/*",
-        copyToCacheDirectory: true,
-        multiple: false
-      });
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "image/*",
+      copyToCacheDirectory: true,
+      multiple: false
+    });
 
-      if (result.canceled || !result.assets[0]) {
-        return;
-      }
-
-      await uploadAvatarFromUri(result.assets[0].uri);
-    } catch (pickerError) {
-      setError(pickerError instanceof Error ? pickerError.message : "Unable to open files right now.");
+    if (result.canceled || !result.assets[0]) {
+      return;
     }
+
+    await uploadAvatarFromUri(result.assets[0].uri);
   };
 
   const handleRemoveAvatar = async () => {
@@ -231,10 +255,9 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
       return;
     }
 
-    if (avatarUrl.trim().length > 0 && !/^https?:\/\//i.test(avatarUrl.trim())) {
-      setError("Profile picture URL must start with http:// or https://.");
-      return;
-    }
+    const finalCountryName = countryCode && smartCountryData[countryCode] 
+      ? smartCountryData[countryCode].name 
+      : profile.country ?? "";
 
     setError(null);
     setSuccess(null);
@@ -249,7 +272,7 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
         dateOfBirth: dateOfBirth.trim().length > 0 ? dateOfBirth.trim() : null,
         avatarUrl,
         city,
-        country,
+        country: finalCountryName,
         timezone,
         locale,
         currency: normalizedCurrency,
@@ -354,8 +377,35 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
         <Text style={styles.sectionTitle}>REGIONAL PREFERENCES</Text>
 
         <View style={styles.rowFields}>
-          <TextField label="City" value={city} onChangeText={setCity} containerStyle={styles.halfField} />
-          <TextField label="Country" value={country} onChangeText={setCountry} containerStyle={styles.halfField} />
+          <View style={styles.halfField}>
+            <SelectField 
+              label="Country" 
+              value={countryCode} 
+              options={countryOptions} 
+              onSelect={handleCountrySelect} 
+              placeholder="Select Country" 
+              searchable
+            />
+          </View>
+          <View style={styles.halfField}>
+            {cityOptions.length > 0 ? (
+              <SelectField 
+                label="City" 
+                value={city} 
+                options={cityOptions} 
+                onSelect={setCity} 
+                placeholder="Select City" 
+                searchable
+              />
+            ) : (
+              <TextField 
+                label="City" 
+                value={city} 
+                onChangeText={setCity} 
+                placeholder="Enter City" 
+              />
+            )}
+          </View>
         </View>
 
         <SelectField 
@@ -364,6 +414,7 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
           options={timeZoneOptions} 
           onSelect={setTimezone} 
           placeholder="Select Timezone" 
+          searchable
         />
 
         <View style={styles.rowFields}>
@@ -373,6 +424,7 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
               value={locale} 
               options={localeOptions} 
               onSelect={setLocale} 
+              searchable
             />
           </View>
           <View style={styles.halfField}>
@@ -381,6 +433,7 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
               value={currency} 
               options={currencyOptions} 
               onSelect={setCurrency} 
+              searchable
             />
           </View>
         </View>
@@ -542,7 +595,8 @@ const styles = createStyles(() => ({
   },
   rowFields: {
     flexDirection: "row",
-    gap: theme.spacing.md
+    gap: theme.spacing.md,
+    zIndex: 2, // Ensure select dropdown goes over elements below
   },
   halfField: {
     flex: 1

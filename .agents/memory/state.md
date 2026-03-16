@@ -35,6 +35,7 @@ updated_at: 2026-03-16
 - Cleaned up the `ProfileScreen` by removing the manual "Profile Picture URL" text input field as users should rely entirely on device-native file/gallery picker uploads
 - Added a dynamic, rotating greeting message with the user's name to the top of the `DashboardScreen` that cycles every 30 seconds
 - Updated the `ProfileScreen` Regional Preferences section to use a new custom `SelectField` component for Timezone, Locale, and Currency inputs, now populated with an exhaustive, dynamically-generated list of all standard Intl options
+- Added a smart cascading dropdown for Country -> City that automatically pre-fills the corresponding Timezone, Locale, and Currency based on the selected country
 
 ### Infrastructure
 - pnpm monorepo workspaces
