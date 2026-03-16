@@ -306,14 +306,14 @@ export const SettingsScreen = ({
       <Card variant="muted" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
           <View style={styles.titleRow}>
-            <LogOut size={18} color={theme.color.statusError} />
-            <Text style={[styles.sectionTitle, { color: theme.color.statusError }]}>SESSION TERMINATION</Text>
+            <LogOut size={18} color={theme.color.textPrimary} />
+            <Text style={styles.sectionTitle}>SIGN OUT</Text>
           </View>
-          <Text style={styles.sectionSubtitle}>Revoke local access tokens</Text>
+          <Text style={styles.sectionSubtitle}>Securely end your session on this device.</Text>
         </View>
         <Button 
-          label="SEVER CONNECTION" 
-          variant="danger" 
+          label="LOGOUT" 
+          variant="secondary" 
           onPress={() => void handleSignOutTap()} 
           style={styles.signOutButton}
         />
