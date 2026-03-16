@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Text, View } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, publishToast, Screen, Switch } from "../components/ui";
+import { Switch, Text, View } from "react-native";
+import { AppHeader, Button, Card, InlineMessage, publishToast, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User, SlidersHorizontal } from "lucide-react-native";
 import { UserProfile } from "../types";
@@ -233,6 +233,8 @@ export const SettingsScreen = ({
             onValueChange={(value) => {
               void updatePreference({ pushNotificationsEnabled: value });
             }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
           />
         </View>
 
@@ -247,6 +249,8 @@ export const SettingsScreen = ({
             onValueChange={(value) => {
               void updatePreference({ emailNotificationsEnabled: value });
             }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
           />
         </View>
 
@@ -261,6 +265,8 @@ export const SettingsScreen = ({
             onValueChange={(value) => {
               void updatePreference({ weeklySummaryEnabled: value });
             }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
           />
         </View>
 
@@ -275,6 +281,8 @@ export const SettingsScreen = ({
             onValueChange={(value) => {
               void updatePreference({ biometricsEnabled: value });
             }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
           />
         </View>
 
@@ -289,6 +297,8 @@ export const SettingsScreen = ({
             onValueChange={(value) => {
               void updatePreference({ marketingOptIn: value });
             }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
           />
         </View>
       </Card>
