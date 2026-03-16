@@ -1,7 +1,7 @@
-import { Pressable, View, Platform, LayoutChangeEvent } from "react-native";
+import { Pressable, View, Platform, LayoutChangeEvent, Image, Text } from "react-native";
 import { AppTabRoute, tabSpecs } from "../../navigation/routes";
 import { createStyles, theme } from "../../theme";
-import { Home, ListOrdered, PieChart, Target, Settings } from "lucide-react-native";
+import { Home, ListOrdered, PieChart, Target, User } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import Animated, { 
   useAnimatedStyle, 
@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 type BottomTabBarProps = {
   activeRoute: AppTabRoute;
   onChange: (route: AppTabRoute) => void;
+  userAvatar?: string | null;
 };
 
 const routeToIconMap: Record<AppTabRoute, any> = {
@@ -23,7 +24,7 @@ const routeToIconMap: Record<AppTabRoute, any> = {
   transactions: ListOrdered,
   budgets: PieChart,
   goals: Target,
-  settings: Settings
+  settings: User // Changed from Settings to User
 };
 
 const AnimatedIconComponent = ({
@@ -31,19 +32,20 @@ const AnimatedIconComponent = ({
   activeIndex,
   index,
   pillX,
-  tabWidth
+  tabWidth,
+  userAvatar
 }: {
   route: AppTabRoute;
   activeIndex: number;
   index: number;
   pillX: SharedValue<number>;
   tabWidth: SharedValue<number>;
+  userAvatar?: string | null;
 }) => {
   const Icon = routeToIconMap[route];
   const size = 22;
 
   // We cross-fade two icons (one active, one inactive) based on the exact physical position of the pill.
-  // This is 100x more stable than trying to push animated color props into an SVG component.
   
   const activeOpacityStyle = useAnimatedStyle(() => {
     if (tabWidth.value === 0) {
@@ -77,6 +79,20 @@ const AnimatedIconComponent = ({
     return { opacity };
   });
 
+  if (route === "settings" && userAvatar) {
+     const avatarSize = 26; // Slightly larger than standard icon size
+     return (
+        <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={[{ position: 'absolute' }, inactiveOpacityStyle]}>
+            <Image source={{ uri: userAvatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, opacity: 0.6 }} />
+          </Animated.View>
+          <Animated.View style={[{ position: 'absolute' }, activeOpacityStyle]}>
+            <Image source={{ uri: userAvatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} />
+          </Animated.View>
+        </View>
+     );
+  }
+
   if (!Icon) return null;
 
   return (
@@ -91,7 +107,7 @@ const AnimatedIconComponent = ({
   );
 };
 
-export const BottomTabBar = ({ activeRoute, onChange }: BottomTabBarProps) => {
+export const BottomTabBar = ({ activeRoute, onChange, userAvatar }: BottomTabBarProps) => {
   const [layoutReady, setLayoutReady] = useState(false);
   const tabWidth = useSharedValue(0);
   const pillX = useSharedValue(0);
@@ -163,7 +179,8 @@ export const BottomTabBar = ({ activeRoute, onChange }: BottomTabBarProps) => {
                       activeIndex={activeIndex} 
                       index={index} 
                       pillX={pillX} 
-                      tabWidth={tabWidth} 
+                      tabWidth={tabWidth}
+                      userAvatar={userAvatar}
                     />
                   </View>
                 </Pressable>

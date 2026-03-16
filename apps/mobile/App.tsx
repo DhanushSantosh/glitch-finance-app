@@ -879,6 +879,27 @@ export default function App() {
     enqueueReconcileSync(token);
   };
 
+  const handleUploadProfileAvatar = async (payload: { uri: string; fileName: string; mimeType: string }): Promise<string> => {
+    if (!token) {
+      throw new Error("Sign in again and retry.");
+    }
+
+    const updatedProfile = await apiClient.uploadProfileAvatar(token, payload);
+    setProfile(updatedProfile);
+    enqueueReconcileSync(token);
+    return updatedProfile.avatarUrl ?? "";
+  };
+
+  const handleRemoveProfileAvatar = async (): Promise<void> => {
+    if (!token) {
+      throw new Error("Sign in again and retry.");
+    }
+
+    const updatedProfile = await apiClient.removeProfileAvatar(token);
+    setProfile(updatedProfile);
+    enqueueReconcileSync(token);
+  };
+
   const handleSmsIntent = async (enabled: boolean) => {
     if (!token) return;
     await apiClient.logSmsIntent(token, enabled);
@@ -1049,6 +1070,8 @@ export default function App() {
           profile={profile}
           onBack={() => setModalRoute(emptyModalRoute)}
           onSave={handleSaveProfile}
+          onUploadAvatar={handleUploadProfileAvatar}
+          onRemoveAvatar={handleRemoveProfileAvatar}
         />
       );
     }
@@ -1058,6 +1081,7 @@ export default function App() {
         <DashboardScreen
           month={reportMonth}
           summary={reportSummary}
+          profile={profile}
           refreshing={refreshing}
           onMonthChange={setReportMonth}
           onApplyMonth={handleApplyReportMonth}
@@ -1186,7 +1210,7 @@ export default function App() {
     return (
       <View style={styles.appShell}>
         <View style={styles.flexFill}>{renderActiveContent()}</View>
-        {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} /> : null}
+        {modalRoute.kind === "none" ? <BottomTabBar activeRoute={activeTab} onChange={setActiveTab} userAvatar={profile?.avatarUrl} /> : null}
       </View>
     );
   };

@@ -28,6 +28,15 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Glitch to access your photo library so you can set a profile picture."
+        }
+      ],
+      "expo-document-picker"
+    ],
     "extra": {
       "eas": {
         "projectId": "729df5f9-5568-4920-a078-1662320f41ab"

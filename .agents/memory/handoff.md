@@ -16,6 +16,9 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-16
 
 **Done:**
+- Added a dynamic, rotating greeting message with the user's name to the `DashboardScreen` that updates periodically.
+- Removed the manual Profile Picture URL text input field from `ProfileScreen` to encourage standard file/gallery uploads.
+- Replaced the 'Settings' icon in the `BottomTabBar` with a 'User' icon, and implemented dynamic rendering of the user's custom profile picture if available.
 - Standardized card action buttons (Edit/Modify and Delete/Clear/Remove) across `BudgetsScreen`, `CategoryManagerScreen`, and `TransactionsScreen` to match the refined styles from `GoalsScreen`.
 - Updated UI on `GoalsScreen` objectives cards: removed hardcoded colors, enhanced progress bar visibility, refined tap targets/borders for secondary actions, and fixed cramped Quick Inject layout with flex-wrap pill buttons.
 - Fixed UI congestion on `GoalFormScreen` (removed split view on balance/deadline, adjusted flex ratios on capital target row).

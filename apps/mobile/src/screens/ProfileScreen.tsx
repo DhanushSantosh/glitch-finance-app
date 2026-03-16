@@ -1,8 +1,17 @@
 import { useMemo, useState } from "react";
 import { Image, Switch, Text, View } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { UserProfile } from "../types";
+
+type AvatarUploadPayload = {
+  uri: string;
+  fileName: string;
+  mimeType: string;
+};
 
 type ProfileFormSubmit = {
   firstName: string;
@@ -25,6 +34,8 @@ type ProfileScreenProps = {
   profile: UserProfile;
   onBack: () => void;
   onSave: (payload: ProfileFormSubmit) => Promise<void>;
+  onUploadAvatar: (payload: AvatarUploadPayload) => Promise<string>;
+  onRemoveAvatar: () => Promise<void>;
 };
 
 const dateOnlyPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -59,7 +70,24 @@ const toInitials = (displayName: string, email: string): string => {
   return fromEmail.slice(0, 2).toUpperCase();
 };
 
-export const ProfileScreen = ({ profile, onBack, onSave }: ProfileScreenProps) => {
+const prepareAvatarForUpload = async (uri: string): Promise<AvatarUploadPayload> => {
+  const optimized = await ImageManipulator.manipulateAsync(
+    uri,
+    [{ resize: { width: 1024 } }],
+    {
+      compress: 0.82,
+      format: ImageManipulator.SaveFormat.JPEG
+    }
+  );
+
+  return {
+    uri: optimized.uri,
+    fileName: `avatar-${Date.now()}.jpg`,
+    mimeType: "image/jpeg"
+  };
+};
+
+export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemoveAvatar }: ProfileScreenProps) => {
   const [firstName, setFirstName] = useState(profile.firstName ?? "");
   const [lastName, setLastName] = useState(profile.lastName ?? "");
   const [displayName, setDisplayName] = useState(profile.displayName ?? "");
@@ -81,6 +109,8 @@ export const ProfileScreen = ({ profile, onBack, onSave }: ProfileScreenProps) =
   const [marketingOptIn, setMarketingOptIn] = useState(profile.settings.marketingOptIn);
 
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [removingAvatar, setRemovingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -96,6 +126,78 @@ export const ProfileScreen = ({ profile, onBack, onSave }: ProfileScreenProps) =
 
     return normalized;
   }, [avatarUrl]);
+
+  const uploadAvatarFromUri = async (uri: string): Promise<void> => {
+    setError(null);
+    setSuccess(null);
+    setUploadingAvatar(true);
+
+    try {
+      const preparedFile = await prepareAvatarForUpload(uri);
+      const uploadedUrl = await onUploadAvatar(preparedFile);
+      setAvatarUrl(uploadedUrl);
+      setSuccess("Profile picture updated.");
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Unable to upload profile picture right now.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleChooseFromGallery = async () => {
+    setError(null);
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError("Gallery permission is required to choose a profile picture.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+      aspect: [1, 1]
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    await uploadAvatarFromUri(result.assets[0].uri);
+  };
+
+  const handleChooseFromFiles = async () => {
+    setError(null);
+
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "image/*",
+      copyToCacheDirectory: true,
+      multiple: false
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    await uploadAvatarFromUri(result.assets[0].uri);
+  };
+
+  const handleRemoveAvatar = async () => {
+    setError(null);
+    setSuccess(null);
+    setRemovingAvatar(true);
+
+    try {
+      await onRemoveAvatar();
+      setAvatarUrl("");
+      setSuccess("Profile picture removed.");
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "Unable to remove profile picture right now.");
+    } finally {
+      setRemovingAvatar(false);
+    }
+  };
 
   const handleSave = async () => {
     const normalizedCurrency = currency.trim().toUpperCase();
@@ -161,6 +263,8 @@ export const ProfileScreen = ({ profile, onBack, onSave }: ProfileScreenProps) =
     }
   };
 
+  const avatarActionBusy = uploadingAvatar || removingAvatar || saving;
+
   return (
     <Screen keyboardAware>
       <AppHeader title="Your Profile" subtitle="Identity and personalized app settings." />
@@ -184,14 +288,30 @@ export const ProfileScreen = ({ profile, onBack, onSave }: ProfileScreenProps) =
           </View>
         </View>
 
-        <TextField
-          label="Profile Picture URL"
-          value={avatarUrl}
-          onChangeText={setAvatarUrl}
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholder="https://example.com/profile.jpg"
-          helperText="Use an HTTPS image URL for your avatar."
+        <View style={styles.avatarActionRow}>
+          <Button
+            label="Choose from Gallery"
+            variant="secondary"
+            disabled={avatarActionBusy}
+            loading={uploadingAvatar}
+            onPress={() => void handleChooseFromGallery()}
+            style={styles.avatarActionButton}
+          />
+          <Button
+            label="Choose from Files"
+            variant="ghost"
+            disabled={avatarActionBusy}
+            onPress={() => void handleChooseFromFiles()}
+            style={styles.avatarActionButton}
+          />
+        </View>
+
+        <Button
+          label="Remove Picture"
+          variant="danger"
+          disabled={avatarActionBusy || avatarUrl.trim().length === 0}
+          loading={removingAvatar}
+          onPress={() => void handleRemoveAvatar()}
         />
       </Card>
 
@@ -323,8 +443,15 @@ export const ProfileScreen = ({ profile, onBack, onSave }: ProfileScreenProps) =
       </Card>
 
       <View style={styles.actionRow}>
-        <Button label="Back" variant="ghost" onPress={onBack} style={styles.actionButton} />
-        <Button label="Save Profile" variant="primary" loading={saving} onPress={() => void handleSave()} style={styles.actionButton} />
+        <Button label="Back" variant="ghost" onPress={onBack} style={styles.actionButton} disabled={saving} />
+        <Button
+          label="Save Profile"
+          variant="primary"
+          loading={saving}
+          disabled={uploadingAvatar || removingAvatar}
+          onPress={() => void handleSave()}
+          style={styles.actionButton}
+        />
       </View>
     </Screen>
   );
@@ -382,6 +509,14 @@ const styles = createStyles(() => ({
     color: theme.color.textMuted,
     fontSize: theme.typography.bodySmall,
     fontWeight: "600"
+  },
+  avatarActionRow: {
+    flexDirection: "row",
+    gap: theme.spacing.md
+  },
+  avatarActionButton: {
+    flex: 1,
+    minHeight: 46
   },
   rowFields: {
     flexDirection: "row",

@@ -203,6 +203,30 @@ Request body (all fields optional, nested settings optional):
 }
 ```
 
+### `POST /api/v1/profile/avatar`
+
+Requires auth. Uploads a profile image file (`multipart/form-data`, field name `file`).
+
+Constraints:
+
+- Allowed types: `image/jpeg`, `image/png`, `image/webp`
+- Max size: 5 MB
+
+Response:
+
+```json
+{
+  "item": {
+    "id": "uuid",
+    "avatarUrl": "http://localhost:4000/api/v1/profile/avatar/<avatar-key>"
+  }
+}
+```
+
+### `DELETE /api/v1/profile/avatar`
+
+Requires auth. Removes the current profile picture and clears `avatarUrl`.
+
 ## Categories
 
 ### `GET /api/v1/categories`

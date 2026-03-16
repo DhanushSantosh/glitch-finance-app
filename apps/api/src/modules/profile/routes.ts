@@ -1,5 +1,11 @@
+import multipart from "@fastify/multipart";
+import { randomUUID } from "node:crypto";
+import { createReadStream, createWriteStream } from "node:fs";
+import { access, mkdir, unlink } from "node:fs/promises";
+import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import { eq } from "drizzle-orm";
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { AppContext } from "../../context.js";
 import { userProfiles, users } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
@@ -31,6 +37,24 @@ type ProfileRow = {
   marketingOptIn: boolean | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+};
+
+const avatarStorageDirectory = path.resolve(process.cwd(), "storage", "avatars");
+const maxAvatarFileSizeBytes = 5 * 1024 * 1024;
+const avatarRoutePrefix = "/api/v1/profile/avatar/";
+const avatarKeyPattern = /^[a-zA-Z0-9._-]{10,220}$/;
+
+const mimeTypeToExtension: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp"
+};
+
+const extensionToMimeType: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp"
 };
 
 const toNullableText = (value: string | undefined): string | null => {
@@ -121,12 +145,242 @@ const loadUserProfile = async (ctx: AppContext, userId: string): Promise<Profile
 
 const hasOwn = (value: object, key: string): boolean => Object.prototype.hasOwnProperty.call(value, key);
 
+const isFileTooLargeError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as { code?: string; message?: string };
+  return (
+    candidate.code === "FST_REQ_FILE_TOO_LARGE" ||
+    candidate.code === "FST_FILES_LIMIT" ||
+    candidate.message?.toLowerCase().includes("file too large") === true
+  );
+};
+
+const ensureAvatarDirectory = async (): Promise<void> => {
+  await mkdir(avatarStorageDirectory, { recursive: true });
+};
+
+const resolveAvatarFilePath = (avatarKey: string): string => path.join(avatarStorageDirectory, avatarKey);
+
+const extractAvatarKeyFromUrl = (avatarUrl: string | null): string | null => {
+  if (!avatarUrl) {
+    return null;
+  }
+
+  let pathname = avatarUrl;
+  try {
+    pathname = new URL(avatarUrl).pathname;
+  } catch {
+    // Keep raw value when avatarUrl is already a path-like string.
+  }
+
+  const markerIndex = pathname.indexOf(avatarRoutePrefix);
+  if (markerIndex < 0) {
+    return null;
+  }
+
+  const key = pathname.slice(markerIndex + avatarRoutePrefix.length).split("/")[0] ?? "";
+
+  if (!avatarKeyPattern.test(key)) {
+    return null;
+  }
+
+  return key;
+};
+
+const deleteAvatarFileIfExists = async (avatarKey: string): Promise<void> => {
+  const avatarPath = resolveAvatarFilePath(avatarKey);
+  try {
+    await unlink(avatarPath);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+};
+
+const buildAvatarPublicUrl = (request: FastifyRequest, avatarKey: string): string => {
+  const forwardedProtoHeader = request.headers["x-forwarded-proto"];
+  const forwardedHostHeader = request.headers["x-forwarded-host"];
+
+  const protocol =
+    (typeof forwardedProtoHeader === "string" && forwardedProtoHeader.split(",")[0]?.trim()) ||
+    request.protocol ||
+    "http";
+
+  const host =
+    (typeof forwardedHostHeader === "string" && forwardedHostHeader.split(",")[0]?.trim()) ||
+    request.headers.host ||
+    "localhost:4000";
+
+  return `${protocol}://${host}${avatarRoutePrefix}${avatarKey}`;
+};
+
+const updateAvatarUrl = async (ctx: AppContext, userId: string, avatarUrl: string | null): Promise<void> => {
+  await ctx.db
+    .update(userProfiles)
+    .set({
+      avatarUrl,
+      updatedAt: new Date()
+    })
+    .where(eq(userProfiles.userId, userId));
+};
+
 export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContext): Promise<void> => {
+  await app.register(multipart, {
+    attachFieldsToBody: false,
+    limits: {
+      files: 1,
+      fileSize: maxAvatarFileSizeBytes
+    }
+  });
+
+  app.get("/api/v1/profile/avatar/:key", async (request, reply) => {
+    const params = request.params as { key?: string };
+    const key = params.key ?? "";
+
+    if (!avatarKeyPattern.test(key)) {
+      throw new AppError(404, "AVATAR_NOT_FOUND", "Avatar not found.");
+    }
+
+    const avatarPath = resolveAvatarFilePath(key);
+    const extension = path.extname(key).toLowerCase();
+    const mimeType = extensionToMimeType[extension] ?? "application/octet-stream";
+
+    try {
+      await access(avatarPath);
+    } catch {
+      throw new AppError(404, "AVATAR_NOT_FOUND", "Avatar not found.");
+    }
+
+    const stream = createReadStream(avatarPath);
+    reply.header("cache-control", "public, max-age=3600");
+    reply.type(mimeType);
+    return reply.send(stream);
+  });
+
   app.get("/api/v1/profile", async (request) => {
     const identity = requireAuth(request);
     await ensureUserProfileRow(ctx, identity.userId);
     const profile = await loadUserProfile(ctx, identity.userId);
     return { item: toApiProfile(profile) };
+  });
+
+  app.post("/api/v1/profile/avatar", async (request) => {
+    const identity = requireAuth(request);
+    await ensureUserProfileRow(ctx, identity.userId);
+
+    if (!request.isMultipart()) {
+      throw new AppError(400, "AVATAR_FILE_REQUIRED", "Select an image file to upload.");
+    }
+
+    const existingProfile = await loadUserProfile(ctx, identity.userId);
+    const previousAvatarKey = extractAvatarKeyFromUrl(existingProfile.avatarUrl);
+
+    let avatarKey: string | null = null;
+
+    try {
+      const file = await request.file();
+      if (!file) {
+        throw new AppError(400, "AVATAR_FILE_REQUIRED", "Select an image file to upload.");
+      }
+
+      const extension = mimeTypeToExtension[file.mimetype];
+      if (!extension) {
+        throw new AppError(400, "INVALID_AVATAR_FILE_TYPE", "Only JPEG, PNG, or WEBP images are supported.");
+      }
+
+      avatarKey = `${identity.userId}-${Date.now()}-${randomUUID()}.${extension}`;
+      await ensureAvatarDirectory();
+
+      const destinationPath = resolveAvatarFilePath(avatarKey);
+      await pipeline(file.file, createWriteStream(destinationPath));
+
+      const avatarUrl = buildAvatarPublicUrl(request, avatarKey);
+      await updateAvatarUrl(ctx, identity.userId, avatarUrl);
+
+      if (previousAvatarKey && previousAvatarKey !== avatarKey) {
+        try {
+          await deleteAvatarFileIfExists(previousAvatarKey);
+        } catch (error) {
+          request.log.warn({ error, previousAvatarKey }, "Unable to delete previous avatar file.");
+        }
+      }
+
+      await ctx.auditService.log({
+        userId: identity.userId,
+        action: "profile.avatar_upload",
+        entityType: "user_profile",
+        entityId: identity.userId,
+        metadata: {
+          avatarKey,
+          mimeType: file.mimetype
+        },
+        requestId: request.id,
+        ipAddress: request.ip
+      });
+
+      const updatedProfile = await loadUserProfile(ctx, identity.userId);
+      return { item: toApiProfile(updatedProfile) };
+    } catch (error) {
+      if (avatarKey) {
+        try {
+          await deleteAvatarFileIfExists(avatarKey);
+        } catch (cleanupError) {
+          request.log.warn({ cleanupError, avatarKey }, "Unable to clean up failed avatar upload file.");
+        }
+      }
+
+      if (isFileTooLargeError(error)) {
+        throw new AppError(413, "AVATAR_FILE_TOO_LARGE", `Avatar image must be under ${maxAvatarFileSizeBytes} bytes.`);
+      }
+
+      throw error;
+    }
+  });
+
+  app.delete("/api/v1/profile/avatar", async (request, reply) => {
+    const identity = requireAuth(request);
+
+    return executeIdempotent({
+      ctx,
+      request,
+      reply,
+      userId: identity.userId,
+      execute: async () => {
+        await ensureUserProfileRow(ctx, identity.userId);
+
+        const existingProfile = await loadUserProfile(ctx, identity.userId);
+        const previousAvatarKey = extractAvatarKeyFromUrl(existingProfile.avatarUrl);
+
+        await updateAvatarUrl(ctx, identity.userId, null);
+
+        if (previousAvatarKey) {
+          try {
+            await deleteAvatarFileIfExists(previousAvatarKey);
+          } catch (error) {
+            request.log.warn({ error, previousAvatarKey }, "Unable to delete avatar file while clearing profile picture.");
+          }
+        }
+
+        await ctx.auditService.log({
+          userId: identity.userId,
+          action: "profile.avatar_remove",
+          entityType: "user_profile",
+          entityId: identity.userId,
+          requestId: request.id,
+          ipAddress: request.ip
+        });
+
+        const updatedProfile = await loadUserProfile(ctx, identity.userId);
+        return {
+          item: toApiProfile(updatedProfile)
+        };
+      }
+    });
   });
 
   app.patch("/api/v1/profile", async (request, reply) => {

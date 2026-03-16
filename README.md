@@ -70,6 +70,12 @@ pnpm dev            # API + Expo (use Expo Go QR for device)
 
 The dev scripts automatically start and wait for the database containers before launching the API.
 
+If you pull native module updates (for example image picker/document picker), restart Metro and rebuild the app binary once:
+
+```bash
+pnpm --filter @glitch/mobile exec npx expo prebuild
+```
+
 ---
 
 ## Dev auth flow

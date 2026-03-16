@@ -31,6 +31,9 @@ updated_at: 2026-03-16
 - Fixed UI congestion on `GoalFormScreen` by adjusting field layouts and flex ratios for a cleaner aesthetic
 - Updated UI on `GoalsScreen` objectives cards: improved Quick Inject layout to flex-wrap with refined pill buttons, thickened progress bars, and restyled Clear/Modify buttons for better visual hierarchy and adherence to design tokens
 - Standardized card action buttons (Edit/Modify and Delete/Clear/Remove) across `BudgetsScreen`, `CategoryManagerScreen`, and `TransactionsScreen` to match the refined styles from `GoalsScreen`
+- Replaced the 'Settings' icon in the `BottomTabBar` with a 'User' icon, and implemented dynamic rendering of the user's profile picture if one is uploaded
+- Cleaned up the `ProfileScreen` by removing the manual "Profile Picture URL" text input field as users should rely entirely on device-native file/gallery picker uploads
+- Added a dynamic, rotating greeting message with the user's name to the top of the `DashboardScreen` that cycles every 30 seconds
 
 ### Infrastructure
 - pnpm monorepo workspaces

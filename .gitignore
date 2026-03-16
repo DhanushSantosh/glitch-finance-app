@@ -22,3 +22,6 @@ apps/*/.turbo
 
 # Local databases
 infra/data
+
+# API Storage
+apps/api/storage

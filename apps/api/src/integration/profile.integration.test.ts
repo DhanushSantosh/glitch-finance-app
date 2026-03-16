@@ -207,4 +207,49 @@ describe("profile integration", () => {
 
     expect(response.statusCode).toBe(401);
   });
+
+  it("rejects avatar upload without a file payload", async () => {
+    const auth = await authViaOtp(app, `profile-avatar-missing-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/profile/avatar",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+    const json = response.json() as { error: { code: string } };
+    expect(json.error.code).toBe("AVATAR_FILE_REQUIRED");
+  });
+
+  it("supports avatar removal endpoint", async () => {
+    const auth = await authViaOtp(app, `profile-avatar-remove-${randomUUID()}@example.com`);
+
+    const seedResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        avatarUrl: "https://images.example.com/avatar-to-remove.png"
+      }
+    });
+
+    expect(seedResponse.statusCode).toBe(200);
+
+    const removeResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/profile/avatar",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      }
+    });
+
+    expect(removeResponse.statusCode).toBe(200);
+    const removedJson = removeResponse.json() as { item: { avatarUrl: string | null } };
+    expect(removedJson.item.avatarUrl).toBeNull();
+  });
 });

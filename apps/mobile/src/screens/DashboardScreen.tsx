@@ -1,14 +1,16 @@
 import { Text, View, Dimensions } from "react-native";
 import { AppHeader, Button, Card, EmptyState, ListItem, Screen, StatTile, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { ReportSummary } from "../types";
+import { ReportSummary, UserProfile } from "../types";
 import { formatDateToken, formatMoney } from "../utils/format";
 import { Wallet, TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from "lucide-react-native";
 import Svg, { Path, Defs, LinearGradient, Stop, Circle } from "react-native-svg";
+import { useEffect, useState } from "react";
 
 type DashboardScreenProps = {
   month: string;
   summary: ReportSummary | null;
+  profile?: UserProfile | null;
   refreshing: boolean;
   onMonthChange: (value: string) => void;
   onApplyMonth: () => Promise<void>;
@@ -34,19 +36,43 @@ const createBezierPath = (points: {x: number, y: number}[]) => {
   return d;
 };
 
+const greetings = [
+  "Looking wealthy,",
+  "Cash money,",
+  "Stay liquid,",
+  "Welcome back,",
+  "Big moves,",
+  "Hello boss,",
+  "Money talks,"
+];
+
 export const DashboardScreen = ({
   month,
   summary,
+  profile,
   refreshing,
   onMonthChange,
   onApplyMonth,
   onRefresh,
   onOpenTransactions
 }: DashboardScreenProps) => {
+  const [greetingIndex, setGreetingIndex] = useState(0);
+
+  useEffect(() => {
+    // Change greeting every 30 seconds
+    const interval = setInterval(() => {
+      setGreetingIndex((prev) => (prev + 1) % greetings.length);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const currency = summary?.totals.currency ?? "INR";
   const latestSeries = summary?.dailySeries.slice(-7) ?? [];
   const netFlow = summary?.totals.net ?? 0;
   const isPositiveFlow = netFlow >= 0;
+
+  const resolvedName = profile?.displayName?.trim() || profile?.firstName?.trim() || "Agent";
+  const currentGreeting = greetings[greetingIndex];
 
   // Chart Calculations
   const chartHeight = 140;
@@ -68,8 +94,7 @@ export const DashboardScreen = ({
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <AppHeader
-        title="GLITCH"
-        subtitle="V1.0 Quantum Telemetry"
+        title={`${currentGreeting}\n${resolvedName}`}
         rightSlot={<Button label="+" variant="primary" onPress={onOpenTransactions} style={{ minHeight: 44, width: 44, borderRadius: 22, paddingHorizontal: 0 }} />}
       />
 

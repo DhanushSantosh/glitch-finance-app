@@ -179,7 +179,8 @@ Structure:
 3. Identity `Card`:
    - Avatar preview/fallback initials
    - Name/email summary
-   - Avatar URL field
+   - Avatar actions (`Choose from Gallery`, `Choose from Files`, `Remove Picture`)
+   - Optional avatar URL fallback field
 4. Personal details `Card`:
    - First name, last name, display name
    - Phone number, date of birth, occupation
@@ -196,6 +197,7 @@ Structure:
 
 Behavior contract:
 - Save performs partial profile update via `/api/v1/profile`.
+- Avatar actions upload/remove profile photo via `/api/v1/profile/avatar`.
 - Date of birth uses `YYYY-MM-DD`.
 - Currency uses a 3-letter uppercase code.
 - Invalid avatar URL is blocked with inline error.

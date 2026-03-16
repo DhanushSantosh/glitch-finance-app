@@ -62,7 +62,7 @@ Redis-backed rate limiting with in-memory fallback.
 | `reports` | `/api/v1/reports/summary`, `/api/v1/reports/export` | Monthly aggregated summaries, CSV/PDF export |
 | `budgets` | `/api/v1/budgets` | Monthly per-category budget plans with live spend aggregation |
 | `goals` | `/api/v1/goals` | Savings goals with progress and completion state |
-| `profile` | `/api/v1/profile` | User profile details and per-profile preference settings |
+| `profile` | `/api/v1/profile`, `/api/v1/profile/avatar` | User profile details, avatar upload/remove, and per-profile preference settings |
 | `consents` | `/api/v1/consents/*` | SMS import consent state and intent logging |
 | `imports` | `/api/v1/imports/sms/scan` | Explicit-trigger SMS field extraction with guardrails |
 | `audit` | (internal service) | Immutable audit event writes, called from other modules |

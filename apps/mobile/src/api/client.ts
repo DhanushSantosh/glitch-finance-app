@@ -27,6 +27,12 @@ type ApiErrorPayload = {
   };
 };
 
+type UploadAvatarPayload = {
+  uri: string;
+  fileName: string;
+  mimeType: string;
+};
+
 const rewriteLoopbackForAndroid = (rawUrl: string): string => {
   if (Platform.OS !== "android") {
     return rawUrl;
@@ -153,6 +159,39 @@ export const apiClient = {
       method: "PATCH",
       token,
       body: payload
+    });
+    return result.item;
+  },
+
+  async uploadProfileAvatar(token: string, payload: UploadAvatarPayload): Promise<UserProfile> {
+    const formData = new FormData();
+    formData.append("file", {
+      uri: payload.uri,
+      name: payload.fileName,
+      type: payload.mimeType
+    } as unknown as Blob);
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/profile/avatar`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    const json = (await response.json()) as { item: UserProfile } & ApiErrorPayload;
+    if (!response.ok) {
+      const message = json.error?.message ?? `Request failed (${response.status})`;
+      throw new Error(message);
+    }
+
+    return json.item;
+  },
+
+  async removeProfileAvatar(token: string): Promise<UserProfile> {
+    const result = await request<{ item: UserProfile }>("/api/v1/profile/avatar", {
+      method: "DELETE",
+      token
     });
     return result.item;
   },

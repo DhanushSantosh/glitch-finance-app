@@ -350,4 +350,98 @@ describe("apiClient — profile", () => {
     expect(calledUrl).toContain("/api/v1/profile");
     expect(requestInit.method).toBe("PATCH");
   });
+
+  it("uploads avatar with multipart POST /api/v1/profile/avatar", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          item: {
+            id: "user-1",
+            email: "profile@example.com",
+            firstName: null,
+            lastName: null,
+            displayName: null,
+            phoneNumber: null,
+            dateOfBirth: null,
+            avatarUrl: "http://localhost:4000/api/v1/profile/avatar/avatar-1.jpg",
+            city: null,
+            country: null,
+            timezone: "UTC",
+            locale: "en-IN",
+            currency: "INR",
+            occupation: null,
+            bio: null,
+            settings: {
+              pushNotificationsEnabled: true,
+              emailNotificationsEnabled: true,
+              weeklySummaryEnabled: true,
+              biometricsEnabled: false,
+              marketingOptIn: false
+            },
+            createdAt: null,
+            updatedAt: null
+          }
+        },
+        true
+      )
+    );
+
+    const updated = await apiClient.uploadProfileAvatar("profile-token", {
+      uri: "file:///tmp/avatar.jpg",
+      fileName: "avatar.jpg",
+      mimeType: "image/jpeg"
+    });
+
+    expect(updated.avatarUrl).toContain("/api/v1/profile/avatar/");
+
+    const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toContain("/api/v1/profile/avatar");
+    expect(requestInit.method).toBe("POST");
+    const headers = requestInit.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBe("Bearer profile-token");
+    expect(requestInit.body).toBeDefined();
+  });
+
+  it("removes avatar with DELETE /api/v1/profile/avatar", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          item: {
+            id: "user-1",
+            email: "profile@example.com",
+            firstName: null,
+            lastName: null,
+            displayName: null,
+            phoneNumber: null,
+            dateOfBirth: null,
+            avatarUrl: null,
+            city: null,
+            country: null,
+            timezone: "UTC",
+            locale: "en-IN",
+            currency: "INR",
+            occupation: null,
+            bio: null,
+            settings: {
+              pushNotificationsEnabled: true,
+              emailNotificationsEnabled: true,
+              weeklySummaryEnabled: true,
+              biometricsEnabled: false,
+              marketingOptIn: false
+            },
+            createdAt: null,
+            updatedAt: null
+          }
+        },
+        true
+      )
+    );
+
+    const updated = await apiClient.removeProfileAvatar("profile-token");
+    expect(updated.avatarUrl).toBeNull();
+
+    const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toContain("/api/v1/profile/avatar");
+    expect(requestInit.method).toBe("DELETE");
+  });
 });
