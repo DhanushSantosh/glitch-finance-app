@@ -288,6 +288,7 @@ Query parameters:
 - `to` (ISO datetime)
 - `sortBy` (`occurredAt|amount`, default `occurredAt`)
 - `sortOrder` (`asc|desc`, default `desc`)
+- `search` (string, max 200 chars — case-insensitive match against `counterparty` and `note`)
 
 Response includes:
 

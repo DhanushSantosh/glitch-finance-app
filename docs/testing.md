@@ -33,6 +33,9 @@
 - Idempotent mutation replay and key-conflict behavior for transaction create/update/delete.
 - Fastify JSON parser client-error envelope mapping (`FST_ERR_CTP_EMPTY_JSON_BODY`).
 - Database unique-constraint conflicts mapped to 409 (no accidental 5xx).
+- Profile CRUD: lazy row creation, partial field patching, field-level `hasOwn` isolation.
+- Avatar upload/remove lifecycle: file storage, old file cleanup, `avatarUrl` update.
+- API contract envelope checks across profile endpoints.
 
 ### Mobile Unit Tests
 
@@ -68,6 +71,8 @@ pnpm smoke:perf
 9. Reports can be exported in CSV and PDF format.
 10. User can delete account and the session becomes invalid immediately.
 11. Settings SMS action logs intent but keeps feature disabled.
+12. Authenticated user can view and update their profile (name, timezone, currency, settings).
+13. Authenticated user can upload and remove a profile avatar image.
 
 ## Recommended Next-Level Test Additions
 

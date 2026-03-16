@@ -58,7 +58,8 @@ Restart Expo after changing this value.
 ## Quick diagnostics
 
 ```bash
-curl http://localhost:4000/api/v1/status
+curl http://localhost:4000/health
+curl http://localhost:4000/api/v1/status    # includes otpDelivery.provider/ready/requestTimeoutMs
 curl http://localhost:4000/api/v1/bootstrap
 curl http://localhost:4000/api/v1/metrics
 ```
