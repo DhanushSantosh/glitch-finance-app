@@ -2,20 +2,51 @@
 
 ## CI/CD Pipeline
 
-Implemented:
-- GitHub Actions workflow: `.github/workflows/ci.yml`
-- API image publish workflow: `.github/workflows/cd-image.yml`
-- Trigger: push to `main` and pull requests
-- Stages:
-  1. Install dependencies
-  2. Workspace lint
-  3. Workspace typecheck
-  4. Migration drift check (`pnpm db:check`)
-  5. API test suite (includes migrations)
-  6. Mobile test suite
+### Continuous integration
 
-Quality gate:
-- Merge to `main` should be blocked unless CI is green.
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `ci.yml` | push + PR to `main` | lint → typecheck → migration drift → API tests → mobile tests |
+| `ci-nightly.yml` | Daily 01:00 UTC | Full test run on `main` — guards against silent regressions from env/dep drift |
+| `dependency-review.yml` | Every PR to `main` | Blocks PRs introducing HIGH/CRITICAL CVEs or GPL/AGPL-licensed packages |
+
+Quality gate: merge to `main` is blocked unless `ci.yml` is green.
+
+### Continuous delivery
+
+| Workflow | Trigger | Action |
+|---|---|---|
+| `cd-image.yml` | push to `main` | Builds and pushes API Docker image to GHCR (`:latest` + `:sha`) |
+| `image-scan.yml` | After `cd-image.yml` | Trivy CVE scan of the published image; SARIF uploaded to GitHub Security tab |
+| `eas-build.yml` | Manual (`workflow_dispatch`) | EAS mobile build — profile (dev/preview/production) and platform (android/ios/all) dropdowns. Requires `EXPO_TOKEN` secret |
+| `release-drafter.yml` | push to `main` | Auto-drafts GitHub Release with changelog grouped by conventional commit type |
+
+### Security scanning
+
+| Workflow | Trigger | What it catches |
+|---|---|---|
+| `codeql.yml` | push, PR, weekly Monday 03:00 UTC | JS/TS SAST — injection, prototype pollution, path traversal. Results in Security tab |
+| `semgrep.yml` | push, PR, weekly Monday 04:00 UTC | OWASP Top 10, JWT misuse, Node/Fastify API patterns. Results in Security tab |
+| `dep-audit.yml` | Daily 05:00 UTC | CVEs disclosed against pinned deps since last PR |
+| `secret-scan.yml` | push + every PR | Accidentally committed secrets via Gitleaks — scans full git history |
+
+Config: `.gitleaks.toml` suppresses known false positives (example env files, test DSNs, lockfile hashes).
+
+### Operations
+
+| Workflow | Trigger | Action |
+|---|---|---|
+| `ops-smoke.yml` | Manual | Staging smoke checks and optional perf smoke |
+| `dr-drill.yml` | Manual | Postgres backup restore + smoke validation |
+| `stale.yml` | Daily 02:00 UTC | Labels issues stale at 30 days, PRs at 21 days; closes after 7 more days |
+
+### Required repo secrets (Settings → Secrets → Actions)
+
+| Secret | Required by | Notes |
+|---|---|---|
+| `EXPO_TOKEN` | `eas-build.yml` | From expo.dev account settings — required for EAS builds |
+| `SEMGREP_APP_TOKEN` | `semgrep.yml` | Optional — enables semgrep.dev dashboard and trend tracking |
+| `GITLEAKS_LICENSE` | `secret-scan.yml` | Optional — only needed for org-level Gitleaks features |
 
 ## Staging and Production Provisioning
 

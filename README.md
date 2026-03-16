@@ -17,8 +17,19 @@ glitch-finance-app/
 │   ├── backup/               Postgres backup and restore
 │   └── ops/                  Secret generation and validation
 └── .github/workflows/
-    ├── ci.yml                Typecheck + test pipeline
-    ├── cd-image.yml          Docker image build → GHCR
+    ├── ci.yml                Typecheck + test pipeline (push + PR)
+    ├── ci-nightly.yml        Nightly full test run — silent regression guard
+    ├── cd-image.yml          Docker image build → GHCR (push to main)
+    ├── dependency-review.yml CVE + license gate on every PR
+    ├── eas-build.yml         Manual EAS mobile build (dev / preview / production)
+    ├── release-drafter.yml   Auto-draft GitHub Releases from commit messages
+    ├── stale.yml             Label and close inactive issues and PRs
+    ├── image-scan.yml        Trivy CVE scan of API Docker image after each CD build
+    ├── codeql.yml            CodeQL SAST — push, PR, weekly
+    ├── semgrep.yml           Semgrep SAST — OWASP, Node, JWT rulesets
+    ├── dep-audit.yml         Daily pnpm CVE audit
+    ├── secret-scan.yml       Gitleaks secret scanning on every push and PR
+    ├── ops-smoke.yml         Manual staging + perf smoke checks
     └── dr-drill.yml          Manual DR drill
 ```
 
@@ -154,10 +165,39 @@ Full contracts: [`docs/api-reference.md`](./docs/api-reference.md)
 
 ## CI/CD
 
-- **CI** (`ci.yml`) — lint → typecheck → migration drift check → API tests → mobile tests. Runs on every push and PR to `main`.
-- **CD** (`cd-image.yml`) — builds and pushes the API Docker image to GHCR on merge to `main`.
-- **DR drill** (`dr-drill.yml`) — manual workflow: restores a Postgres backup and runs smoke tests.
-- **Ops smoke** (`ops-smoke.yml`) — manual workflow for staging smoke checks and optional perf smoke checks.
+### Continuous integration
+
+| Workflow | Trigger | Stages |
+|---|---|---|
+| `ci.yml` | push + every PR to `main` | lint → typecheck → migration drift → API tests → mobile tests |
+| `ci-nightly.yml` | Daily 01:00 UTC | Same as CI — catches silent regressions from env/dep drift |
+| `dependency-review.yml` | Every PR to `main` | Blocks PRs with HIGH/CRITICAL CVEs or GPL/AGPL dependencies |
+
+### Continuous delivery
+
+| Workflow | Trigger | Action |
+|---|---|---|
+| `cd-image.yml` | push to `main` | Builds and pushes API Docker image to GHCR (tagged `:latest` + `:sha`) |
+| `image-scan.yml` | After `cd-image.yml` completes | Trivy scans the published image; results go to the Security tab |
+| `eas-build.yml` | Manual (`workflow_dispatch`) | EAS build with profile and platform dropdowns — requires `EXPO_TOKEN` secret |
+| `release-drafter.yml` | push to `main` | Drafts GitHub Release with changelog grouped by conventional commit type |
+
+### Security scanning
+
+| Workflow | Trigger | What it catches |
+|---|---|---|
+| `codeql.yml` | push, PR, weekly Monday | Injection, prototype pollution, path traversal — results in Security tab |
+| `semgrep.yml` | push, PR, weekly Monday | OWASP Top 10, JWT misuse, Node/Fastify patterns — results in Security tab |
+| `dep-audit.yml` | Daily 05:00 UTC | CVEs disclosed against pinned deps since last PR |
+| `secret-scan.yml` | push + every PR | Accidentally committed secrets across full git history (Gitleaks) |
+
+### Operations
+
+| Workflow | Trigger | Action |
+|---|---|---|
+| `ops-smoke.yml` | Manual | Staging smoke checks and optional perf smoke |
+| `dr-drill.yml` | Manual | Postgres backup restore + smoke validation |
+| `stale.yml` | Daily 02:00 UTC | Labels issues stale at 30d, PRs at 21d; closes after 7d more |
 
 ---
 
