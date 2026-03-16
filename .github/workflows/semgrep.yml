@@ -1,15 +1,11 @@
 name: Semgrep SAST
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
   schedule:
     - cron: "0 4 * * 1" # 04:00 UTC every Monday
   workflow_dispatch:
+  # push/PR deliberately omitted — CodeQL covers on-commit SAST.
+  # Semgrep runs weekly for its Node/OWASP/JWT rulesets depth scan.
 
 permissions:
   contents: read

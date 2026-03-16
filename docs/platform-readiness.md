@@ -26,7 +26,7 @@ Quality gate: merge to `main` is blocked unless `ci.yml` is green.
 | Workflow | Trigger | What it catches |
 |---|---|---|
 | `codeql.yml` | push, PR, weekly Monday 03:00 UTC | JS/TS SAST — injection, prototype pollution, path traversal. Results in Security tab |
-| `semgrep.yml` | push, PR, weekly Monday 04:00 UTC | OWASP Top 10, JWT misuse, Node/Fastify API patterns. Results in Security tab |
+| `semgrep.yml` | Weekly Monday 04:00 UTC + manual | OWASP Top 10, JWT misuse, Node/Fastify API patterns. Weekly only — CodeQL covers push/PR SAST |
 | `dep-audit.yml` | Daily 05:00 UTC | CVEs disclosed against pinned deps since last PR |
 | `secret-scan.yml` | push + every PR | Accidentally committed secrets via Gitleaks — scans full git history |
 

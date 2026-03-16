@@ -187,7 +187,7 @@ Full contracts: [`docs/api-reference.md`](./docs/api-reference.md)
 | Workflow | Trigger | What it catches |
 |---|---|---|
 | `codeql.yml` | push, PR, weekly Monday | Injection, prototype pollution, path traversal — results in Security tab |
-| `semgrep.yml` | push, PR, weekly Monday | OWASP Top 10, JWT misuse, Node/Fastify patterns — results in Security tab |
+| `semgrep.yml` | Weekly Monday + manual | OWASP Top 10, JWT misuse, Node/Fastify patterns — weekly deep scan (CodeQL covers push/PR) |
 | `dep-audit.yml` | Daily 05:00 UTC | CVEs disclosed against pinned deps since last PR |
 | `secret-scan.yml` | push + every PR | Accidentally committed secrets across full git history (Gitleaks) |
 
