@@ -19,6 +19,12 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      - name: Resolve lowercase image ref
+        id: meta
+        env:
+          REPO: ${{ github.repository }}
+        run: echo "image=ghcr.io/${REPO,,}/api:latest" >> "$GITHUB_OUTPUT"
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -27,19 +33,19 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull image
-        run: docker pull ghcr.io/${{ github.repository }}/api:latest
+        run: docker pull "${{ steps.meta.outputs.image }}"
 
       - name: Run Trivy vulnerability scan
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ github.workspace }}:/output" \
+            -v "$GITHUB_WORKSPACE:/output" \
             aquasec/trivy:latest image \
             --format sarif \
             --output /output/trivy-results.sarif \
             --severity CRITICAL,HIGH \
             --exit-code 0 \
-            ghcr.io/${{ github.repository }}/api:latest
+            "${{ steps.meta.outputs.image }}"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
