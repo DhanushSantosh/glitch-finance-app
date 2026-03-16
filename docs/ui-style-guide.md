@@ -181,6 +181,7 @@ Shared primitives live in `apps/mobile/src/components/ui/`:
 | `Button` | `primary / secondary / ghost / danger` variants |
 | `TextField` | Labeled input with focus styling |
 | `SegmentedControl` | Inline option picker |
+| `SelectField` | Modal-based searchable single-select (used for large option lists e.g. timezone, locale, currency) |
 | `StatTile` | Compact metric tile with tone indicator |
 | `EmptyState` | Zero-data placeholder |
 | `ListItem` | Row with title/subtitle/meta/trailing/children |
