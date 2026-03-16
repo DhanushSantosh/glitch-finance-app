@@ -107,6 +107,24 @@ export const apiClient = {
     return request<BootstrapPayload>("/api/v1/bootstrap");
   },
 
+  async authWithGoogle(idToken: string, nonce?: string): Promise<{ token: string; user: User }> {
+    return request<{ token: string; user: User }>("/api/v1/auth/oauth/google", {
+      method: "POST",
+      body: { idToken, ...(nonce ? { nonce } : {}) }
+    });
+  },
+
+  async authWithApple(
+    identityToken: string,
+    rawNonce: string,
+    user?: { firstName?: string; lastName?: string; email?: string }
+  ): Promise<{ token: string; user: User }> {
+    return request<{ token: string; user: User }>("/api/v1/auth/oauth/apple", {
+      method: "POST",
+      body: { identityToken, rawNonce, ...(user ? { user } : {}) }
+    });
+  },
+
   async requestOtp(email: string): Promise<{ message: string; debugOtpCode?: string }> {
     return request<{ message: string; debugOtpCode?: string }>("/api/v1/auth/request-otp", {
       method: "POST",

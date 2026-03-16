@@ -8,6 +8,23 @@ const requestOtpSchema = z.object({
   email: z.string().trim().email().max(320)
 });
 
+const googleOAuthSchema = z.object({
+  idToken: z.string().min(1).max(4096),
+  nonce: z.string().max(128).optional()
+});
+
+const appleOAuthSchema = z.object({
+  identityToken: z.string().min(1).max(4096),
+  rawNonce: z.string().min(8).max(128),
+  user: z
+    .object({
+      firstName: z.string().max(80).optional(),
+      lastName: z.string().max(80).optional(),
+      email: z.string().email().max(320).optional()
+    })
+    .optional()
+});
+
 const verifyOtpSchema = z.object({
   email: z.string().trim().email().max(320),
   code: z
@@ -93,5 +110,42 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     const identity = requireAuth(request);
     await ctx.authService.deleteAccount(identity, request.id, request.ip);
     return { success: true };
+  });
+
+  app.post("/api/v1/auth/oauth/google", async (request) => {
+    const body = parseOrThrow(googleOAuthSchema, request.body);
+
+    const result = await ctx.authService.signInWithOAuth({
+      provider: "google",
+      idToken: body.idToken,
+      rawNonce: body.nonce,
+      ipAddress: request.ip,
+      requestId: request.id
+    });
+
+    return {
+      token: result.token,
+      user: result.user,
+      session: { expiresInDays: ctx.env.AUTH_SESSION_TTL_DAYS }
+    };
+  });
+
+  app.post("/api/v1/auth/oauth/apple", async (request) => {
+    const body = parseOrThrow(appleOAuthSchema, request.body);
+
+    const result = await ctx.authService.signInWithOAuth({
+      provider: "apple",
+      idToken: body.identityToken,
+      rawNonce: body.rawNonce,
+      profileHint: body.user,
+      ipAddress: request.ip,
+      requestId: request.id
+    });
+
+    return {
+      token: result.token,
+      user: result.user,
+      session: { expiresInDays: ctx.env.AUTH_SESSION_TTL_DAYS }
+    };
   });
 };

@@ -16,17 +16,23 @@ import {
 
 export const transactionDirectionEnum = pgEnum("transaction_direction", ["debit", "credit", "transfer"]);
 export const transactionSourceEnum = pgEnum("transaction_source", ["manual", "sms_import", "statement_import"]);
+export const authProviderEnum = pgEnum("auth_provider", ["otp", "google", "apple", "merged"]);
 
 export const users = pgTable(
   "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     email: varchar("email", { length: 320 }).notNull(),
+    googleId: varchar("google_id", { length: 128 }),
+    appleId: varchar("apple_id", { length: 128 }),
+    authProvider: authProviderEnum("auth_provider").default("otp").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
   },
   (table) => ({
-    usersEmailUnique: uniqueIndex("users_email_unique").on(table.email)
+    usersEmailUnique: uniqueIndex("users_email_unique").on(table.email),
+    usersGoogleIdUnique: uniqueIndex("users_google_id_unique").on(table.googleId),
+    usersAppleIdUnique: uniqueIndex("users_apple_id_unique").on(table.appleId)
   })
 );
 

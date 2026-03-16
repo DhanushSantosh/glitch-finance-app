@@ -13,7 +13,8 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.glitch.finance"
+      "bundleIdentifier": "com.glitch.finance",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.glitch.finance",
@@ -35,7 +36,14 @@
           "photosPermission": "Allow Glitch to access your photo library so you can set a profile picture."
         }
       ],
-      "expo-document-picker"
+      "expo-document-picker",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
+        }
+      ]
     ],
     "extra": {
       "eas": {

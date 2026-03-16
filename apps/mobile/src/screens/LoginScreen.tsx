@@ -1,15 +1,27 @@
-import { useState } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, Text, View } from "react-native";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 
 type LoginScreenProps = {
   onRequestOtp: (email: string) => Promise<void>;
+  onGoogleSignIn: () => Promise<void>;
+  onAppleSignIn: () => Promise<void>;
 };
 
-export const LoginScreen = ({ onRequestOtp }: LoginScreenProps) => {
+export const LoginScreen = ({ onRequestOtp, onGoogleSignIn, onAppleSignIn }: LoginScreenProps) => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === "ios") {
+      void AppleAuthentication.isAvailableAsync().then(setAppleAvailable);
+    }
+  }, []);
 
   const handleSendOtp = async () => {
     try {
@@ -25,6 +37,36 @@ export const LoginScreen = ({ onRequestOtp }: LoginScreenProps) => {
       setLoading(false);
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      await onGoogleSignIn();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Google Sign-In failed.";
+      if (!message.includes("cancelled")) {
+        publishToast({ tone: "error", title: "Google Sign-In", message });
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setAppleLoading(true);
+      await onAppleSignIn();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Apple Sign-In failed.";
+      if (!message.includes("cancelled") && !message.includes("ERR_CANCELED")) {
+        publishToast({ tone: "error", title: "Apple Sign-In", message });
+      }
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
+  const anyLoading = loading || googleLoading || appleLoading;
 
   return (
     <Screen keyboardAware contentContainerStyle={styles.container}>
@@ -47,13 +89,39 @@ export const LoginScreen = ({ onRequestOtp }: LoginScreenProps) => {
             helperText="A secure OTP will be sent to this email."
           />
 
-          <Button 
-            label="Continue" 
-            loading={loading} 
-            disabled={email.trim().length === 0} 
-            onPress={() => void handleSendOtp()} 
+          <Button
+            label="Continue with Email"
+            loading={loading}
+            disabled={email.trim().length === 0 || anyLoading}
+            onPress={() => void handleSendOtp()}
             style={styles.submitButton}
           />
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <View style={styles.oauthButtons}>
+          <Button
+            label="Continue with Google"
+            variant="secondary"
+            loading={googleLoading}
+            disabled={anyLoading}
+            onPress={() => void handleGoogleSignIn()}
+          />
+
+          {appleAvailable && (
+            <Button
+              label="Continue with Apple"
+              variant="secondary"
+              loading={appleLoading}
+              disabled={anyLoading}
+              onPress={() => void handleAppleSignIn()}
+            />
+          )}
         </View>
 
         <View style={styles.footer}>
@@ -83,6 +151,25 @@ const styles = createStyles(() => ({
   },
   submitButton: {
     marginTop: theme.spacing.md
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.08)"
+  },
+  dividerText: {
+    color: theme.color.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1
+  },
+  oauthButtons: {
+    gap: theme.spacing.md
   },
   footer: {
     alignItems: "center",

@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { DbClient } from "../../db/client.js";
-import { authOtps, sessions, users } from "../../db/schema.js";
+import { authOtps, sessions, userProfiles, users } from "../../db/schema.js";
 import { AppEnv } from "../../env.js";
 import { AppError } from "../../errors.js";
 import { RateLimiter } from "../../rate-limit/rate-limiter.js";
@@ -10,6 +10,7 @@ import { AlertsService } from "../alerts/service.js";
 import { SloMonitorService } from "../slo/service.js";
 import { OtpDeliveryProvider } from "./provider.js";
 import { calculateOtpExpiry, isOtpAttemptAllowed, isOtpExpired } from "./otp-policy.js";
+import { verifyGoogleIdToken, verifyAppleIdToken } from "./oauth.js";
 
 type RequestOtpInput = {
   email: string;
@@ -28,6 +29,19 @@ export type AuthIdentity = {
   userId: string;
   sessionId: string;
   email: string;
+};
+
+type OAuthSignInInput = {
+  provider: "google" | "apple";
+  idToken: string;
+  rawNonce?: string;
+  profileHint?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  ipAddress: string;
+  requestId: string;
 };
 
 type AuthServiceDeps = {
@@ -220,7 +234,11 @@ export class AuthService {
       throw new AppError(401, "INVALID_OTP", "OTP is invalid or expired.");
     }
 
-    const existingUserRows = await this.deps.db.select().from(users).where(eq(users.email, email)).limit(1);
+    const existingUserRows = await this.deps.db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
     const user =
       existingUserRows[0] ??
       (
@@ -260,6 +278,142 @@ export class AuthService {
         id: user.id,
         email: user.email
       }
+    };
+  }
+
+  async signInWithOAuth(input: OAuthSignInInput): Promise<{ token: string; user: { id: string; email: string } }> {
+    const { provider, idToken, rawNonce, profileHint, ipAddress, requestId } = input;
+
+    // 1. Verify the provider token and extract stable ID + email
+    let providerId: string;
+    let providerEmail: string | undefined;
+
+    if (provider === "google") {
+      if (!this.deps.env.GOOGLE_CLIENT_ID) {
+        throw new AppError(503, "OAUTH_NOT_CONFIGURED", "Google Sign-In is not configured.");
+      }
+      const payload = await verifyGoogleIdToken(idToken, this.deps.env.GOOGLE_CLIENT_ID);
+      providerId = payload.sub;
+      providerEmail = payload.email;
+    } else {
+      if (!this.deps.env.APPLE_APP_BUNDLE_ID) {
+        throw new AppError(503, "OAUTH_NOT_CONFIGURED", "Apple Sign-In is not configured.");
+      }
+      if (!rawNonce) {
+        throw new AppError(400, "MISSING_NONCE", "rawNonce is required for Apple Sign-In.");
+      }
+      const payload = await verifyAppleIdToken(idToken, rawNonce, this.deps.env.APPLE_APP_BUNDLE_ID);
+      providerId = payload.sub;
+      providerEmail = payload.email ?? profileHint?.email;
+    }
+
+    const normalizedEmail = providerEmail ? this.normalizeEmail(providerEmail) : undefined;
+    const providerIdField = provider === "google" ? users.googleId : users.appleId;
+
+    // 2. Look up by provider ID first (returning user fast path)
+    let existingUser: { id: string; email: string } | undefined = (
+      await this.deps.db
+        .select({ id: users.id, email: users.email })
+        .from(users)
+        .where(eq(providerIdField, providerId))
+        .limit(1)
+    )[0];
+
+    let isNewUser = false;
+    let wasLinked = false;
+
+    if (!existingUser) {
+      // 3. Look up by email (existing OTP user — link accounts)
+      if (normalizedEmail) {
+        const emailMatch = (
+          await this.deps.db
+            .select({ id: users.id, email: users.email })
+            .from(users)
+            .where(eq(users.email, normalizedEmail))
+            .limit(1)
+        )[0];
+
+        if (emailMatch) {
+          // Link the OAuth provider to the existing account
+          const updated = await this.deps.db
+            .update(users)
+            .set({
+              [provider === "google" ? "googleId" : "appleId"]: providerId,
+              authProvider: "merged",
+              updatedAt: new Date()
+            })
+            .where(eq(users.id, emailMatch.id))
+            .returning({ id: users.id, email: users.email });
+          existingUser = updated[0];
+          wasLinked = true;
+        }
+      }
+
+      // 4. No match anywhere — create new user
+      if (!existingUser) {
+        if (!normalizedEmail) {
+          throw new AppError(422, "EMAIL_REQUIRED", "Unable to determine email from OAuth provider.");
+        }
+        const created = await this.deps.db
+          .insert(users)
+          .values({
+            email: normalizedEmail,
+            [provider === "google" ? "googleId" : "appleId"]: providerId,
+            authProvider: provider
+          })
+          .returning({ id: users.id, email: users.email });
+        existingUser = created[0];
+        isNewUser = true;
+      }
+    }
+
+    if (!existingUser) {
+      throw new AppError(500, "OAUTH_USER_RESOLUTION_FAILED", "Unable to resolve user for OAuth sign-in.");
+    }
+
+    // 5. For Apple first sign-in: persist name hint to profile if fields are empty
+    if (provider === "apple" && isNewUser && profileHint && (profileHint.firstName || profileHint.lastName)) {
+      await this.deps.db
+        .insert(userProfiles)
+        .values({
+          userId: existingUser.id,
+          firstName: profileHint.firstName ?? null,
+          lastName: profileHint.lastName ?? null
+        })
+        .onConflictDoNothing();
+    }
+
+    // 6. Issue session (same as OTP flow)
+    const token = generateSessionToken();
+    const tokenHash = this.hashToken(token);
+    const expiresAt = new Date(Date.now() + this.deps.env.AUTH_SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+    const insertedSession = await this.deps.db
+      .insert(sessions)
+      .values({ userId: existingUser.id, tokenHash, expiresAt })
+      .returning({ id: sessions.id });
+
+    await this.enforceActiveSessionLimit(existingUser.id);
+
+    const auditAction = isNewUser
+      ? `auth.oauth_${provider}_signup`
+      : wasLinked
+        ? `auth.oauth_${provider}_link`
+        : `auth.oauth_${provider}_login`;
+
+    await this.deps.auditService.log({
+      userId: existingUser.id,
+      action: auditAction,
+      entityType: "session",
+      entityId: insertedSession[0].id,
+      metadata: { provider, isNewUser, wasLinked },
+      requestId,
+      ipAddress
+    });
+
+    return {
+      token,
+      user: { id: existingUser.id, email: existingUser.email }
     };
   }
 

@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
+import { configureGoogleSignIn, signInWithApple, signInWithGoogle } from "./src/auth/oauthProviders";
 import { BottomTabBar, InlineMessage, publishToast, ToastViewport } from "./src/components/ui";
 import { deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "./src/flow/mobileFlow";
 import { AppTabRoute, defaultTabRoute, emptyModalRoute, ModalRoute } from "./src/navigation/routes";
@@ -183,6 +184,13 @@ export default function App() {
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
   const regionalPreferences = useMemo(() => resolveRegionalPreferences(profile, bootstrap), [bootstrap, profile]);
+
+  useEffect(() => {
+    const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    if (googleClientId) {
+      configureGoogleSignIn(googleClientId);
+    }
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== "android") {
@@ -511,6 +519,22 @@ export default function App() {
     setToken(result.token);
     await loadAuthenticatedData(result.token);
     setPendingEmail("");
+  };
+
+  const handleGoogleSignIn = async () => {
+    const googleResult = await signInWithGoogle();
+    const result = await apiClient.authWithGoogle(googleResult.idToken, googleResult.nonce);
+    await saveSessionToken(result.token);
+    setToken(result.token);
+    await loadAuthenticatedData(result.token);
+  };
+
+  const handleAppleSignIn = async () => {
+    const appleResult = await signInWithApple();
+    const result = await apiClient.authWithApple(appleResult.identityToken, appleResult.rawNonce, appleResult.user);
+    await saveSessionToken(result.token);
+    setToken(result.token);
+    await loadAuthenticatedData(result.token);
   };
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
@@ -1336,7 +1360,11 @@ export default function App() {
           </View>
           <View style={styles.flexFill}>
             {authStage === "login" ? (
-              <LoginScreen onRequestOtp={handleRequestOtp} />
+              <LoginScreen
+                onRequestOtp={handleRequestOtp}
+                onGoogleSignIn={handleGoogleSignIn}
+                onAppleSignIn={handleAppleSignIn}
+              />
             ) : (
               <OtpVerifyScreen email={pendingEmail} onBack={() => setPendingEmail("")} onVerify={handleVerifyOtp} />
             )}

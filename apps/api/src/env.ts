@@ -53,7 +53,9 @@ const envSchema = z
     AUTH_RATE_LIMIT_MAX_VERIFY_OTP: z.coerce.number().int().min(1).max(30).default(10),
     SMS_IMPORT_SCAN_ENABLED: booleanFromEnv.default(false),
     SMS_DISCLOSURE_VERSION: z.string().default("sms_disclosure_v1"),
-    APP_CURRENCY: z.string().length(3).default("INR")
+    APP_CURRENCY: z.string().length(3).default("INR"),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    APPLE_APP_BUNDLE_ID: z.string().min(1).optional()
   })
   .superRefine((value, refinementContext) => {
     if (value.OTP_PROVIDER === "resend" && !value.RESEND_API_KEY) {
