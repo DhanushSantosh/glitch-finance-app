@@ -80,14 +80,14 @@ const AnimatedIconComponent = ({
   });
 
   if (route === "settings" && userAvatar) {
-     const avatarSize = 26; // Slightly larger than standard icon size
+     const avatarSize = 28; // Increased from 26
      return (
         <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={[{ position: 'absolute' }, inactiveOpacityStyle]}>
-            <Image source={{ uri: userAvatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, opacity: 0.6 }} />
+            <Image source={{ uri: userAvatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, opacity: 1 }} />
           </Animated.View>
           <Animated.View style={[{ position: 'absolute' }, activeOpacityStyle]}>
-            <Image source={{ uri: userAvatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} />
+            <Image source={{ uri: userAvatar }} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, opacity: 1 }} />
           </Animated.View>
         </View>
      );
