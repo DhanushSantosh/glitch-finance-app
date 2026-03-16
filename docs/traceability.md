@@ -19,6 +19,8 @@ Sprint delivery reference: Sprint 1.1 through MVP completion.
 - **FR-001** (partial): Email OTP implemented; phone OTP deferred.
 - **FR-003**: Account recovery via dedicated OTP recovery endpoints.
 - **FR-004**: Account deletion endpoint and mobile settings action.
+- **FR-005**: Full profile management flow implemented in settings (details + avatar URL + localization fields).
+- **FR-006**: Per-profile settings implemented (notifications, weekly summary, biometric intent, product updates).
 - **FR-060** (partial): Session continuity on same device via persisted token.
 
 ### Privacy and Consent
@@ -65,6 +67,7 @@ Sprint delivery reference: Sprint 1.1 through MVP completion.
 | `apps/api/src/integration/auth-transactions.integration.test.ts` | OTP lifecycle, transaction CRUD, category CRUD, auto-categorization, account deletion, recovery flow |
 | `apps/api/src/integration/reports.integration.test.ts` | Report summary correctness, export contracts, cross-user isolation |
 | `apps/api/src/integration/budgets-goals.integration.test.ts` | Budget/goal CRUD, spend aggregation, cross-user isolation |
+| `apps/api/src/integration/profile.integration.test.ts` | Profile defaults, profile updates, per-profile setting persistence, auth guardrails |
 | `apps/api/src/integration/contracts.integration.test.ts` | Strict response/error envelope contract checks |
 | `apps/api/src/integration/imports.integration.test.ts` | SMS scan endpoint default-disable guardrail |
 

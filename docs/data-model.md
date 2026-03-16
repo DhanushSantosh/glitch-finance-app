@@ -17,6 +17,22 @@ ORM: Drizzle (`apps/api/src/db/schema.ts`)
 - `email` (unique)
 - timestamps
 
+### `user_profiles`
+
+- `user_id` (uuid, pk, fk -> `users.id`, one-to-one)
+- Profile identity fields:
+  - `first_name`, `last_name`, `display_name`
+  - `phone_number`, `date_of_birth`, `avatar_url`
+  - `city`, `country`, `timezone`, `locale`, `currency`
+  - `occupation`, `bio`
+- Per-profile settings:
+  - `push_notifications_enabled`
+  - `email_notifications_enabled`
+  - `weekly_summary_enabled`
+  - `biometrics_enabled`
+  - `marketing_opt_in`
+- `created_at`, `updated_at`
+
 ### `sessions`
 
 - `id` (uuid, pk)

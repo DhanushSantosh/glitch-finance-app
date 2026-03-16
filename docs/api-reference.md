@@ -145,6 +145,64 @@ Requires auth. Returns current user identity.
 
 Requires auth. Permanently deletes authenticated user and cascaded user-owned records.
 
+## Profile
+
+### `GET /api/v1/profile`
+
+Requires auth. Returns full profile and per-profile preference settings.
+
+Response:
+
+```json
+{
+  "item": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "firstName": "Dhanush",
+    "lastName": "K",
+    "displayName": "Dhanush K",
+    "phoneNumber": "+919999999999",
+    "dateOfBirth": "2002-08-21",
+    "avatarUrl": "https://example.com/avatar.jpg",
+    "city": "Bengaluru",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "locale": "en-IN",
+    "currency": "INR",
+    "occupation": "Student",
+    "bio": "Building Glitch to production quality.",
+    "settings": {
+      "pushNotificationsEnabled": true,
+      "emailNotificationsEnabled": true,
+      "weeklySummaryEnabled": true,
+      "biometricsEnabled": false,
+      "marketingOptIn": false
+    },
+    "createdAt": "2026-03-16T10:00:00.000Z",
+    "updatedAt": "2026-03-16T10:00:00.000Z"
+  }
+}
+```
+
+### `PATCH /api/v1/profile`
+
+Requires auth. Partial update accepted.
+
+Request body (all fields optional, nested settings optional):
+
+```json
+{
+  "displayName": "Dhanush K",
+  "avatarUrl": "https://example.com/avatar.jpg",
+  "timezone": "Asia/Kolkata",
+  "currency": "INR",
+  "settings": {
+    "pushNotificationsEnabled": false,
+    "weeklySummaryEnabled": false
+  }
+}
+```
+
 ## Categories
 
 ### `GET /api/v1/categories`

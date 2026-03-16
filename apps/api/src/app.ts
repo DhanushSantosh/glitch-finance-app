@@ -13,6 +13,7 @@ import { registerGoalRoutes } from "./modules/goals/routes.js";
 import { registerReportRoutes } from "./modules/reports/routes.js";
 import { registerImportRoutes } from "./modules/imports/routes.js";
 import { registerMetricsRoutes } from "./modules/metrics/routes.js";
+import { registerProfileRoutes } from "./modules/profile/routes.js";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
@@ -103,6 +104,7 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await registerBudgetRoutes(app, ctx);
   await registerGoalRoutes(app, ctx);
   await registerReportRoutes(app, ctx);
+  await registerProfileRoutes(app, ctx);
   await registerConsentRoutes(app, ctx);
   await registerImportRoutes(app, ctx);
   await registerMetricsRoutes(app);

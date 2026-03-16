@@ -140,7 +140,7 @@ pnpm smoke:perf                          # API p95 smoke checks for transactions
 
 Base URL: `http://localhost:4000`. All protected routes require `Authorization: Bearer <token>`.
 
-Modules: `auth`, `categories`, `transactions`, `budgets`, `goals`, `reports`, `consents`, `imports`, `account`, `metrics`
+Modules: `auth`, `profile`, `categories`, `transactions`, `budgets`, `goals`, `reports`, `consents`, `imports`, `account`, `metrics`
 
 Full contracts: [`docs/api-reference.md`](./docs/api-reference.md)
 

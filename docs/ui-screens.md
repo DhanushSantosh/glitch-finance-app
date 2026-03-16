@@ -153,19 +153,52 @@ Behavior contract:
 Structure:
 1. `Screen`
 2. `AppHeader`
-3. Manage Categories action row → opens `categoryManager` modal
-4. SMS disclosure `Card`:
+3. Profile `Card`:
+   - Profile summary (name + email)
+   - `Edit Profile` action -> opens `profile` modal
+4. Manage Categories action row -> opens `categoryManager` modal
+5. SMS disclosure `Card`:
    - Section header
    - Warning and info `InlineMessage`
    - Action row: Keep Disabled / Request Enable
-5. Account `Card`:
+6. Account `Card`:
    - Delete account action (destructive)
    - Sign out action
 
 Behavior contract:
 - SMS feature remains disabled; consent action logs user intent only.
+- Profile action opens full profile editing flow with per-profile settings.
 - Delete account shows confirmation alert, calls account deletion API, clears local state.
 - Sign out clears local session and resets all authenticated state.
+
+## Profile (`profile` modal)
+
+Structure:
+1. `Screen` (keyboard-aware)
+2. `AppHeader`
+3. Identity `Card`:
+   - Avatar preview/fallback initials
+   - Name/email summary
+   - Avatar URL field
+4. Personal details `Card`:
+   - First name, last name, display name
+   - Phone number, date of birth, occupation
+5. Regional preferences `Card`:
+   - City, country, timezone, locale, currency
+   - Bio
+6. Per-profile settings `Card`:
+   - Push notifications toggle
+   - Email notifications toggle
+   - Weekly summary toggle
+   - Biometric lock toggle intent
+   - Product updates toggle
+7. Footer actions: `Back`, `Save Profile`
+
+Behavior contract:
+- Save performs partial profile update via `/api/v1/profile`.
+- Date of birth uses `YYYY-MM-DD`.
+- Currency uses a 3-letter uppercase code.
+- Invalid avatar URL is blocked with inline error.
 
 ## Category Studio (`categoryManager` modal)
 

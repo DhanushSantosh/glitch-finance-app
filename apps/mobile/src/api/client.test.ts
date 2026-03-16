@@ -252,3 +252,102 @@ describe("apiClient — logout", () => {
     expect(headers["Authorization"]).toBe("Bearer logout-token");
   });
 });
+
+describe("apiClient — profile", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("fetches profile from /api/v1/profile", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          item: {
+            id: "user-1",
+            email: "profile@example.com",
+            firstName: null,
+            lastName: null,
+            displayName: null,
+            phoneNumber: null,
+            dateOfBirth: null,
+            avatarUrl: null,
+            city: null,
+            country: null,
+            timezone: "UTC",
+            locale: "en-IN",
+            currency: "INR",
+            occupation: null,
+            bio: null,
+            settings: {
+              pushNotificationsEnabled: true,
+              emailNotificationsEnabled: true,
+              weeklySummaryEnabled: true,
+              biometricsEnabled: false,
+              marketingOptIn: false
+            },
+            createdAt: null,
+            updatedAt: null
+          }
+        },
+        true
+      )
+    );
+
+    const profile = await apiClient.getProfile("profile-token");
+    expect(profile.email).toBe("profile@example.com");
+
+    const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toContain("/api/v1/profile");
+    expect(requestInit.method).toBe("GET");
+  });
+
+  it("updates profile with PATCH /api/v1/profile", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          item: {
+            id: "user-1",
+            email: "profile@example.com",
+            firstName: "Dhanush",
+            lastName: "K",
+            displayName: "Dhanush K",
+            phoneNumber: "+919999999999",
+            dateOfBirth: "2002-08-21",
+            avatarUrl: "https://example.com/avatar.png",
+            city: "Bengaluru",
+            country: "India",
+            timezone: "Asia/Kolkata",
+            locale: "en-IN",
+            currency: "INR",
+            occupation: "Student",
+            bio: "Bio",
+            settings: {
+              pushNotificationsEnabled: false,
+              emailNotificationsEnabled: true,
+              weeklySummaryEnabled: false,
+              biometricsEnabled: true,
+              marketingOptIn: true
+            },
+            createdAt: "2026-03-16T12:00:00.000Z",
+            updatedAt: "2026-03-16T12:05:00.000Z"
+          }
+        },
+        true
+      )
+    );
+
+    const updated = await apiClient.updateProfile("profile-token", {
+      displayName: "Dhanush K",
+      settings: {
+        pushNotificationsEnabled: false
+      }
+    });
+
+    expect(updated.displayName).toBe("Dhanush K");
+    expect(updated.settings.pushNotificationsEnabled).toBe(false);
+
+    const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toContain("/api/v1/profile");
+    expect(requestInit.method).toBe("PATCH");
+  });
+});

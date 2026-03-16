@@ -17,11 +17,22 @@ import { GoalFormScreen } from "./src/screens/GoalFormScreen";
 import { GoalsScreen } from "./src/screens/GoalsScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { OtpVerifyScreen } from "./src/screens/OtpVerifyScreen";
+import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { TransactionFormScreen } from "./src/screens/TransactionFormScreen";
 import { TransactionsScreen } from "./src/screens/TransactionsScreen";
 import { createStyles, theme } from "./src/theme";
-import { BootstrapPayload, Budget, Category, Goal, ReportSummary, Transaction, TransactionListQuery, User } from "./src/types";
+import {
+  BootstrapPayload,
+  Budget,
+  Category,
+  Goal,
+  ReportSummary,
+  Transaction,
+  TransactionListQuery,
+  User,
+  UserProfile
+} from "./src/types";
 import { calculateBudgetTotals } from "./src/utils/budgetTotals";
 import { shiftMonthToken } from "./src/utils/month";
 
@@ -130,6 +141,7 @@ export default function App() {
   const [pendingEmail, setPendingEmail] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [bootstrap, setBootstrap] = useState<BootstrapPayload | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -200,6 +212,11 @@ export default function App() {
 
       if (modalRoute.kind === "goalForm") {
         setEditingGoal(null);
+        setModalRoute(emptyModalRoute);
+        return true;
+      }
+
+      if (modalRoute.kind === "profile") {
         setModalRoute(emptyModalRoute);
         return true;
       }
@@ -286,12 +303,13 @@ export default function App() {
       }
 
       try {
-        const [categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
+        const [categoryItems, transactionData, budgetData, goalItems, reportData, profileData] = await Promise.all([
           apiClient.getCategories(sessionToken),
           apiClient.getTransactions(sessionToken, buildTransactionQuery(transactionFilters, 1)),
           apiClient.getBudgets(sessionToken, budgetMonth),
           apiClient.getGoals(sessionToken),
-          apiClient.getReportSummary(sessionToken, reportMonth)
+          apiClient.getReportSummary(sessionToken, reportMonth),
+          apiClient.getProfile(sessionToken)
         ]);
 
         setCategories(categoryItems);
@@ -305,6 +323,7 @@ export default function App() {
         setBudgetTotals(budgetData.totals);
         setGoals(goalItems);
         setReportSummary(reportData);
+        setProfile(profileData);
       } finally {
         if (showRefreshing) {
           setRefreshing(false);
@@ -336,9 +355,10 @@ export default function App() {
   const loadAuthenticatedData = async (sessionToken: string, budgetMonthToken: string, reportMonthToken: string) => {
     const initialFilters = defaultTransactionFilters;
 
-    const [bootstrapPayload, currentUser, categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
+    const [bootstrapPayload, currentUser, profileData, categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
       apiClient.getBootstrap(),
       apiClient.me(sessionToken),
+      apiClient.getProfile(sessionToken),
       apiClient.getCategories(sessionToken),
       apiClient.getTransactions(sessionToken, buildTransactionQuery(initialFilters, 1)),
       apiClient.getBudgets(sessionToken, budgetMonthToken),
@@ -348,6 +368,7 @@ export default function App() {
 
     setBootstrap(bootstrapPayload);
     setUser(currentUser);
+    setProfile(profileData);
     setCategories(categoryItems);
     setTransactionFilters(initialFilters);
     setTransactions(transactionData.items);
@@ -835,6 +856,29 @@ export default function App() {
     ]);
   };
 
+  const handleSaveProfile = async (payload: {
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    phoneNumber: string;
+    dateOfBirth: string | null;
+    avatarUrl: string;
+    city: string;
+    country: string;
+    timezone: string;
+    locale: string;
+    currency: string;
+    occupation: string;
+    bio: string;
+    settings: UserProfile["settings"];
+  }) => {
+    if (!token) return;
+
+    const updatedProfile = await apiClient.updateProfile(token, payload);
+    setProfile(updatedProfile);
+    enqueueReconcileSync(token);
+  };
+
   const handleSmsIntent = async (enabled: boolean) => {
     if (!token) return;
     await apiClient.logSmsIntent(token, enabled);
@@ -848,6 +892,7 @@ export default function App() {
   const clearAuthenticatedState = () => {
     setToken(null);
     setUser(null);
+    setProfile(null);
     setTransactions([]);
     setTransactionFilters(defaultTransactionFilters);
     setTransactionPagination(emptyTransactionPagination);
@@ -989,6 +1034,25 @@ export default function App() {
       );
     }
 
+    if (modalRoute.kind === "profile") {
+      if (!profile) {
+        return (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={theme.color.actionPrimary} />
+            <Text style={styles.loadingText}>Loading profile...</Text>
+          </View>
+        );
+      }
+
+      return (
+        <ProfileScreen
+          profile={profile}
+          onBack={() => setModalRoute(emptyModalRoute)}
+          onSave={handleSaveProfile}
+        />
+      );
+    }
+
     if (activeTab === "dashboard") {
       return (
         <DashboardScreen
@@ -1077,7 +1141,11 @@ export default function App() {
 
     return (
       <SettingsScreen
+        profile={profile}
         smsDisclosureVersion={bootstrap?.legal.smsDisclosureVersion ?? "sms_disclosure_v1"}
+        onOpenProfile={() => {
+          setModalRoute({ kind: "profile" });
+        }}
         onRequestEnable={handleSmsIntent}
         onOpenCategoryManager={() => {
           setModalRoute({ kind: "categoryManager" });

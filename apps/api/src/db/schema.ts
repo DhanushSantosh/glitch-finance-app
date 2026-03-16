@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -26,6 +27,39 @@ export const users = pgTable(
   },
   (table) => ({
     usersEmailUnique: uniqueIndex("users_email_unique").on(table.email)
+  })
+);
+
+export const userProfiles = pgTable(
+  "user_profiles",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    firstName: varchar("first_name", { length: 80 }),
+    lastName: varchar("last_name", { length: 80 }),
+    displayName: varchar("display_name", { length: 120 }),
+    phoneNumber: varchar("phone_number", { length: 24 }),
+    dateOfBirth: date("date_of_birth"),
+    avatarUrl: varchar("avatar_url", { length: 2048 }),
+    city: varchar("city", { length: 120 }),
+    country: varchar("country", { length: 120 }),
+    timezone: varchar("timezone", { length: 80 }).default("UTC").notNull(),
+    locale: varchar("locale", { length: 35 }).default("en-IN").notNull(),
+    currency: varchar("currency", { length: 3 }).default("INR").notNull(),
+    occupation: varchar("occupation", { length: 120 }),
+    bio: varchar("bio", { length: 280 }),
+    pushNotificationsEnabled: boolean("push_notifications_enabled").default(true).notNull(),
+    emailNotificationsEnabled: boolean("email_notifications_enabled").default(true).notNull(),
+    weeklySummaryEnabled: boolean("weekly_summary_enabled").default(true).notNull(),
+    biometricsEnabled: boolean("biometrics_enabled").default(false).notNull(),
+    marketingOptIn: boolean("marketing_opt_in").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => ({
+    userProfilesTimezoneIndex: index("user_profiles_timezone_idx").on(table.timezone)
   })
 );
 

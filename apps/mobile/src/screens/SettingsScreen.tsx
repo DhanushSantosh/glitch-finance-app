@@ -1,10 +1,13 @@
 import { Text, View } from "react-native";
 import { AppHeader, Button, Card, InlineMessage, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree } from "lucide-react-native";
+import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User } from "lucide-react-native";
+import { UserProfile } from "../types";
 
 type SettingsScreenProps = {
+  profile: UserProfile | null;
   smsDisclosureVersion: string;
+  onOpenProfile: () => void;
   onRequestEnable: (enabled: boolean) => Promise<void>;
   onOpenCategoryManager: () => void;
   onDeleteAccount: () => Promise<void>;
@@ -12,15 +15,38 @@ type SettingsScreenProps = {
 };
 
 export const SettingsScreen = ({
+  profile,
   smsDisclosureVersion,
+  onOpenProfile,
   onRequestEnable,
   onOpenCategoryManager,
   onDeleteAccount,
   onSignOut
 }: SettingsScreenProps) => {
+  const resolvedProfileName =
+    profile?.displayName?.trim() ||
+    [profile?.firstName?.trim(), profile?.lastName?.trim()].filter(Boolean).join(" ") ||
+    profile?.email ||
+    "Profile";
+
   return (
     <Screen>
       <AppHeader title="System" subtitle="Security and configuration." />
+
+      <Card variant="glass" style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleRow}>
+            <User size={18} color={theme.color.textMuted} />
+            <Text style={styles.sectionTitle}>PROFILE</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>Manage identity and profile-specific preferences.</Text>
+        </View>
+        <View style={styles.profileSummary}>
+          <Text style={styles.profileName}>{resolvedProfileName}</Text>
+          <Text style={styles.profileEmail}>{profile?.email ?? "Loading profile..."}</Text>
+        </View>
+        <Button label="EDIT PROFILE" variant="secondary" onPress={onOpenProfile} />
+      </Card>
 
       <Card variant="glass" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
@@ -147,6 +173,24 @@ const styles = createStyles(() => ({
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 1
+  },
+  profileSummary: {
+    gap: 2,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.color.surfaceMuted
+  },
+  profileName: {
+    color: theme.color.textPrimary,
+    fontSize: theme.typography.body,
+    fontWeight: "700"
+  },
+  profileEmail: {
+    color: theme.color.textMuted,
+    fontSize: theme.typography.caption,
+    fontWeight: "600"
   },
   actionRow: {
     flexDirection: "row",

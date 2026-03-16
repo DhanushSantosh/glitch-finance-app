@@ -8,7 +8,8 @@ export type ModalRoute =
   | { kind: "categoryForm"; mode: "create" | "edit" }
   | { kind: "transactionForm"; mode: "create" | "edit" }
   | { kind: "budgetForm"; mode: "create" | "edit" }
-  | { kind: "goalForm"; mode: "create" | "edit" };
+  | { kind: "goalForm"; mode: "create" | "edit" }
+  | { kind: "profile" };
 
 export type TabSpec = {
   route: AppTabRoute;

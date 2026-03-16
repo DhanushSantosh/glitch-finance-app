@@ -1,0 +1,210 @@
+import { randomUUID } from "node:crypto";
+import type { FastifyInstance } from "fastify";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createApp } from "../app.js";
+
+type AuthResult = {
+  token: string;
+  userId: string;
+};
+
+const authViaOtp = async (app: FastifyInstance, email: string): Promise<AuthResult> => {
+  const requestOtpResponse = await app.inject({
+    method: "POST",
+    url: "/api/v1/auth/request-otp",
+    payload: { email }
+  });
+
+  expect(requestOtpResponse.statusCode).toBe(200);
+  const requestOtpJson = requestOtpResponse.json() as { debugOtpCode?: string };
+  expect(requestOtpJson.debugOtpCode).toBeTruthy();
+
+  const verifyResponse = await app.inject({
+    method: "POST",
+    url: "/api/v1/auth/verify-otp",
+    payload: {
+      email,
+      code: requestOtpJson.debugOtpCode
+    }
+  });
+
+  expect(verifyResponse.statusCode).toBe(200);
+  const verifyJson = verifyResponse.json() as {
+    token: string;
+    user: { id: string };
+  };
+
+  return {
+    token: verifyJson.token,
+    userId: verifyJson.user.id
+  };
+};
+
+describe("profile integration", () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createApp();
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns default profile values for a newly authenticated user", async () => {
+    const auth = await authViaOtp(app, `profile-default-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    const json = response.json() as {
+      item: {
+        id: string;
+        email: string;
+        firstName: string | null;
+        settings: {
+          pushNotificationsEnabled: boolean;
+          emailNotificationsEnabled: boolean;
+          weeklySummaryEnabled: boolean;
+          biometricsEnabled: boolean;
+          marketingOptIn: boolean;
+        };
+      };
+    };
+
+    expect(json.item.id).toBe(auth.userId);
+    expect(json.item.email).toContain("profile-default-");
+    expect(json.item.firstName).toBeNull();
+    expect(json.item.settings.pushNotificationsEnabled).toBe(true);
+    expect(json.item.settings.emailNotificationsEnabled).toBe(true);
+    expect(json.item.settings.weeklySummaryEnabled).toBe(true);
+    expect(json.item.settings.biometricsEnabled).toBe(false);
+    expect(json.item.settings.marketingOptIn).toBe(false);
+  });
+
+  it("updates and persists profile fields and per-profile settings", async () => {
+    const auth = await authViaOtp(app, `profile-update-${randomUUID()}@example.com`);
+
+    const updateResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        firstName: "Dhanush",
+        lastName: "K",
+        displayName: "Dhanush K",
+        phoneNumber: "+919999999999",
+        dateOfBirth: "2002-08-21",
+        avatarUrl: "https://images.example.com/avatar.png",
+        city: "Bengaluru",
+        country: "India",
+        timezone: "Asia/Kolkata",
+        locale: "en-IN",
+        currency: "INR",
+        occupation: "Student",
+        bio: "Building Glitch to production quality.",
+        settings: {
+          pushNotificationsEnabled: false,
+          emailNotificationsEnabled: true,
+          weeklySummaryEnabled: false,
+          biometricsEnabled: true,
+          marketingOptIn: true
+        }
+      }
+    });
+
+    expect(updateResponse.statusCode).toBe(200);
+    const updated = updateResponse.json() as {
+      item: {
+        firstName: string | null;
+        lastName: string | null;
+        displayName: string | null;
+        settings: {
+          pushNotificationsEnabled: boolean;
+          weeklySummaryEnabled: boolean;
+          biometricsEnabled: boolean;
+          marketingOptIn: boolean;
+        };
+      };
+    };
+
+    expect(updated.item.firstName).toBe("Dhanush");
+    expect(updated.item.lastName).toBe("K");
+    expect(updated.item.displayName).toBe("Dhanush K");
+    expect(updated.item.settings.pushNotificationsEnabled).toBe(false);
+    expect(updated.item.settings.weeklySummaryEnabled).toBe(false);
+    expect(updated.item.settings.biometricsEnabled).toBe(true);
+    expect(updated.item.settings.marketingOptIn).toBe(true);
+
+    const readBackResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      }
+    });
+
+    expect(readBackResponse.statusCode).toBe(200);
+    const readBack = readBackResponse.json() as {
+      item: {
+        firstName: string | null;
+        city: string | null;
+        settings: {
+          pushNotificationsEnabled: boolean;
+          weeklySummaryEnabled: boolean;
+          biometricsEnabled: boolean;
+          marketingOptIn: boolean;
+        };
+      };
+    };
+
+    expect(readBack.item.firstName).toBe("Dhanush");
+    expect(readBack.item.city).toBe("Bengaluru");
+    expect(readBack.item.settings.pushNotificationsEnabled).toBe(false);
+    expect(readBack.item.settings.weeklySummaryEnabled).toBe(false);
+    expect(readBack.item.settings.biometricsEnabled).toBe(true);
+    expect(readBack.item.settings.marketingOptIn).toBe(true);
+  });
+
+  it("rejects invalid profile payloads", async () => {
+    const auth = await authViaOtp(app, `profile-invalid-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        avatarUrl: "ftp://invalid.example.com/avatar.png"
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+    const json = response.json() as {
+      error: {
+        code: string;
+      };
+    };
+
+    expect(json.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("requires auth for profile endpoints", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/profile"
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});

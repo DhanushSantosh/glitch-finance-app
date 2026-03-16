@@ -37,6 +37,7 @@ Session token persisted with `AsyncStorage`.
 | Goals | `activeTab = goals` |
 | Add/Edit Goal | `modalRoute.kind = goalForm` |
 | Settings | `activeTab = settings` |
+| Profile | `modalRoute.kind = profile` |
 | Category Studio | `modalRoute.kind = categoryManager` |
 | Add/Edit Category | `modalRoute.kind = categoryForm` |
 | Login | pre-auth (`authStage = login`) |
@@ -61,6 +62,7 @@ Redis-backed rate limiting with in-memory fallback.
 | `reports` | `/api/v1/reports/summary`, `/api/v1/reports/export` | Monthly aggregated summaries, CSV/PDF export |
 | `budgets` | `/api/v1/budgets` | Monthly per-category budget plans with live spend aggregation |
 | `goals` | `/api/v1/goals` | Savings goals with progress and completion state |
+| `profile` | `/api/v1/profile` | User profile details and per-profile preference settings |
 | `consents` | `/api/v1/consents/*` | SMS import consent state and intent logging |
 | `imports` | `/api/v1/imports/sms/scan` | Explicit-trigger SMS field extraction with guardrails |
 | `audit` | (internal service) | Immutable audit event writes, called from other modules |

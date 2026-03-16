@@ -57,6 +57,8 @@ Build a cross-platform (iOS + Android) personal finance tracker focused on UPI-e
 - **FR-002**: User shall log in securely with session continuity across devices.
 - **FR-003**: User shall reset account access using verified recovery method.
 - **FR-004**: User shall delete account and associated cloud data from settings.
+- **FR-005**: User shall view and update profile details (name, avatar URL, phone, location, locale/timezone/currency, bio) from settings.
+- **FR-006**: User shall manage per-profile preferences (notifications, weekly summary, biometric lock intent, product updates).
 
 ### 8.2 Transaction Core
 - **FR-010**: User shall create, edit, delete manual transactions.

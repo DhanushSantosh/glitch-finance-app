@@ -5,6 +5,35 @@ export type User = {
   email: string;
 };
 
+export type ProfileSettings = {
+  pushNotificationsEnabled: boolean;
+  emailNotificationsEnabled: boolean;
+  weeklySummaryEnabled: boolean;
+  biometricsEnabled: boolean;
+  marketingOptIn: boolean;
+};
+
+export type UserProfile = {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  avatarUrl: string | null;
+  city: string | null;
+  country: string | null;
+  timezone: string;
+  locale: string;
+  currency: string;
+  occupation: string | null;
+  bio: string | null;
+  settings: ProfileSettings;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
 export type Category = {
   id: string;
   name: string;

@@ -81,6 +81,43 @@ const meResponseSchema = z
   })
   .strict();
 
+const profileItemSchema = z
+  .object({
+    id: z.string().uuid(),
+    email: z.string().email(),
+    firstName: z.string().nullable(),
+    lastName: z.string().nullable(),
+    displayName: z.string().nullable(),
+    phoneNumber: z.string().nullable(),
+    dateOfBirth: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
+    city: z.string().nullable(),
+    country: z.string().nullable(),
+    timezone: z.string().min(1),
+    locale: z.string().min(1),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+    occupation: z.string().nullable(),
+    bio: z.string().nullable(),
+    settings: z
+      .object({
+        pushNotificationsEnabled: z.boolean(),
+        emailNotificationsEnabled: z.boolean(),
+        weeklySummaryEnabled: z.boolean(),
+        biometricsEnabled: z.boolean(),
+        marketingOptIn: z.boolean()
+      })
+      .strict(),
+    createdAt: isoDateTimeStringSchema.nullable(),
+    updatedAt: isoDateTimeStringSchema.nullable()
+  })
+  .strict();
+
+const profileResponseSchema = z
+  .object({
+    item: profileItemSchema
+  })
+  .strict();
+
 const transactionItemSchema = z
   .object({
     id: z.string().uuid(),
@@ -279,6 +316,63 @@ describe("api contracts", () => {
     expect(meAfterLogoutResponse.statusCode).toBe(401);
     const unauthorized = parseJson(meAfterLogoutResponse.json(), errorEnvelopeSchema);
     expect(unauthorized.error.code).toBe("UNAUTHORIZED");
+  });
+
+  it("validates profile contracts and error envelopes", async () => {
+    const email = `contracts-profile-${randomUUID()}@example.com`;
+    const auth = await authenticate(app, email);
+
+    const getProfileResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      }
+    });
+    expect(getProfileResponse.statusCode).toBe(200);
+    parseJson(getProfileResponse.json(), profileResponseSchema);
+
+    const invalidUpdateResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        avatarUrl: "ftp://invalid-avatar.example.com/avatar.png"
+      }
+    });
+    expect(invalidUpdateResponse.statusCode).toBe(400);
+    parseJson(invalidUpdateResponse.json(), validationErrorEnvelopeSchema);
+
+    const updateProfileResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        displayName: "Contracts User",
+        timezone: "Asia/Kolkata",
+        currency: "INR",
+        settings: {
+          pushNotificationsEnabled: false,
+          weeklySummaryEnabled: false
+        }
+      }
+    });
+    expect(updateProfileResponse.statusCode).toBe(200);
+    const profileBody = parseJson(updateProfileResponse.json(), profileResponseSchema);
+    expect(profileBody.item.displayName).toBe("Contracts User");
+    expect(profileBody.item.settings.pushNotificationsEnabled).toBe(false);
+    expect(profileBody.item.settings.weeklySummaryEnabled).toBe(false);
+
+    const unauthorizedResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/profile"
+    });
+    expect(unauthorizedResponse.statusCode).toBe(401);
+    parseJson(unauthorizedResponse.json(), errorEnvelopeSchema);
   });
 
   it("validates transaction contracts and error envelopes", async () => {

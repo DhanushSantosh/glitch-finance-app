@@ -5,11 +5,13 @@ import {
   BudgetListResponse,
   Category,
   Goal,
+  ProfileSettings,
   ReportSummary,
   Transaction,
   TransactionListQuery,
   TransactionListResponse,
-  User
+  User,
+  UserProfile
 } from "../types";
 
 type RequestOptions = {
@@ -119,6 +121,40 @@ export const apiClient = {
     return request<User>("/api/v1/me", {
       token
     });
+  },
+
+  async getProfile(token: string): Promise<UserProfile> {
+    const result = await request<{ item: UserProfile }>("/api/v1/profile", {
+      token
+    });
+    return result.item;
+  },
+
+  async updateProfile(
+    token: string,
+    payload: Partial<{
+      firstName: string;
+      lastName: string;
+      displayName: string;
+      phoneNumber: string;
+      dateOfBirth: string | null;
+      avatarUrl: string;
+      city: string;
+      country: string;
+      timezone: string;
+      locale: string;
+      currency: string;
+      occupation: string;
+      bio: string;
+      settings: Partial<ProfileSettings>;
+    }>
+  ): Promise<UserProfile> {
+    const result = await request<{ item: UserProfile }>("/api/v1/profile", {
+      method: "PATCH",
+      token,
+      body: payload
+    });
+    return result.item;
   },
 
   async logout(token: string): Promise<void> {
