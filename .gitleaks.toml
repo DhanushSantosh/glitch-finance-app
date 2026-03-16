@@ -1,0 +1,22 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Project-level allowlist for known false positives"
+
+paths = [
+  # Test fixtures and example configs — never real secrets
+  '''.env.example''',
+  '''apps/api/.env.example''',
+  # pnpm lockfile integrity hashes — not secrets
+  '''pnpm-lock.yaml''',
+]
+
+regexes = [
+  # OTP hash secret placeholder in example env files
+  '''test-secret-at-least-16''',
+  # Postgres example DSN in docs/config
+  '''postgresql://glitch:glitch@''',
+  # Redis example DSN
+  '''redis://127\.0\.0\.1:6379''',
+]
