@@ -1,11 +1,16 @@
 import { Platform } from "react-native";
 import * as Crypto from "expo-crypto";
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes
-} from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
+
+// @react-native-google-signin/google-signin requires a native build — not available in Expo Go.
+// Lazy-require so the import doesn't crash the runtime when the native module is absent.
+let _googleSignin: typeof import("@react-native-google-signin/google-signin") | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  _googleSignin = require("@react-native-google-signin/google-signin");
+} catch {
+  // Running in Expo Go or an environment without the native module — Google Sign-In disabled.
+}
 
 export type GoogleSignInResult = {
   idToken: string;
@@ -22,11 +27,22 @@ export type AppleSignInResult = {
   };
 };
 
+export function isGoogleSignInAvailable(): boolean {
+  return _googleSignin !== null;
+}
+
 export function configureGoogleSignIn(webClientId: string): void {
-  GoogleSignin.configure({ webClientId, offlineAccess: false });
+  if (!_googleSignin) return;
+  _googleSignin.GoogleSignin.configure({ webClientId, offlineAccess: false });
 }
 
 export async function signInWithGoogle(): Promise<GoogleSignInResult> {
+  if (!_googleSignin) {
+    throw new Error("Google Sign-In requires a development build (not available in Expo Go).");
+  }
+
+  const { GoogleSignin, isErrorWithCode, statusCodes } = _googleSignin;
+
   try {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const response = await GoogleSignin.signIn();

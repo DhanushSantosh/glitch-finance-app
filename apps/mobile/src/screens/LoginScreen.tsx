@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Platform, Text, View } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
+import { isGoogleSignInAvailable } from "../auth/oauthProviders";
 import { createStyles, theme } from "../theme";
 
 type LoginScreenProps = {
@@ -16,6 +17,7 @@ export const LoginScreen = ({ onRequestOtp, onGoogleSignIn, onAppleSignIn }: Log
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const googleAvailable = isGoogleSignInAvailable();
 
   useEffect(() => {
     if (Platform.OS === "ios") {
@@ -98,31 +100,37 @@ export const LoginScreen = ({ onRequestOtp, onGoogleSignIn, onAppleSignIn }: Log
           />
         </View>
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
+        {(googleAvailable || appleAvailable) && (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-        <View style={styles.oauthButtons}>
-          <Button
-            label="Continue with Google"
-            variant="secondary"
-            loading={googleLoading}
-            disabled={anyLoading}
-            onPress={() => void handleGoogleSignIn()}
-          />
+            <View style={styles.oauthButtons}>
+              {googleAvailable && (
+                <Button
+                  label="Continue with Google"
+                  variant="secondary"
+                  loading={googleLoading}
+                  disabled={anyLoading}
+                  onPress={() => void handleGoogleSignIn()}
+                />
+              )}
 
-          {appleAvailable && (
-            <Button
-              label="Continue with Apple"
-              variant="secondary"
-              loading={appleLoading}
-              disabled={anyLoading}
-              onPress={() => void handleAppleSignIn()}
-            />
-          )}
-        </View>
+              {appleAvailable && (
+                <Button
+                  label="Continue with Apple"
+                  variant="secondary"
+                  loading={appleLoading}
+                  disabled={anyLoading}
+                  onPress={() => void handleAppleSignIn()}
+                />
+              )}
+            </View>
+          </>
+        )}
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>By continuing, you agree to our Terms and Privacy Policy.</Text>
