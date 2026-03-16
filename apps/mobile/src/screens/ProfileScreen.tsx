@@ -6,47 +6,7 @@ import * as ImagePicker from "expo-image-picker";
 import { AppHeader, Button, Card, InlineMessage, Screen, TextField, SelectField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { UserProfile } from "../types";
-
-// Common timezones
-const timeZoneOptions = [
-  { value: "UTC", label: "UTC" },
-  { value: "America/New_York", label: "Eastern Time (US)" },
-  { value: "America/Chicago", label: "Central Time (US)" },
-  { value: "America/Denver", label: "Mountain Time (US)" },
-  { value: "America/Los_Angeles", label: "Pacific Time (US)" },
-  { value: "Europe/London", label: "London" },
-  { value: "Europe/Paris", label: "Paris" },
-  { value: "Europe/Berlin", label: "Berlin" },
-  { value: "Asia/Dubai", label: "Dubai" },
-  { value: "Asia/Kolkata", label: "India (IST)" },
-  { value: "Asia/Singapore", label: "Singapore" },
-  { value: "Asia/Tokyo", label: "Tokyo" },
-  { value: "Australia/Sydney", label: "Sydney" }
-];
-
-// Common currencies
-const currencyOptions = [
-  { value: "USD", label: "US Dollar (USD)" },
-  { value: "EUR", label: "Euro (EUR)" },
-  { value: "GBP", label: "British Pound (GBP)" },
-  { value: "INR", label: "Indian Rupee (INR)" },
-  { value: "AUD", label: "Australian Dollar (AUD)" },
-  { value: "CAD", label: "Canadian Dollar (CAD)" },
-  { value: "SGD", label: "Singapore Dollar (SGD)" },
-  { value: "JPY", label: "Japanese Yen (JPY)" },
-  { value: "AED", label: "UAE Dirham (AED)" }
-];
-
-// Common locales
-const localeOptions = [
-  { value: "en-US", label: "English (US)" },
-  { value: "en-GB", label: "English (UK)" },
-  { value: "en-IN", label: "English (India)" },
-  { value: "fr-FR", label: "French" },
-  { value: "de-DE", label: "German" },
-  { value: "es-ES", label: "Spanish" },
-  { value: "ja-JP", label: "Japanese" }
-];
+import { timeZoneOptions, currencyOptions, localeOptions } from "../utils/regionalOptions";
 
 type AvatarUploadPayload = {
   uri: string;

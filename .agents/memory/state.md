@@ -34,7 +34,7 @@ updated_at: 2026-03-16
 - Replaced the 'Settings' icon in the `BottomTabBar` with a 'User' icon, and implemented dynamic rendering of the user's profile picture if one is uploaded
 - Cleaned up the `ProfileScreen` by removing the manual "Profile Picture URL" text input field as users should rely entirely on device-native file/gallery picker uploads
 - Added a dynamic, rotating greeting message with the user's name to the top of the `DashboardScreen` that cycles every 30 seconds
-- Updated the `ProfileScreen` Regional Preferences section to use a new custom `SelectField` component for Timezone, Locale, and Currency inputs, allowing easy selection from standard options
+- Updated the `ProfileScreen` Regional Preferences section to use a new custom `SelectField` component for Timezone, Locale, and Currency inputs, now populated with an exhaustive, dynamically-generated list of all standard Intl options
 
 ### Infrastructure
 - pnpm monorepo workspaces
