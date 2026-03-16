@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
+import { AppHeader, Button, Card, InlineMessage, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 
 type OtpVerifyScreenProps = {
@@ -12,15 +12,17 @@ type OtpVerifyScreenProps = {
 export const OtpVerifyScreen = ({ email, onBack, onVerify }: OtpVerifyScreenProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleVerify = async () => {
     try {
       setLoading(true);
-      setError(null);
       await onVerify(code);
     } catch (verifyError) {
-      setError(verifyError instanceof Error ? verifyError.message : "Unable to verify OTP.");
+      publishToast({
+        tone: "error",
+        title: "Unable to verify OTP",
+        message: verifyError instanceof Error ? verifyError.message : "Unable to verify OTP."
+      });
     } finally {
       setLoading(false);
     }
@@ -46,8 +48,6 @@ export const OtpVerifyScreen = ({ email, onBack, onVerify }: OtpVerifyScreenProp
             textContentType="oneTimeCode"
             style={styles.otpInput}
           />
-
-          {error ? <InlineMessage tone="error" text={error} /> : null}
 
           <Button 
             label="Verify & Sign In" 
@@ -101,4 +101,3 @@ const styles = createStyles(() => ({
     minHeight: 40
   }
 }));
-

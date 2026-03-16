@@ -35,7 +35,14 @@ export const SelectField = ({ label, value, options, onSelect, placeholder, sear
 
   return (
     <>
-      <Pressable onPress={() => { setSearchQuery(""); setModalVisible(true); }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Select ${label}`}
+        onPress={() => {
+          setSearchQuery("");
+          setModalVisible(true);
+        }}
+      >
         <View pointerEvents="none">
           <TextField
             label={label}
@@ -52,6 +59,7 @@ export const SelectField = ({ label, value, options, onSelect, placeholder, sear
 
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
+          <Pressable style={styles.backdropPressable} onPress={() => setModalVisible(false)} />
           <SafeAreaView style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select {label}</Text>
@@ -120,6 +128,9 @@ const styles = createStyles(() => ({
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "flex-end",
+  },
+  backdropPressable: {
+    flex: 1,
   },
   modalContent: {
     backgroundColor: theme.color.bgBase,

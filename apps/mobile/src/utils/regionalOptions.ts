@@ -2386,8 +2386,8 @@ export const localeOptions = [
     "label": "ko-KR"
   },
   {
-    "value": "nl-IT",
-    "label": "nl-IT"
+    "value": "nl-NL",
+    "label": "nl-NL"
   },
   {
     "value": "pt-BR",

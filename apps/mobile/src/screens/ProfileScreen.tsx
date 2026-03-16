@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
-import { Image, Switch, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { AppHeader, Button, Card, InlineMessage, Screen, TextField, SelectField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, TextField, SelectField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { UserProfile } from "../types";
 import { timeZoneOptions, currencyOptions, localeOptions } from "../utils/regionalOptions";
-import { smartCountryData, countryOptions } from "../utils/smartRegions";
+import { countryOptions, getCityOptionsForCountry, getCountryByCode, getCountryCodeFromValue } from "../utils/smartRegions";
 
 type AvatarUploadPayload = {
   uri: string;
@@ -29,7 +29,6 @@ type ProfileFormSubmit = {
   currency: string;
   occupation: string;
   bio: string;
-  settings: UserProfile["settings"];
 };
 
 type ProfileScreenProps = {
@@ -89,12 +88,6 @@ const prepareAvatarForUpload = async (uri: string): Promise<AvatarUploadPayload>
   };
 };
 
-// Map existing full country names to ISO codes if needed
-const getCountryCodeFromName = (name: string) => {
-  const match = Object.entries(smartCountryData).find(([_, data]) => data.name === name);
-  return match ? match[0] : "";
-};
-
 export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemoveAvatar }: ProfileScreenProps) => {
   const [firstName, setFirstName] = useState(profile.firstName ?? "");
   const [lastName, setLastName] = useState(profile.lastName ?? "");
@@ -104,7 +97,7 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? "");
   
   // Try to map existing country back to code, or fallback to empty
-  const [countryCode, setCountryCode] = useState(getCountryCodeFromName(profile.country ?? "") || "");
+  const [countryCode, setCountryCode] = useState(getCountryCodeFromValue(profile.country ?? "") || "");
   const [city, setCity] = useState(profile.city ?? "");
   
   const [timezone, setTimezone] = useState(profile.timezone);
@@ -114,35 +107,27 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   const [occupation, setOccupation] = useState(profile.occupation ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
 
-  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(profile.settings.pushNotificationsEnabled);
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(profile.settings.emailNotificationsEnabled);
-  const [weeklySummaryEnabled, setWeeklySummaryEnabled] = useState(profile.settings.weeklySummaryEnabled);
-  const [biometricsEnabled, setBiometricsEnabled] = useState(profile.settings.biometricsEnabled);
-  const [marketingOptIn, setMarketingOptIn] = useState(profile.settings.marketingOptIn);
-
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [removingAvatar, setRemovingAvatar] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Derived city options based on selected country
   const cityOptions = useMemo(() => {
-    if (!countryCode || !smartCountryData[countryCode]) return [];
-    return smartCountryData[countryCode].cities.map(c => ({ value: c, label: c }));
+    return getCityOptionsForCountry(countryCode);
   }, [countryCode]);
 
   const handleCountrySelect = (newCode: string) => {
     setCountryCode(newCode);
-    const data = smartCountryData[newCode];
+    const data = getCountryByCode(newCode);
     if (data) {
       setCity(""); // Reset city since country changed
       setTimezone(data.timezone);
       setLocale(data.locale);
       setCurrency(data.currency);
       // Optional: auto-select first city
-      if (data.cities.length > 0) {
-        setCity(data.cities[0]);
+      const nextCities = getCityOptionsForCountry(newCode);
+      if (nextCities.length > 0) {
+        setCity(nextCities[0].value);
       }
     }
   };
@@ -161,72 +146,100 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   }, [avatarUrl]);
 
   const uploadAvatarFromUri = async (uri: string): Promise<void> => {
-    setError(null);
-    setSuccess(null);
     setUploadingAvatar(true);
 
     try {
       const preparedFile = await prepareAvatarForUpload(uri);
       const uploadedUrl = await onUploadAvatar(preparedFile);
       setAvatarUrl(uploadedUrl);
-      setSuccess("Profile picture updated.");
+      publishToast({
+        tone: "success",
+        title: "Profile picture",
+        message: "Profile picture updated."
+      });
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Unable to upload profile picture right now.");
+      publishToast({
+        tone: "error",
+        title: "Profile picture",
+        message: uploadError instanceof Error ? uploadError.message : "Unable to upload profile picture right now."
+      });
     } finally {
       setUploadingAvatar(false);
     }
   };
 
   const handleChooseFromGallery = async () => {
-    setError(null);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        publishToast({
+          tone: "warn",
+          title: "Gallery permission",
+          message: "Gallery permission is required to choose a profile picture."
+        });
+        return;
+      }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError("Gallery permission is required to choose a profile picture.");
-      return;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        aspect: [1, 1]
+      });
+
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
+
+      await uploadAvatarFromUri(result.assets[0].uri);
+    } catch (pickerError) {
+      publishToast({
+        tone: "error",
+        title: "Profile picture",
+        message: pickerError instanceof Error ? pickerError.message : "Unable to open gallery right now."
+      });
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-      aspect: [1, 1]
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    await uploadAvatarFromUri(result.assets[0].uri);
   };
 
   const handleChooseFromFiles = async () => {
-    setError(null);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*",
+        copyToCacheDirectory: true,
+        multiple: false
+      });
 
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "image/*",
-      copyToCacheDirectory: true,
-      multiple: false
-    });
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
 
-    if (result.canceled || !result.assets[0]) {
-      return;
+      await uploadAvatarFromUri(result.assets[0].uri);
+    } catch (pickerError) {
+      publishToast({
+        tone: "error",
+        title: "Profile picture",
+        message: pickerError instanceof Error ? pickerError.message : "Unable to open files right now."
+      });
     }
-
-    await uploadAvatarFromUri(result.assets[0].uri);
   };
 
   const handleRemoveAvatar = async () => {
-    setError(null);
-    setSuccess(null);
     setRemovingAvatar(true);
 
     try {
       await onRemoveAvatar();
       setAvatarUrl("");
-      setSuccess("Profile picture removed.");
+      publishToast({
+        tone: "success",
+        title: "Profile picture",
+        message: "Profile picture removed."
+      });
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : "Unable to remove profile picture right now.");
+      publishToast({
+        tone: "error",
+        title: "Profile picture",
+        message: removeError instanceof Error ? removeError.message : "Unable to remove profile picture right now."
+      });
     } finally {
       setRemovingAvatar(false);
     }
@@ -236,31 +249,43 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
     const normalizedCurrency = currency.trim().toUpperCase();
 
     if (normalizedCurrency.length !== 3) {
-      setError("Currency must be a valid 3-letter code (for example INR).");
+      publishToast({
+        tone: "error",
+        title: "Profile",
+        message: "Currency must be a valid 3-letter code (for example INR)."
+      });
       return;
     }
 
     if (timezone.trim().length === 0) {
-      setError("Timezone is required.");
+      publishToast({
+        tone: "error",
+        title: "Profile",
+        message: "Timezone is required."
+      });
       return;
     }
 
     if (locale.trim().length === 0) {
-      setError("Locale is required.");
+      publishToast({
+        tone: "error",
+        title: "Profile",
+        message: "Locale is required."
+      });
       return;
     }
 
     if (dateOfBirth.trim().length > 0 && !isValidDateOnly(dateOfBirth.trim())) {
-      setError("Date of birth must be in YYYY-MM-DD format.");
+      publishToast({
+        tone: "error",
+        title: "Profile",
+        message: "Date of birth must be in YYYY-MM-DD format."
+      });
       return;
     }
 
-    const finalCountryName = countryCode && smartCountryData[countryCode] 
-      ? smartCountryData[countryCode].name 
-      : profile.country ?? "";
+    const finalCountryName = getCountryByCode(countryCode)?.name ?? profile.country ?? "";
 
-    setError(null);
-    setSuccess(null);
     setSaving(true);
 
     try {
@@ -277,19 +302,14 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
         locale,
         currency: normalizedCurrency,
         occupation,
-        bio,
-        settings: {
-          pushNotificationsEnabled,
-          emailNotificationsEnabled,
-          weeklySummaryEnabled,
-          biometricsEnabled,
-          marketingOptIn
-        }
+        bio
       });
-
-      setSuccess("Profile updated successfully.");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Unable to save profile right now.");
+      publishToast({
+        tone: "error",
+        title: "Profile",
+        message: saveError instanceof Error ? saveError.message : "Unable to save profile right now."
+      });
     } finally {
       setSaving(false);
     }
@@ -300,9 +320,6 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   return (
     <Screen keyboardAware>
       <AppHeader title="Your Profile" subtitle="Identity and personalized app settings." />
-
-      {error ? <InlineMessage tone="error" text={error} /> : null}
-      {success ? <InlineMessage tone="success" text={success} /> : null}
 
       <Card variant="glass" style={styles.profileCard}>
         <View style={styles.profileHeaderRow}>
@@ -448,75 +465,6 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
         />
       </Card>
 
-      <Card variant="muted" style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>PROFILE SETTINGS</Text>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleTextWrap}>
-            <Text style={styles.toggleTitle}>Push Notifications</Text>
-            <Text style={styles.toggleSubtitle}>Transaction and reminder alerts on this profile.</Text>
-          </View>
-          <Switch
-            value={pushNotificationsEnabled}
-            onValueChange={setPushNotificationsEnabled}
-            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
-            thumbColor={theme.color.surface}
-          />
-        </View>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleTextWrap}>
-            <Text style={styles.toggleTitle}>Email Notifications</Text>
-            <Text style={styles.toggleSubtitle}>Receive security and account activity emails.</Text>
-          </View>
-          <Switch
-            value={emailNotificationsEnabled}
-            onValueChange={setEmailNotificationsEnabled}
-            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
-            thumbColor={theme.color.surface}
-          />
-        </View>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleTextWrap}>
-            <Text style={styles.toggleTitle}>Weekly Summary</Text>
-            <Text style={styles.toggleSubtitle}>Get a weekly spend digest for this profile.</Text>
-          </View>
-          <Switch
-            value={weeklySummaryEnabled}
-            onValueChange={setWeeklySummaryEnabled}
-            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
-            thumbColor={theme.color.surface}
-          />
-        </View>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleTextWrap}>
-            <Text style={styles.toggleTitle}>Biometric Lock</Text>
-            <Text style={styles.toggleSubtitle}>Require biometrics before app access on this device.</Text>
-          </View>
-          <Switch
-            value={biometricsEnabled}
-            onValueChange={setBiometricsEnabled}
-            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
-            thumbColor={theme.color.surface}
-          />
-        </View>
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleTextWrap}>
-            <Text style={styles.toggleTitle}>Product Updates</Text>
-            <Text style={styles.toggleSubtitle}>Receive feature announcements and onboarding tips.</Text>
-          </View>
-          <Switch
-            value={marketingOptIn}
-            onValueChange={setMarketingOptIn}
-            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
-            thumbColor={theme.color.surface}
-          />
-        </View>
-      </Card>
-
       <View style={styles.actionRow}>
         <Button label="Back" variant="ghost" onPress={onBack} style={styles.actionButton} disabled={saving} />
         <Button
@@ -604,29 +552,6 @@ const styles = createStyles(() => ({
   bioInput: {
     minHeight: 92,
     textAlignVertical: "top"
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.color.borderSubtle
-  },
-  toggleTextWrap: {
-    flex: 1,
-    gap: 2
-  },
-  toggleTitle: {
-    color: theme.color.textPrimary,
-    fontSize: theme.typography.body,
-    fontWeight: "600"
-  },
-  toggleSubtitle: {
-    color: theme.color.textSecondary,
-    fontSize: theme.typography.caption,
-    fontWeight: "500"
   },
   actionRow: {
     flexDirection: "row",

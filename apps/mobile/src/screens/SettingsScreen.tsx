@@ -1,7 +1,8 @@
-import { Text, View } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen } from "../components/ui";
+import { useEffect, useRef, useState } from "react";
+import { Switch, Text, View } from "react-native";
+import { AppHeader, Button, Card, InlineMessage, publishToast, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User } from "lucide-react-native";
+import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User, SlidersHorizontal } from "lucide-react-native";
 import { UserProfile } from "../types";
 
 type SettingsScreenProps = {
@@ -10,6 +11,7 @@ type SettingsScreenProps = {
   onOpenProfile: () => void;
   onRequestEnable: (enabled: boolean) => Promise<void>;
   onOpenCategoryManager: () => void;
+  onSaveProfileSettings: (settings: UserProfile["settings"]) => Promise<void>;
   onDeleteAccount: () => Promise<void>;
   onSignOut: () => Promise<void>;
 };
@@ -20,6 +22,7 @@ export const SettingsScreen = ({
   onOpenProfile,
   onRequestEnable,
   onOpenCategoryManager,
+  onSaveProfileSettings,
   onDeleteAccount,
   onSignOut
 }: SettingsScreenProps) => {
@@ -28,6 +31,113 @@ export const SettingsScreen = ({
     [profile?.firstName?.trim(), profile?.lastName?.trim()].filter(Boolean).join(" ") ||
     profile?.email ||
     "Profile";
+
+  const [settingsState, setSettingsState] = useState<UserProfile["settings"]>(
+    profile?.settings ?? {
+      pushNotificationsEnabled: true,
+      emailNotificationsEnabled: true,
+      weeklySummaryEnabled: true,
+      biometricsEnabled: false,
+      marketingOptIn: false
+    }
+  );
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const requestVersionRef = useRef(0);
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setSettingsState(profile.settings);
+  }, [profile]);
+
+  const updatePreference = async (patch: Partial<UserProfile["settings"]>) => {
+    if (!profile) {
+      return;
+    }
+
+    const nextSettings: UserProfile["settings"] = {
+      ...settingsState,
+      ...patch
+    };
+    const requestVersion = requestVersionRef.current + 1;
+    requestVersionRef.current = requestVersion;
+    const [updatedKey] = Object.keys(patch) as (keyof UserProfile["settings"])[];
+
+    const preferenceLabelMap: Record<keyof UserProfile["settings"], string> = {
+      pushNotificationsEnabled: "Push notifications",
+      emailNotificationsEnabled: "Email notifications",
+      weeklySummaryEnabled: "Weekly summary",
+      biometricsEnabled: "Biometric lock",
+      marketingOptIn: "Product updates"
+    };
+    const preferenceLabel = updatedKey ? preferenceLabelMap[updatedKey] : "Preference";
+    const preferenceState = updatedKey && nextSettings[updatedKey] ? "enabled" : "disabled";
+
+    setSettingsState(nextSettings);
+    setSavingPreferences(true);
+
+    try {
+      await onSaveProfileSettings(nextSettings);
+      if (requestVersionRef.current === requestVersion) {
+        publishToast({
+          tone: "success",
+          title: "Preferences",
+          message: `${preferenceLabel} ${preferenceState}.`
+        });
+      }
+    } catch (error) {
+      if (requestVersionRef.current === requestVersion) {
+        setSettingsState(profile.settings);
+        publishToast({
+          tone: "error",
+          title: "Preferences",
+          message: error instanceof Error ? error.message : "Unable to update preferences right now."
+        });
+      }
+    } finally {
+      if (requestVersionRef.current === requestVersion) {
+        setSavingPreferences(false);
+      }
+    }
+  };
+
+  const handleSmsIntentAction = async (enabled: boolean) => {
+    try {
+      await onRequestEnable(enabled);
+    } catch (error) {
+      publishToast({
+        tone: "error",
+        title: "SMS protocol",
+        message: error instanceof Error ? error.message : "Unable to record this request right now."
+      });
+    }
+  };
+
+  const handleSignOutTap = async () => {
+    try {
+      await onSignOut();
+    } catch (error) {
+      publishToast({
+        tone: "error",
+        title: "Sign out",
+        message: error instanceof Error ? error.message : "Unable to sign out right now."
+      });
+    }
+  };
+
+  const handleDeleteAccountTap = async () => {
+    try {
+      await onDeleteAccount();
+    } catch (error) {
+      publishToast({
+        tone: "error",
+        title: "Delete account",
+        message: error instanceof Error ? error.message : "Unable to delete account right now."
+      });
+    }
+  };
 
   return (
     <Screen>
@@ -39,7 +149,7 @@ export const SettingsScreen = ({
             <User size={18} color={theme.color.textMuted} />
             <Text style={styles.sectionTitle}>PROFILE</Text>
           </View>
-          <Text style={styles.sectionSubtitle}>Manage identity and profile-specific preferences.</Text>
+          <Text style={styles.sectionSubtitle}>Manage identity and regional profile details.</Text>
         </View>
         <View style={styles.profileSummary}>
           <Text style={styles.profileName}>{resolvedProfileName}</Text>
@@ -75,7 +185,7 @@ export const SettingsScreen = ({
               </>
             } 
             variant="ghost" 
-            onPress={() => void onRequestEnable(false)} 
+            onPress={() => void handleSmsIntentAction(false)} 
             style={styles.flexAction} 
           />
           <Button 
@@ -86,7 +196,7 @@ export const SettingsScreen = ({
               </>
             } 
             variant="primary" 
-            onPress={() => void onRequestEnable(true)} 
+            onPress={() => void handleSmsIntentAction(true)} 
             style={styles.flexAction} 
           />
         </View>
@@ -103,6 +213,96 @@ export const SettingsScreen = ({
         <Button label="MANAGE CATEGORIES" variant="secondary" onPress={onOpenCategoryManager} />
       </Card>
 
+      <Card variant="glass" style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.titleRow}>
+            <SlidersHorizontal size={18} color={theme.color.textMuted} />
+            <Text style={styles.sectionTitle}>PREFERENCES</Text>
+          </View>
+          <Text style={styles.sectionSubtitle}>App behavior controls for this account.</Text>
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleTextWrap}>
+            <Text style={styles.toggleTitle}>Push Notifications</Text>
+            <Text style={styles.toggleSubtitle}>Transaction and reminder alerts.</Text>
+          </View>
+          <Switch
+            value={settingsState.pushNotificationsEnabled}
+            disabled={savingPreferences || !profile}
+            onValueChange={(value) => {
+              void updatePreference({ pushNotificationsEnabled: value });
+            }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
+          />
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleTextWrap}>
+            <Text style={styles.toggleTitle}>Email Notifications</Text>
+            <Text style={styles.toggleSubtitle}>Security and account activity emails.</Text>
+          </View>
+          <Switch
+            value={settingsState.emailNotificationsEnabled}
+            disabled={savingPreferences || !profile}
+            onValueChange={(value) => {
+              void updatePreference({ emailNotificationsEnabled: value });
+            }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
+          />
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleTextWrap}>
+            <Text style={styles.toggleTitle}>Weekly Summary</Text>
+            <Text style={styles.toggleSubtitle}>Weekly spending digest and trends.</Text>
+          </View>
+          <Switch
+            value={settingsState.weeklySummaryEnabled}
+            disabled={savingPreferences || !profile}
+            onValueChange={(value) => {
+              void updatePreference({ weeklySummaryEnabled: value });
+            }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
+          />
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleTextWrap}>
+            <Text style={styles.toggleTitle}>Biometric Lock</Text>
+            <Text style={styles.toggleSubtitle}>Require biometric unlock on this device.</Text>
+          </View>
+          <Switch
+            value={settingsState.biometricsEnabled}
+            disabled={savingPreferences || !profile}
+            onValueChange={(value) => {
+              void updatePreference({ biometricsEnabled: value });
+            }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
+          />
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleTextWrap}>
+            <Text style={styles.toggleTitle}>Product Updates</Text>
+            <Text style={styles.toggleSubtitle}>Feature announcements and release notes.</Text>
+          </View>
+          <Switch
+            value={settingsState.marketingOptIn}
+            disabled={savingPreferences || !profile}
+            onValueChange={(value) => {
+              void updatePreference({ marketingOptIn: value });
+            }}
+            trackColor={{ false: theme.color.borderStrong, true: theme.color.actionPrimary }}
+            thumbColor={theme.color.surface}
+          />
+        </View>
+      </Card>
+
       <Card variant="muted" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
           <View style={styles.titleRow}>
@@ -114,7 +314,7 @@ export const SettingsScreen = ({
         <Button 
           label="SEVER CONNECTION" 
           variant="danger" 
-          onPress={() => void onSignOut()} 
+          onPress={() => void handleSignOutTap()} 
           style={styles.signOutButton}
         />
       </Card>
@@ -124,7 +324,7 @@ export const SettingsScreen = ({
           <Text style={[styles.sectionTitle, { color: theme.color.statusError }]}>ACCOUNT DELETION</Text>
           <Text style={styles.sectionSubtitle}>Permanently remove account data from cloud storage.</Text>
         </View>
-        <Button label="DELETE ACCOUNT" variant="danger" onPress={() => void onDeleteAccount()} />
+        <Button label="DELETE ACCOUNT" variant="danger" onPress={() => void handleDeleteAccountTap()} />
       </Card>
 
       <View style={styles.versionFooter}>
@@ -191,6 +391,29 @@ const styles = createStyles(() => ({
     color: theme.color.textMuted,
     fontSize: theme.typography.caption,
     fontWeight: "600"
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.color.borderSubtle
+  },
+  toggleTextWrap: {
+    flex: 1,
+    gap: 2
+  },
+  toggleTitle: {
+    color: theme.color.textPrimary,
+    fontSize: theme.typography.body,
+    fontWeight: "600"
+  },
+  toggleSubtitle: {
+    color: theme.color.textSecondary,
+    fontSize: theme.typography.caption,
+    fontWeight: "500"
   },
   actionRow: {
     flexDirection: "row",

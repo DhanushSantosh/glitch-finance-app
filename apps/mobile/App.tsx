@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
-import { BottomTabBar, InlineMessage } from "./src/components/ui";
+import { BottomTabBar, InlineMessage, publishToast, ToastViewport } from "./src/components/ui";
 import { deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "./src/flow/mobileFlow";
 import { AppTabRoute, defaultTabRoute, emptyModalRoute, ModalRoute } from "./src/navigation/routes";
 import { BudgetFormScreen } from "./src/screens/BudgetFormScreen";
@@ -138,7 +138,11 @@ const resolveErrorMessage = (error: unknown, fallback: string): string => {
 };
 
 const showActionError = (title: string, error: unknown, fallback: string): void => {
-  Alert.alert(title, resolveErrorMessage(error, fallback));
+  publishToast({
+    tone: "error",
+    title,
+    message: resolveErrorMessage(error, fallback)
+  });
 };
 
 export default function App() {
@@ -490,7 +494,12 @@ export default function App() {
     const response = await apiClient.requestOtp(email);
     setPendingEmail(email.trim().toLowerCase());
     if (response.debugOtpCode) {
-      Alert.alert("Development OTP", `Use this OTP: ${response.debugOtpCode}`);
+      publishToast({
+        tone: "info",
+        title: "Development OTP",
+        message: `Use this OTP: ${response.debugOtpCode}`,
+        durationMs: 4500
+      });
     }
   };
 
@@ -518,8 +527,17 @@ export default function App() {
               await apiClient.deleteTransaction(token, transaction.id);
               setTransactions((previous) => previous.filter((item) => item.id !== transaction.id));
               enqueueReconcileSync(token);
+              publishToast({
+                tone: "success",
+                title: "Transactions",
+                message: "Transaction deleted."
+              });
             } catch (error) {
-              Alert.alert("Unable to delete transaction", resolveErrorMessage(error, "Please try again."));
+              publishToast({
+                tone: "error",
+                title: "Unable to delete transaction",
+                message: resolveErrorMessage(error, "Please try again.")
+              });
             }
           })();
         }
@@ -612,6 +630,11 @@ export default function App() {
     setModalRoute(emptyModalRoute);
     setActiveTab("transactions");
     enqueueReconcileSync(token);
+    publishToast({
+      tone: "success",
+      title: "Transactions",
+      message: modalRoute.kind === "transactionForm" && modalRoute.mode === "edit" ? "Transaction updated." : "Transaction created."
+    });
   };
 
   const handleSaveCategory = async (payload: { name: string; direction: "debit" | "credit" | "transfer" }) => {
@@ -652,6 +675,11 @@ export default function App() {
     setEditingCategory(null);
     setModalRoute({ kind: "categoryManager" });
     enqueueReconcileSync(token);
+    publishToast({
+      tone: "success",
+      title: "Categories",
+      message: modalRoute.kind === "categoryForm" && modalRoute.mode === "edit" ? "Category updated." : "Category created."
+    });
   };
 
   const handleDeleteCategory = async (category: Category) => {
@@ -679,8 +707,17 @@ export default function App() {
                 )
               );
               enqueueReconcileSync(token);
+              publishToast({
+                tone: "success",
+                title: "Categories",
+                message: "Category deleted."
+              });
             } catch (error) {
-              Alert.alert("Unable to delete category", resolveErrorMessage(error, "Please try again."));
+              publishToast({
+                tone: "error",
+                title: "Unable to delete category",
+                message: resolveErrorMessage(error, "Please try again.")
+              });
             }
           })();
         }
@@ -787,6 +824,11 @@ export default function App() {
     setModalRoute(emptyModalRoute);
     setActiveTab("budgets");
     enqueueReconcileSync(token);
+    publishToast({
+      tone: "success",
+      title: "Budgets",
+      message: modalRoute.kind === "budgetForm" && modalRoute.mode === "edit" ? "Budget updated." : "Budget created."
+    });
   };
 
   const handleDeleteBudget = async (budget: Budget) => {
@@ -808,8 +850,17 @@ export default function App() {
                 return next;
               });
               enqueueReconcileSync(token);
+              publishToast({
+                tone: "success",
+                title: "Budgets",
+                message: "Budget deleted."
+              });
             } catch (error) {
-              Alert.alert("Unable to delete budget", resolveErrorMessage(error, "Please try again."));
+              publishToast({
+                tone: "error",
+                title: "Unable to delete budget",
+                message: resolveErrorMessage(error, "Please try again.")
+              });
             }
           })();
         }
@@ -855,6 +906,11 @@ export default function App() {
     setModalRoute(emptyModalRoute);
     setActiveTab("goals");
     enqueueReconcileSync(token);
+    publishToast({
+      tone: "success",
+      title: "Goals",
+      message: modalRoute.kind === "goalForm" && modalRoute.mode === "edit" ? "Goal updated." : "Goal created."
+    });
   };
 
   const handleContributeGoal = async (goal: Goal, increment: number) => {
@@ -868,6 +924,11 @@ export default function App() {
 
     setGoals((previous) => previous.map((item) => (item.id === updatedGoal.id ? updatedGoal : item)));
     enqueueReconcileSync(token);
+    publishToast({
+      tone: "success",
+      title: "Goals",
+      message: "Contribution applied."
+    });
   };
 
   const handleDeleteGoal = async (goal: Goal) => {
@@ -884,8 +945,17 @@ export default function App() {
               await apiClient.deleteGoal(token, goal.id);
               setGoals((previous) => previous.filter((item) => item.id !== goal.id));
               enqueueReconcileSync(token);
+              publishToast({
+                tone: "success",
+                title: "Goals",
+                message: "Goal deleted."
+              });
             } catch (error) {
-              Alert.alert("Unable to delete goal", resolveErrorMessage(error, "Please try again."));
+              publishToast({
+                tone: "error",
+                title: "Unable to delete goal",
+                message: resolveErrorMessage(error, "Please try again.")
+              });
             }
           })();
         }
@@ -907,11 +977,23 @@ export default function App() {
     currency: string;
     occupation: string;
     bio: string;
-    settings: UserProfile["settings"];
   }) => {
     if (!token) return;
 
     const updatedProfile = await apiClient.updateProfile(token, payload);
+    setProfile(updatedProfile);
+    enqueueReconcileSync(token);
+    publishToast({
+      tone: "success",
+      title: "Profile",
+      message: "Profile updated."
+    });
+  };
+
+  const handleSaveProfileSettings = async (settings: UserProfile["settings"]) => {
+    if (!token) return;
+
+    const updatedProfile = await apiClient.updateProfile(token, { settings });
     setProfile(updatedProfile);
     enqueueReconcileSync(token);
   };
@@ -941,10 +1023,13 @@ export default function App() {
     if (!token) return;
     await apiClient.logSmsIntent(token, enabled);
     const outcome = resolveSmsIntentOutcome(enabled);
-    Alert.alert(
-      "Request recorded",
-      `SMS detection remains disabled in this sprint. Requested: ${outcome.requestedEnabled ? "enable" : "disable"}.`
-    );
+    publishToast({
+      tone: "info",
+      title: "Request recorded",
+      message: `SMS detection remains disabled in this sprint. Requested: ${
+        outcome.requestedEnabled ? "enable" : "disable"
+      }.`
+    });
   };
 
   const clearAuthenticatedState = () => {
@@ -983,7 +1068,11 @@ export default function App() {
     clearAuthenticatedState();
 
     if (remoteLogoutFailed) {
-      Alert.alert("Signed out locally", "Could not complete server logout due to a network issue, but this device session is cleared.");
+      publishToast({
+        tone: "warn",
+        title: "Signed out locally",
+        message: "Could not complete server logout due to a network issue, but this device session is cleared."
+      });
     }
   };
 
@@ -1003,7 +1092,11 @@ export default function App() {
               try {
                 await apiClient.deleteAccount(token);
               } catch {
-                Alert.alert("Delete failed", "Could not delete account right now. Please try again.");
+                publishToast({
+                  tone: "error",
+                  title: "Delete failed",
+                  message: "Could not delete account right now. Please try again."
+                });
                 return;
               }
 
@@ -1218,6 +1311,7 @@ export default function App() {
         onOpenCategoryManager={() => {
           setModalRoute({ kind: "categoryManager" });
         }}
+        onSaveProfileSettings={handleSaveProfileSettings}
         onDeleteAccount={handleDeleteAccount}
         onSignOut={handleSignOut}
       />
@@ -1265,6 +1359,7 @@ export default function App() {
         <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
           <StatusBar style="light" />
           {renderShellContent()}
+          <ToastViewport bottomOffset={modalRoute.kind === "none" && isAuthenticated ? 120 : 24} />
         </SafeAreaView>
       </SafeAreaProvider>
     </GestureHandlerRootView>

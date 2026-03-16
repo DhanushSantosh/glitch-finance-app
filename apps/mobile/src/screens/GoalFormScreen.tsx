@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { Goal } from "../types";
 import { Check, X, Target, Wallet, Clock, BarChart3 } from "lucide-react-native";
@@ -26,7 +26,6 @@ export const GoalFormScreen = ({ initial, defaultCurrency, onCancel, onSubmit }:
   const [currentAmount, setCurrentAmount] = useState(initial ? String(initial.currentAmount) : "0");
   const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
   const [targetDate, setTargetDate] = useState(initial?.targetDate ? initial.targetDate.slice(0, 10) : "");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const resolveMessage = (input: unknown, fallback: string): string =>
@@ -34,7 +33,11 @@ export const GoalFormScreen = ({ initial, defaultCurrency, onCancel, onSubmit }:
 
   const handleSubmit = async () => {
     if (name.trim().length < 2) {
-      setError("Enter a valid objective name.");
+      publishToast({
+        tone: "error",
+        title: "Goal",
+        message: "Enter a valid objective name."
+      });
       return;
     }
 
@@ -42,21 +45,32 @@ export const GoalFormScreen = ({ initial, defaultCurrency, onCancel, onSubmit }:
     const parsedCurrent = Number(currentAmount);
 
     if (!Number.isFinite(parsedTarget) || parsedTarget <= 0) {
-      setError("Enter a valid target amount.");
+      publishToast({
+        tone: "error",
+        title: "Goal",
+        message: "Enter a valid target amount."
+      });
       return;
     }
 
     if (!Number.isFinite(parsedCurrent) || parsedCurrent < 0) {
-      setError("Enter a valid current amount.");
+      publishToast({
+        tone: "error",
+        title: "Goal",
+        message: "Enter a valid current amount."
+      });
       return;
     }
 
     if (targetDate && Number.isNaN(new Date(targetDate).getTime())) {
-      setError("Target date must be a valid date.");
+      publishToast({
+        tone: "error",
+        title: "Goal",
+        message: "Target date must be a valid date."
+      });
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
@@ -68,7 +82,11 @@ export const GoalFormScreen = ({ initial, defaultCurrency, onCancel, onSubmit }:
         targetDate: targetDate ? new Date(targetDate).toISOString() : null
       });
     } catch (submitError) {
-      setError(resolveMessage(submitError, "Unable to save goal right now."));
+      publishToast({
+        tone: "error",
+        title: "Goal",
+        message: resolveMessage(submitError, "Unable to save goal right now.")
+      });
     } finally {
       setLoading(false);
     }
@@ -80,8 +98,6 @@ export const GoalFormScreen = ({ initial, defaultCurrency, onCancel, onSubmit }:
         title={initial ? "Modify Objective" : "New Objective"}
         subtitle="Define capital accumulation parameters."
       />
-
-      {error ? <InlineMessage tone="error" text={error} /> : null}
 
       <Card variant="glass" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>

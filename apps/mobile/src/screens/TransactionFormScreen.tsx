@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen, SegmentedControl, TextField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, SegmentedControl, TextField } from "../components/ui";
 import { canSubmitTransaction } from "../flow/mobileFlow";
 import { createStyles, theme } from "../theme";
 import { Category, Transaction, TransactionDirection } from "../types";
@@ -32,7 +32,6 @@ export const TransactionFormScreen = ({ categories, initial, defaultCurrency, on
   const [counterparty, setCounterparty] = useState(initial?.counterparty ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [occurredAt, setOccurredAt] = useState(initial ? initial.occurredAt.slice(0, 19) : new Date().toISOString().slice(0, 19));
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const resolveMessage = (input: unknown, fallback: string): string =>
@@ -46,16 +45,23 @@ export const TransactionFormScreen = ({ categories, initial, defaultCurrency, on
   const handleSubmit = async () => {
     const parsedAmount = Number(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setError("Enter a valid non-zero amount.");
+      publishToast({
+        tone: "error",
+        title: "Transaction",
+        message: "Enter a valid non-zero amount."
+      });
       return;
     }
 
     if (!canSubmitTransaction(String(parsedAmount), occurredAt)) {
-      setError("Enter a valid date/time in ISO format (YYYY-MM-DDTHH:mm:ss).");
+      publishToast({
+        tone: "error",
+        title: "Transaction",
+        message: "Enter a valid date/time in ISO format (YYYY-MM-DDTHH:mm:ss)."
+      });
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
@@ -69,7 +75,11 @@ export const TransactionFormScreen = ({ categories, initial, defaultCurrency, on
         occurredAt: new Date(occurredAt).toISOString()
       });
     } catch (submitError) {
-      setError(resolveMessage(submitError, "Unable to save transaction right now."));
+      publishToast({
+        tone: "error",
+        title: "Transaction",
+        message: resolveMessage(submitError, "Unable to save transaction right now.")
+      });
     } finally {
       setLoading(false);
     }
@@ -86,8 +96,6 @@ export const TransactionFormScreen = ({ categories, initial, defaultCurrency, on
         title={initial ? "Modify Entry" : "New Entry"}
         subtitle="Record transaction telemetry."
       />
-
-      {error ? <InlineMessage tone="error" text={error} /> : null}
 
       <Card variant="glass" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 
 type LoginScreenProps = {
@@ -10,15 +10,17 @@ type LoginScreenProps = {
 export const LoginScreen = ({ onRequestOtp }: LoginScreenProps) => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSendOtp = async () => {
     try {
-      setError(null);
       setLoading(true);
       await onRequestOtp(email);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to request OTP.");
+      publishToast({
+        tone: "error",
+        title: "Unable to request OTP",
+        message: requestError instanceof Error ? requestError.message : "Unable to request OTP."
+      });
     } finally {
       setLoading(false);
     }
@@ -44,8 +46,6 @@ export const LoginScreen = ({ onRequestOtp }: LoginScreenProps) => {
             placeholder="name@domain.com"
             helperText="A secure OTP will be sent to this email."
           />
-
-          {error ? <InlineMessage tone="error" text={error} /> : null}
 
           <Button 
             label="Continue" 
@@ -97,4 +97,3 @@ const styles = createStyles(() => ({
     letterSpacing: 0.5
   }
 }));
-

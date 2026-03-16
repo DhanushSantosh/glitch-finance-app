@@ -1,130 +1,150 @@
-export const smartCountryData: Record<string, { name: string; currency: string; locale: string; timezone: string; cities: string[] }> = {
-  "US": {
-    "name": "United States",
-    "currency": "USD",
-    "locale": "en-US",
-    "timezone": "America/New_York",
-    "cities": [
-      "New York",
-      "Los Angeles",
-      "Chicago",
-      "Houston",
-      "Phoenix"
-    ]
-  },
-  "IN": {
-    "name": "India",
-    "currency": "INR",
-    "locale": "en-IN",
-    "timezone": "Asia/Kolkata",
-    "cities": [
-      "Mumbai",
-      "Delhi",
-      "Bangalore",
-      "Hyderabad",
-      "Chennai"
-    ]
-  },
-  "GB": {
-    "name": "United Kingdom",
-    "currency": "GBP",
-    "locale": "en-GB",
-    "timezone": "Europe/London",
-    "cities": [
-      "London",
-      "Birmingham",
-      "Manchester",
-      "Glasgow",
-      "Edinburgh"
-    ]
-  },
-  "CA": {
-    "name": "Canada",
-    "currency": "CAD",
-    "locale": "en-CA",
-    "timezone": "America/Toronto",
-    "cities": [
-      "Toronto",
-      "Montreal",
-      "Vancouver",
-      "Calgary",
-      "Ottawa"
-    ]
-  },
-  "AU": {
-    "name": "Australia",
-    "currency": "AUD",
-    "locale": "en-AU",
-    "timezone": "Australia/Sydney",
-    "cities": [
-      "Sydney",
-      "Melbourne",
-      "Brisbane",
-      "Perth",
-      "Adelaide"
-    ]
-  },
-  "DE": {
-    "name": "Germany",
-    "currency": "EUR",
-    "locale": "de-DE",
-    "timezone": "Europe/Berlin",
-    "cities": [
-      "Berlin",
-      "Munich",
-      "Frankfurt",
-      "Hamburg",
-      "Cologne"
-    ]
-  },
-  "FR": {
-    "name": "France",
-    "currency": "EUR",
-    "locale": "fr-FR",
-    "timezone": "Europe/Paris",
-    "cities": [
-      "Paris",
-      "Marseille",
-      "Lyon",
-      "Toulouse",
-      "Nice"
-    ]
-  },
-  "JP": {
-    "name": "Japan",
-    "currency": "JPY",
-    "locale": "ja-JP",
-    "timezone": "Asia/Tokyo",
-    "cities": [
-      "Tokyo",
-      "Yokohama",
-      "Osaka",
-      "Nagoya",
-      "Sapporo"
-    ]
-  },
-  "AE": {
-    "name": "United Arab Emirates",
-    "currency": "AED",
-    "locale": "ar-AE",
-    "timezone": "Asia/Dubai",
-    "cities": [
-      "Dubai",
-      "Abu Dhabi",
-      "Sharjah",
-      "Al Ain",
-      "Ajman"
-    ]
-  },
-  "SG": {
-    "name": "Singapore",
-    "currency": "SGD",
-    "locale": "en-SG",
-    "timezone": "Asia/Singapore",
-    "cities": [
-      "Singapore"
-    ]
+import { City, Country, ICountry } from "country-state-city";
+import { localeOptions } from "./regionalOptions";
+
+type Option = {
+  value: string;
+  label: string;
+};
+
+type CountryRegionData = {
+  code: string;
+  name: string;
+  currency: string;
+  locale: string;
+  timezone: string;
+};
+
+const fallbackCurrency = "USD";
+const fallbackLocale = "en-US";
+const fallbackTimeZone = "UTC";
+
+const localeSet = new Set(localeOptions.map((option) => option.value));
+
+const isSupportedLocale = (value: string): boolean => Intl.DateTimeFormat.supportedLocalesOf([value]).length > 0;
+
+const isSupportedTimeZone = (value: string): boolean => {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
   }
 };
 
-export const countryOptions = Object.entries(smartCountryData).map(([code, data]) => ({ value: code, label: data.name })).sort((a, b) => a.label.localeCompare(b.label));
+const isSupportedCurrency = (value: string): boolean => {
+  if (!/^[A-Z]{3}$/.test(value)) {
+    return false;
+  }
+
+  try {
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: value
+    }).format(1);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const allCountries = Country.getAllCountries().sort((left, right) => left.name.localeCompare(right.name));
+
+const countriesByCode = new Map(allCountries.map((country) => [country.isoCode.toUpperCase(), country]));
+const countriesByName = new Map(allCountries.map((country) => [country.name.trim().toLowerCase(), country.isoCode.toUpperCase()]));
+
+const resolveCountryLocale = (countryCode: string): string => {
+  const exactLocaleMatches = localeOptions
+    .map((option) => option.value)
+    .filter((locale) => locale.toUpperCase().endsWith(`-${countryCode}`) && isSupportedLocale(locale));
+
+  if (exactLocaleMatches.length > 0) {
+    return exactLocaleMatches[0];
+  }
+
+  const englishCandidate = `en-${countryCode}`;
+  if (localeSet.has(englishCandidate) && isSupportedLocale(englishCandidate)) {
+    return englishCandidate;
+  }
+
+  return fallbackLocale;
+};
+
+const resolveCountryCurrency = (country: ICountry): string => {
+  const normalized = (country.currency ?? "").trim().toUpperCase();
+  return isSupportedCurrency(normalized) ? normalized : fallbackCurrency;
+};
+
+const resolveCountryTimeZone = (country: ICountry): string => {
+  const firstZone = country.timezones?.[0]?.zoneName?.trim();
+  return firstZone && isSupportedTimeZone(firstZone) ? firstZone : fallbackTimeZone;
+};
+
+export const countryOptions: Option[] = allCountries.map((country) => ({
+  value: country.isoCode.toUpperCase(),
+  label: country.name
+}));
+
+const cityOptionsCache = new Map<string, Option[]>();
+
+export const getCountryCodeFromValue = (input: string): string => {
+  const normalized = input.trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const upperCode = normalized.toUpperCase();
+  if (countriesByCode.has(upperCode)) {
+    return upperCode;
+  }
+
+  const byName = countriesByName.get(normalized.toLowerCase());
+  return byName ?? "";
+};
+
+export const getCountryByCode = (countryCode: string): CountryRegionData | null => {
+  const country = countriesByCode.get(countryCode.toUpperCase());
+  if (!country) {
+    return null;
+  }
+
+  const code = country.isoCode.toUpperCase();
+
+  return {
+    code,
+    name: country.name,
+    currency: resolveCountryCurrency(country),
+    locale: resolveCountryLocale(code),
+    timezone: resolveCountryTimeZone(country)
+  };
+};
+
+export const getCityOptionsForCountry = (countryCode: string): Option[] => {
+  const normalizedCode = countryCode.trim().toUpperCase();
+  if (!normalizedCode) {
+    return [];
+  }
+
+  const cached = cityOptionsCache.get(normalizedCode);
+  if (cached) {
+    return cached;
+  }
+
+  const citySet = new Set<string>();
+  const cities = City.getCitiesOfCountry(normalizedCode) ?? [];
+  for (const city of cities) {
+    const name = city.name.trim();
+    if (name.length > 0) {
+      citySet.add(name);
+    }
+  }
+
+  const options = Array.from(citySet)
+    .sort((left, right) => left.localeCompare(right))
+    .map((city) => ({
+      value: city,
+      label: city
+    }));
+
+  cityOptionsCache.set(normalizedCode, options);
+  return options;
+};

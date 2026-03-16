@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { Budget, Category } from "../types";
 import { Check, X, Target, CalendarDays, Wallet } from "lucide-react-native";
@@ -29,7 +29,6 @@ export const BudgetFormScreen = ({ categories, initial, month, defaultCurrency, 
   const [monthInput, setMonthInput] = useState(initial?.month ?? month);
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const resolveMessage = (input: unknown, fallback: string): string =>
@@ -37,22 +36,33 @@ export const BudgetFormScreen = ({ categories, initial, month, defaultCurrency, 
 
   const handleSubmit = async () => {
     if (!categoryId) {
-      setError("Select a target category.");
+      publishToast({
+        tone: "error",
+        title: "Budget",
+        message: "Select a target category."
+      });
       return;
     }
 
     const parsedAmount = Number(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setError("Enter a valid non-zero allocation limit.");
+      publishToast({
+        tone: "error",
+        title: "Budget",
+        message: "Enter a valid non-zero allocation limit."
+      });
       return;
     }
 
     if (!MONTH_PATTERN.test(monthInput)) {
-      setError("Cycle must be in YYYY-MM format.");
+      publishToast({
+        tone: "error",
+        title: "Budget",
+        message: "Cycle must be in YYYY-MM format."
+      });
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
@@ -63,7 +73,11 @@ export const BudgetFormScreen = ({ categories, initial, month, defaultCurrency, 
         currency: currency.toUpperCase()
       });
     } catch (submitError) {
-      setError(resolveMessage(submitError, "Unable to save budget right now."));
+      publishToast({
+        tone: "error",
+        title: "Budget",
+        message: resolveMessage(submitError, "Unable to save budget right now.")
+      });
     } finally {
       setLoading(false);
     }
@@ -75,8 +89,6 @@ export const BudgetFormScreen = ({ categories, initial, month, defaultCurrency, 
         title={initial ? "Modify Allocation" : "New Allocation"}
         subtitle="Establish capital constraints and monitor burn rates."
       />
-
-      {error ? <InlineMessage tone="error" text={error} /> : null}
 
       <Card variant="glass" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>

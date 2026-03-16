@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, Screen, SegmentedControl, TextField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, SegmentedControl, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { Category, TransactionDirection } from "../types";
 
@@ -18,7 +18,6 @@ type CategoryFormScreenProps = {
 export const CategoryFormScreen = ({ initial, onCancel, onSubmit }: CategoryFormScreenProps) => {
   const [name, setName] = useState(initial?.name ?? "");
   const [direction, setDirection] = useState<TransactionDirection>(initial?.direction ?? "debit");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const resolveMessage = (input: unknown, fallback: string): string =>
@@ -27,11 +26,14 @@ export const CategoryFormScreen = ({ initial, onCancel, onSubmit }: CategoryForm
   const handleSubmit = async () => {
     const normalizedName = name.trim();
     if (normalizedName.length < 2) {
-      setError("Category name must be at least 2 characters.");
+      publishToast({
+        tone: "error",
+        title: "Category",
+        message: "Category name must be at least 2 characters."
+      });
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
@@ -40,7 +42,11 @@ export const CategoryFormScreen = ({ initial, onCancel, onSubmit }: CategoryForm
         direction
       });
     } catch (submitError) {
-      setError(resolveMessage(submitError, "Unable to save category right now."));
+      publishToast({
+        tone: "error",
+        title: "Category",
+        message: resolveMessage(submitError, "Unable to save category right now.")
+      });
     } finally {
       setLoading(false);
     }
@@ -63,8 +69,6 @@ export const CategoryFormScreen = ({ initial, onCancel, onSubmit }: CategoryForm
           selected={direction}
           onSelect={setDirection}
         />
-
-        {error ? <InlineMessage tone="error" text={error} /> : null}
 
         <View style={styles.actionRow}>
           <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.flexAction} />
