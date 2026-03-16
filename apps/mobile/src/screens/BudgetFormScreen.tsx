@@ -31,6 +31,9 @@ export const BudgetFormScreen = ({ categories, initial, month, onCancel, onSubmi
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const resolveMessage = (input: unknown, fallback: string): string =>
+    input instanceof Error && input.message.trim().length > 0 ? input.message : fallback;
+
   const handleSubmit = async () => {
     if (!categoryId) {
       setError("Select a target category.");
@@ -58,6 +61,8 @@ export const BudgetFormScreen = ({ categories, initial, month, onCancel, onSubmi
         amount: parsedAmount,
         currency: currency.toUpperCase()
       });
+    } catch (submitError) {
+      setError(resolveMessage(submitError, "Unable to save budget right now."));
     } finally {
       setLoading(false);
     }

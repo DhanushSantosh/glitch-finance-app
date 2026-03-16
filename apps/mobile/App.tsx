@@ -136,6 +136,10 @@ const resolveErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const showActionError = (title: string, error: unknown, fallback: string): void => {
+  Alert.alert(title, resolveErrorMessage(error, fallback));
+};
+
 export default function App() {
   const [isBooting, setIsBooting] = useState(true);
   const [pendingEmail, setPendingEmail] = useState("");
@@ -432,7 +436,9 @@ export default function App() {
     const snapshot = transactionFilters;
     transactionFilterTimerRef.current = setTimeout(() => {
       transactionFilterTimerRef.current = null;
-      void fetchTransactions(token, snapshot, 1, false);
+      void fetchTransactions(token, snapshot, 1, false).catch(() => {
+        // Silent background debounce failure; user can retry via Apply.
+      });
     }, TRANSACTION_FILTER_SYNC_DEBOUNCE_MS);
 
     return () => {
@@ -444,7 +450,11 @@ export default function App() {
 
   const refreshAll = async () => {
     if (!token) return;
-    await syncLatestData(token, { showRefreshing: true });
+    try {
+      await syncLatestData(token, { showRefreshing: true });
+    } catch (error) {
+      showActionError("Sync failed", error, "Unable to refresh data. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -453,7 +463,9 @@ export default function App() {
     }
 
     const runBackgroundSync = () => {
-      void syncLatestData(token);
+      void syncLatestData(token).catch(() => {
+        // Background sync failures should not crash UI flow.
+      });
     };
 
     const intervalId = setInterval(runBackgroundSync, BACKGROUND_SYNC_INTERVAL_MS);
@@ -516,7 +528,11 @@ export default function App() {
       clearTimeout(transactionFilterTimerRef.current);
       transactionFilterTimerRef.current = null;
     }
-    await fetchTransactions(token, transactionFilters, 1, false);
+    try {
+      await fetchTransactions(token, transactionFilters, 1, false);
+    } catch (error) {
+      showActionError("Unable to apply filters", error, "Please check the filter values and retry.");
+    }
   };
 
   const handleResetTransactionFilters = async () => {
@@ -525,8 +541,12 @@ export default function App() {
       clearTimeout(transactionFilterTimerRef.current);
       transactionFilterTimerRef.current = null;
     }
-    setTransactionFilters(defaultTransactionFilters);
-    await fetchTransactions(token, defaultTransactionFilters, 1, false);
+    try {
+      setTransactionFilters(defaultTransactionFilters);
+      await fetchTransactions(token, defaultTransactionFilters, 1, false);
+    } catch (error) {
+      showActionError("Unable to reset filters", error, "Please try again.");
+    }
   };
 
   const handleLoadMoreTransactions = async () => {
@@ -537,6 +557,8 @@ export default function App() {
     setTransactionLoadingMore(true);
     try {
       await fetchTransactions(token, transactionFilters, transactionPagination.nextPage, true);
+    } catch (error) {
+      showActionError("Unable to load more", error, "Please try again.");
     } finally {
       setTransactionLoadingMore(false);
     }
@@ -664,30 +686,40 @@ export default function App() {
   const handleApplyBudgetMonth = async () => {
     if (!token) return;
 
-    const budgetData = await apiClient.getBudgets(token, budgetMonth);
-    setBudgets(budgetData.items);
-    setBudgetTotals(budgetData.totals);
-    setBudgetMonth(budgetData.month);
+    try {
+      const budgetData = await apiClient.getBudgets(token, budgetMonth);
+      setBudgets(budgetData.items);
+      setBudgetTotals(budgetData.totals);
+      setBudgetMonth(budgetData.month);
+    } catch (error) {
+      showActionError("Unable to apply month", error, "Month must be in YYYY-MM format.");
+    }
   };
 
   const handleShiftBudgetMonth = async (delta: number) => {
     if (!token) return;
 
     const nextMonth = shiftMonthToken(budgetMonth, delta);
-    setBudgetMonth(nextMonth);
-
-    const budgetData = await apiClient.getBudgets(token, nextMonth);
-    setBudgets(budgetData.items);
-    setBudgetTotals(budgetData.totals);
-    setBudgetMonth(budgetData.month);
+    try {
+      const budgetData = await apiClient.getBudgets(token, nextMonth);
+      setBudgets(budgetData.items);
+      setBudgetTotals(budgetData.totals);
+      setBudgetMonth(budgetData.month);
+    } catch (error) {
+      showActionError("Unable to change month", error, "Please try again.");
+    }
   };
 
   const handleApplyReportMonth = async () => {
     if (!token) return;
 
-    const summary = await apiClient.getReportSummary(token, reportMonth);
-    setReportSummary(summary);
-    setReportMonth(summary.month);
+    try {
+      const summary = await apiClient.getReportSummary(token, reportMonth);
+      setReportSummary(summary);
+      setReportMonth(summary.month);
+    } catch (error) {
+      showActionError("Unable to apply month", error, "Month must be in YYYY-MM format.");
+    }
   };
 
   const handleSaveBudget = async (payload: { categoryId: string; month: string; amount: number; currency: string }) => {

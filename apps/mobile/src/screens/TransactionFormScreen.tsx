@@ -34,6 +34,9 @@ export const TransactionFormScreen = ({ categories, initial, onCancel, onSubmit 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const resolveMessage = (input: unknown, fallback: string): string =>
+    input instanceof Error && input.message.trim().length > 0 ? input.message : fallback;
+
   const eligibleCategories = useMemo(
     () => categories.filter((category) => category.direction === direction || category.direction === "transfer"),
     [categories, direction]
@@ -64,6 +67,8 @@ export const TransactionFormScreen = ({ categories, initial, onCancel, onSubmit 
         note: note.trim(),
         occurredAt: new Date(occurredAt).toISOString()
       });
+    } catch (submitError) {
+      setError(resolveMessage(submitError, "Unable to save transaction right now."));
     } finally {
       setLoading(false);
     }

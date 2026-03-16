@@ -145,42 +145,50 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   };
 
   const handleChooseFromGallery = async () => {
-    setError(null);
+    try {
+      setError(null);
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError("Gallery permission is required to choose a profile picture.");
-      return;
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setError("Gallery permission is required to choose a profile picture.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        aspect: [1, 1]
+      });
+
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
+
+      await uploadAvatarFromUri(result.assets[0].uri);
+    } catch (pickerError) {
+      setError(pickerError instanceof Error ? pickerError.message : "Unable to open gallery right now.");
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-      aspect: [1, 1]
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    await uploadAvatarFromUri(result.assets[0].uri);
   };
 
   const handleChooseFromFiles = async () => {
-    setError(null);
+    try {
+      setError(null);
 
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "image/*",
-      copyToCacheDirectory: true,
-      multiple: false
-    });
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*",
+        copyToCacheDirectory: true,
+        multiple: false
+      });
 
-    if (result.canceled || !result.assets[0]) {
-      return;
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
+
+      await uploadAvatarFromUri(result.assets[0].uri);
+    } catch (pickerError) {
+      setError(pickerError instanceof Error ? pickerError.message : "Unable to open files right now.");
     }
-
-    await uploadAvatarFromUri(result.assets[0].uri);
   };
 
   const handleRemoveAvatar = async () => {

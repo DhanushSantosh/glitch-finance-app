@@ -21,6 +21,9 @@ export const CategoryFormScreen = ({ initial, onCancel, onSubmit }: CategoryForm
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const resolveMessage = (input: unknown, fallback: string): string =>
+    input instanceof Error && input.message.trim().length > 0 ? input.message : fallback;
+
   const handleSubmit = async () => {
     const normalizedName = name.trim();
     if (normalizedName.length < 2) {
@@ -36,6 +39,8 @@ export const CategoryFormScreen = ({ initial, onCancel, onSubmit }: CategoryForm
         name: normalizedName,
         direction
       });
+    } catch (submitError) {
+      setError(resolveMessage(submitError, "Unable to save category right now."));
     } finally {
       setLoading(false);
     }
@@ -79,4 +84,3 @@ const styles = createStyles(() => ({
     flex: 1
   }
 }));
-

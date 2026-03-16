@@ -28,6 +28,9 @@ export const GoalFormScreen = ({ initial, onCancel, onSubmit }: GoalFormScreenPr
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const resolveMessage = (input: unknown, fallback: string): string =>
+    input instanceof Error && input.message.trim().length > 0 ? input.message : fallback;
+
   const handleSubmit = async () => {
     if (name.trim().length < 2) {
       setError("Enter a valid objective name.");
@@ -63,6 +66,8 @@ export const GoalFormScreen = ({ initial, onCancel, onSubmit }: GoalFormScreenPr
         currency: currency.toUpperCase(),
         targetDate: targetDate ? new Date(targetDate).toISOString() : null
       });
+    } catch (submitError) {
+      setError(resolveMessage(submitError, "Unable to save goal right now."));
     } finally {
       setLoading(false);
     }
