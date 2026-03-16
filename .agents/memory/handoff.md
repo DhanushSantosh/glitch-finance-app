@@ -16,7 +16,7 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-16
 
 **Done:**
-- Refactored session termination UI in `SettingsScreen` to a more user-friendly "SIGN OUT" flow, replacing technical "SEVER CONNECTION" terminology.
+- Refactored session termination UI in `SettingsScreen` to a more user-friendly "SIGN OUT" flow with a native confirmation dialog, replacing technical "SEVER CONNECTION" terminology.
 - Extended sliding animations across the app: completely refactored `SegmentedControl` to use a sliding pill indicator.
 - Implemented a centralized mobile toast system:
   - Added global bus (`publishToast`) and subscriber model.

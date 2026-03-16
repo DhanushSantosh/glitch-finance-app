@@ -45,7 +45,7 @@ updated_at: 2026-03-16
   - Queue + auto-dismiss behavior
   - Bottom-safe placement with subtle fade/slide animation
 - Settings preferences moved below Category Studio and now persist immediately on toggle (no save button)
-- Refactored session termination UI in `SettingsScreen` to a more user-friendly "SIGN OUT" flow, replacing technical "SEVER CONNECTION" terminology
+- Refactored session termination UI in `SettingsScreen` to a more user-friendly "SIGN OUT" flow with a native confirmation dialog, replacing technical "SEVER CONNECTION" terminology
 - Major mutation feedback shifted from nearby inline banners to centralized toast UX
 
 ### Infrastructure

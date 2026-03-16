@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Switch, Text, View } from "react-native";
+import { Alert, Switch, Text, View } from "react-native";
 import { AppHeader, Button, Card, InlineMessage, publishToast, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User, SlidersHorizontal } from "lucide-react-native";
@@ -115,16 +115,29 @@ export const SettingsScreen = ({
     }
   };
 
-  const handleSignOutTap = async () => {
-    try {
-      await onSignOut();
-    } catch (error) {
-      publishToast({
-        tone: "error",
-        title: "Sign out",
-        message: error instanceof Error ? error.message : "Unable to sign out right now."
-      });
-    }
+  const handleSignOutTap = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to log out of your session?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Logout", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await onSignOut();
+            } catch (error) {
+              publishToast({
+                tone: "error",
+                title: "Sign out",
+                message: error instanceof Error ? error.message : "Unable to sign out right now."
+              });
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleDeleteAccountTap = async () => {
