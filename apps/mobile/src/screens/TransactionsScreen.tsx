@@ -3,6 +3,7 @@ import { AppHeader, Button, Card, EmptyState, ListItem, Screen, SegmentedControl
 import { createStyles, theme } from "../theme";
 import { Category, Transaction } from "../types";
 import { formatDateTime, formatMoney } from "../utils/format";
+import { RegionalPreferences } from "../utils/regional";
 import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter } from "lucide-react-native";
 
 type TransactionFilters = {
@@ -18,6 +19,7 @@ type TransactionFilters = {
 type TransactionsScreenProps = {
   items: Transaction[];
   categories: Category[];
+  regionalPreferences: RegionalPreferences;
   filters: TransactionFilters;
   pagination: {
     page: number;
@@ -47,6 +49,7 @@ const getSignedAmount = (item: Transaction): string => {
 export const TransactionsScreen = ({
   items,
   categories,
+  regionalPreferences,
   filters,
   pagination,
   refreshing,
@@ -167,7 +170,7 @@ export const TransactionsScreen = ({
               useCard
               title={item.categoryName ?? "Uncategorized"}
               subtitle={item.counterparty ?? "System"}
-              meta={formatDateTime(item.occurredAt)}
+              meta={formatDateTime(item.occurredAt, regionalPreferences)}
               detail={item.note ?? undefined}
               trailing={
                 <View style={styles.amountContainer}>
@@ -176,7 +179,7 @@ export const TransactionsScreen = ({
                     {isCredit ? <ArrowUpRight size={18} color={theme.color.statusSuccess} style={{marginRight: 4}}/> : null}
                     {!isDebit && !isCredit ? <RefreshCw size={16} color={theme.color.statusInfo} style={{marginRight: 4}}/> : null}
                     <Text style={[styles.amount, isCredit ? styles.credit : null, isDebit ? styles.debit : null]}>
-                      {formatMoney(item.amount, item.currency)}
+                      {formatMoney(item.amount, item.currency, regionalPreferences)}
                     </Text>
                   </View>
                 </View>

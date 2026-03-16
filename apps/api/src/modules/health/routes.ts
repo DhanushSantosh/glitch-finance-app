@@ -52,6 +52,8 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
     return {
       appName: "Quantex25",
       currency: ctx.env.APP_CURRENCY,
+      locale: "en-IN",
+      timezone: "UTC",
       featureFlags: {
         smsImportEnabledByDefault: false,
         aiInsightsEnabled: false

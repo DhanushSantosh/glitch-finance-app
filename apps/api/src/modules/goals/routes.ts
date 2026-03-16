@@ -5,6 +5,7 @@ import { AppError } from "../../errors.js";
 import { savingsGoals } from "../../db/schema.js";
 import { requireAuth } from "../../utils/auth.js";
 import { executeIdempotent } from "../../utils/idempotency.js";
+import { isSupportedCurrency, resolveUserRegionalPreferences } from "../../utils/regional.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import { goalCreateSchema, goalUpdateSchema, idParamSchema } from "./validation.js";
 
@@ -75,6 +76,15 @@ export const registerGoalRoutes = async (app: FastifyInstance, ctx: AppContext):
       userId: identity.userId,
       execute: async () => {
         const body = parseOrThrow(goalCreateSchema, request.body);
+        if (body.currency && !isSupportedCurrency(body.currency.toUpperCase())) {
+          throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
+        }
+        const regionalPreferences = await resolveUserRegionalPreferences(ctx.db, identity.userId, {
+          timezone: "UTC",
+          locale: "en-IN",
+          currency: ctx.env.APP_CURRENCY
+        });
+        const normalizedCurrency = (body.currency ?? regionalPreferences.currency).toUpperCase();
 
         const closedAt = body.currentAmount >= body.targetAmount ? new Date() : null;
 
@@ -85,7 +95,7 @@ export const registerGoalRoutes = async (app: FastifyInstance, ctx: AppContext):
             name: body.name,
             targetAmount: body.targetAmount.toFixed(2),
             currentAmount: body.currentAmount.toFixed(2),
-            currency: body.currency.toUpperCase(),
+            currency: normalizedCurrency,
             targetDate: body.targetDate,
             closedAt,
             updatedAt: new Date()
@@ -138,6 +148,10 @@ export const registerGoalRoutes = async (app: FastifyInstance, ctx: AppContext):
         const existing = existingRows[0];
         if (!existing) {
           throw new AppError(404, "GOAL_NOT_FOUND", "Goal not found.");
+        }
+
+        if (body.currency && !isSupportedCurrency(body.currency.toUpperCase())) {
+          throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
         }
 
         const nextTarget = body.targetAmount ?? Number(existing.targetAmount);

@@ -8,7 +8,7 @@ export const budgetCreateSchema = z.object({
   categoryId: z.string().uuid(),
   month: budgetMonthSchema,
   amount: z.coerce.number().positive().finite(),
-  currency: z.string().length(3).default("INR")
+  currency: z.string().length(3).optional()
 });
 
 export const budgetUpdateSchema = z

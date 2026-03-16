@@ -5,7 +5,7 @@ export const transactionInputSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
   direction: z.enum(["debit", "credit", "transfer"]),
   amount: z.coerce.number().positive().finite(),
-  currency: z.string().length(3).default("INR"),
+  currency: z.string().length(3).optional(),
   counterparty: z.string().trim().max(160).optional(),
   note: z.string().trim().max(1000).optional(),
   occurredAt: z.coerce.date()
@@ -45,11 +45,11 @@ export const normalizeTransactionPayload = (input: {
   counterparty?: string;
   note?: string;
   occurredAt: Date;
-}) => ({
+}, defaultCurrency = "INR") => ({
   categoryId: input.categoryId ?? null,
   direction: input.direction,
   amount: input.amount.toFixed(2),
-  currency: (input.currency ?? "INR").toUpperCase(),
+  currency: (input.currency ?? defaultCurrency).toUpperCase(),
   counterparty: input.counterparty,
   note: input.note,
   occurredAt: input.occurredAt

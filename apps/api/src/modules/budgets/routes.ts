@@ -5,13 +5,12 @@ import { budgetPlans, categories, transactions } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
 import { executeIdempotent } from "../../utils/idempotency.js";
+import { getCurrentMonthTokenForTimeZone, getMonthWindowForTimeZone, isSupportedCurrency, resolveUserRegionalPreferences } from "../../utils/regional.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import {
   budgetCreateSchema,
   budgetListQuerySchema,
   budgetUpdateSchema,
-  getCurrentMonthToken,
-  getMonthWindow,
   idParamSchema
 } from "./validation.js";
 
@@ -29,8 +28,13 @@ export const registerBudgetRoutes = async (app: FastifyInstance, ctx: AppContext
   app.get("/api/v1/budgets", async (request) => {
     const identity = requireAuth(request);
     const query = parseOrThrow(budgetListQuerySchema, request.query);
-    const month = query.month ?? getCurrentMonthToken();
-    const monthWindow = getMonthWindow(month);
+    const regionalPreferences = await resolveUserRegionalPreferences(ctx.db, identity.userId, {
+      timezone: "UTC",
+      locale: "en-IN",
+      currency: ctx.env.APP_CURRENCY
+    });
+    const month = query.month ?? getCurrentMonthTokenForTimeZone(regionalPreferences.timezone);
+    const monthWindow = getMonthWindowForTimeZone(month, regionalPreferences.timezone);
 
     const plans = await ctx.db
       .select({
@@ -122,6 +126,16 @@ export const registerBudgetRoutes = async (app: FastifyInstance, ctx: AppContext
       userId: identity.userId,
       execute: async () => {
         const body = parseOrThrow(budgetCreateSchema, request.body);
+        const regionalPreferences = await resolveUserRegionalPreferences(ctx.db, identity.userId, {
+          timezone: "UTC",
+          locale: "en-IN",
+          currency: ctx.env.APP_CURRENCY
+        });
+        const normalizedCurrency = (body.currency ?? regionalPreferences.currency).toUpperCase();
+
+        if (!isSupportedCurrency(normalizedCurrency)) {
+          throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
+        }
 
         const categoryRows = await ctx.db
           .select({ id: categories.id, direction: categories.direction })
@@ -145,14 +159,14 @@ export const registerBudgetRoutes = async (app: FastifyInstance, ctx: AppContext
             categoryId: body.categoryId,
             month: body.month,
             amount: body.amount.toFixed(2),
-            currency: body.currency.toUpperCase(),
+            currency: normalizedCurrency,
             updatedAt: new Date()
           })
           .onConflictDoUpdate({
             target: [budgetPlans.userId, budgetPlans.categoryId, budgetPlans.month],
             set: {
               amount: body.amount.toFixed(2),
-              currency: body.currency.toUpperCase(),
+              currency: normalizedCurrency,
               updatedAt: new Date()
             }
           })
@@ -210,6 +224,10 @@ export const registerBudgetRoutes = async (app: FastifyInstance, ctx: AppContext
         const existing = existingRows[0];
         if (!existing) {
           throw new AppError(404, "BUDGET_NOT_FOUND", "Budget not found.");
+        }
+
+        if (body.currency && !isSupportedCurrency(body.currency.toUpperCase())) {
+          throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
         }
 
         const nextCategoryId = body.categoryId ?? existing.categoryId;

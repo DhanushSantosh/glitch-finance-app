@@ -80,6 +80,8 @@ export type TransactionListResponse = {
 export type BootstrapPayload = {
   appName: string;
   currency: string;
+  locale?: string;
+  timezone?: string;
   featureFlags: {
     smsImportEnabledByDefault: boolean;
     aiInsightsEnabled: boolean;

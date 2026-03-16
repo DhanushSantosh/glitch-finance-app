@@ -16,18 +16,19 @@ type BudgetFormScreenProps = {
   categories: Category[];
   initial?: Budget | null;
   month: string;
+  defaultCurrency: string;
   onCancel: () => void;
   onSubmit: (payload: BudgetFormSubmit) => Promise<void>;
 };
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-export const BudgetFormScreen = ({ categories, initial, month, onCancel, onSubmit }: BudgetFormScreenProps) => {
+export const BudgetFormScreen = ({ categories, initial, month, defaultCurrency, onCancel, onSubmit }: BudgetFormScreenProps) => {
   const debitCategories = useMemo(() => categories.filter((category) => category.direction === "debit"), [categories]);
   const [categoryId, setCategoryId] = useState<string>(initial?.categoryId ?? debitCategories[0]?.id ?? "");
   const [monthInput, setMonthInput] = useState(initial?.month ?? month);
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
-  const [currency, setCurrency] = useState(initial?.currency ?? "INR");
+  const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

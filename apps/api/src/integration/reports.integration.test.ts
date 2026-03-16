@@ -233,6 +233,81 @@ describe("reports integration", () => {
     expect(summaryJson.totals.transactionCount).toBe(1);
   });
 
+  it("uses profile currency and timezone defaults when query omits currency", async () => {
+    const user = await authViaOtp(app, `reports-regional-${randomUUID()}@example.com`);
+
+    const updateProfileResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        timezone: "America/Los_Angeles",
+        locale: "en-US",
+        currency: "USD"
+      }
+    });
+
+    expect(updateProfileResponse.statusCode).toBe(200);
+
+    const categoriesResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/categories",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    const categoryJson = categoriesResponse.json() as { items: Array<{ id: string; direction: string }> };
+    const debitCategory = categoryJson.items.find((item) => item.direction === "debit");
+    expect(debitCategory).toBeDefined();
+
+    const createTx = async (occurredAt: string, amount: number) => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/transactions",
+        headers: {
+          authorization: `Bearer ${user.token}`
+        },
+        payload: {
+          direction: "debit",
+          amount,
+          categoryId: debitCategory?.id,
+          currency: "USD",
+          occurredAt
+        }
+      });
+      expect(response.statusCode).toBe(200);
+    };
+
+    // Feb 28 23:30 in America/Los_Angeles (excluded from March window)
+    await createTx("2026-03-01T07:30:00.000Z", 20);
+    // Mar 1 00:30 in America/Los_Angeles (included in March window)
+    await createTx("2026-03-01T08:30:00.000Z", 80);
+
+    const summaryResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/summary?month=2026-03",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(summaryResponse.statusCode).toBe(200);
+    const summaryJson = summaryResponse.json() as {
+      totals: { currency: string; expense: number; transactionCount: number };
+      dailySeries: Array<{ date: string; expense: number }>;
+    };
+
+    expect(summaryJson.totals.currency).toBe("USD");
+    expect(summaryJson.totals.expense).toBe(80);
+    expect(summaryJson.totals.transactionCount).toBe(1);
+
+    const marchFirst = summaryJson.dailySeries.find((item) => item.date === "2026-03-01");
+    expect(marchFirst?.expense).toBe(80);
+  });
+
   it("GET /api/v1/reports/export returns 401 when unauthenticated", async () => {
     const response = await app.inject({
       method: "GET",

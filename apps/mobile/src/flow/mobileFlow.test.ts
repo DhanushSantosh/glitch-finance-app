@@ -25,4 +25,11 @@ describe("mobile flow helpers", () => {
   it("returns month token in YYYY-MM format", () => {
     expect(getCurrentMonthToken()).toMatch(/^\d{4}-(0[1-9]|1[0-2])$/);
   });
+
+  it("derives month token using provided timezone", () => {
+    const fixedInstant = new Date("2026-03-01T00:30:00.000Z");
+
+    expect(getCurrentMonthToken("Asia/Kolkata", fixedInstant)).toBe("2026-03");
+    expect(getCurrentMonthToken("America/Los_Angeles", fixedInstant)).toBe("2026-02");
+  });
 });

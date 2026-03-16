@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { budgetMonthSchema, getCurrentMonthToken, getMonthWindow } from "../budgets/validation.js";
+import { budgetMonthSchema } from "../budgets/validation.js";
+import { getCurrentMonthTokenForTimeZone } from "../../utils/regional.js";
 
 export const reportSummaryQuerySchema = z.object({
   month: budgetMonthSchema.optional(),
@@ -11,6 +12,4 @@ export const reportExportQuerySchema = reportSummaryQuerySchema.extend({
   format: z.enum(["csv", "pdf"]).default("csv")
 });
 
-export const resolveReportMonth = (month?: string): string => month ?? getCurrentMonthToken();
-
-export { getMonthWindow };
+export const resolveReportMonth = (month: string | undefined, timeZone: string): string => month ?? getCurrentMonthTokenForTimeZone(timeZone);

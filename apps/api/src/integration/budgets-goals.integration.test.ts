@@ -200,6 +200,59 @@ describe("budgets + goals integration", () => {
     expect(patchJson.item.amount).toBe(3500);
   });
 
+  it("defaults budget and goal currency from user profile when currency is omitted", async () => {
+    const user = await authViaOtp(app, `regional-budget-goal-${randomUUID()}@example.com`);
+
+    const updateProfileResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        currency: "USD"
+      }
+    });
+    expect(updateProfileResponse.statusCode).toBe(200);
+
+    const categoriesResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/categories",
+      headers: { authorization: `Bearer ${user.token}` }
+    });
+    const categoriesJson = categoriesResponse.json() as { items: Array<{ id: string; direction: string }> };
+    const debitCategory = categoriesJson.items.find((item) => item.direction === "debit");
+    expect(debitCategory).toBeDefined();
+
+    const createBudgetResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/budgets",
+      headers: { authorization: `Bearer ${user.token}` },
+      payload: {
+        categoryId: debitCategory?.id,
+        month: "2026-03",
+        amount: 900
+      }
+    });
+    expect(createBudgetResponse.statusCode).toBe(200);
+    const budgetCurrency = (createBudgetResponse.json() as { item: { currency: string } }).item.currency;
+    expect(budgetCurrency).toBe("USD");
+
+    const createGoalResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/goals",
+      headers: { authorization: `Bearer ${user.token}` },
+      payload: {
+        name: "Emergency Reserve",
+        targetAmount: 5000,
+        currentAmount: 250
+      }
+    });
+    expect(createGoalResponse.statusCode).toBe(200);
+    const goalCurrency = (createGoalResponse.json() as { item: { currency: string } }).item.currency;
+    expect(goalCurrency).toBe("USD");
+  });
+
   it("PATCH /api/v1/budgets/:id returns 404 for a non-existent budget id", async () => {
     const user = await authViaOtp(app, `budget-patch-404-${randomUUID()}@example.com`);
     const nonExistentId = randomUUID();

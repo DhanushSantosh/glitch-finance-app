@@ -11,6 +11,14 @@ import { userProfiles, users } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
 import { executeIdempotent } from "../../utils/idempotency.js";
+import {
+  isSupportedCurrency,
+  isSupportedLocale,
+  isSupportedTimeZone,
+  normalizeCurrency,
+  normalizeLocale,
+  normalizeTimeZone
+} from "../../utils/regional.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import { profileUpdateSchema } from "./validation.js";
 
@@ -66,7 +74,14 @@ const toNullableText = (value: string | undefined): string | null => {
   return normalized.length > 0 ? normalized : null;
 };
 
-const toApiProfile = (row: ProfileRow) => ({
+const toApiProfile = (
+  row: ProfileRow,
+  defaults: {
+    timezone: string;
+    locale: string;
+    currency: string;
+  }
+) => ({
   id: row.userId,
   email: row.email,
   firstName: row.firstName,
@@ -77,9 +92,9 @@ const toApiProfile = (row: ProfileRow) => ({
   avatarUrl: row.avatarUrl,
   city: row.city,
   country: row.country,
-  timezone: row.timezone ?? "UTC",
-  locale: row.locale ?? "en-IN",
-  currency: row.currency ?? "INR",
+  timezone: normalizeTimeZone(row.timezone, defaults.timezone),
+  locale: normalizeLocale(row.locale, defaults.locale),
+  currency: normalizeCurrency(row.currency, defaults.currency),
   occupation: row.occupation,
   bio: row.bio,
   settings: {
@@ -230,6 +245,12 @@ const updateAvatarUrl = async (ctx: AppContext, userId: string, avatarUrl: strin
 };
 
 export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContext): Promise<void> => {
+  const profileDefaults = {
+    timezone: "UTC",
+    locale: "en-IN",
+    currency: ctx.env.APP_CURRENCY
+  };
+
   await app.register(multipart, {
     attachFieldsToBody: false,
     limits: {
@@ -266,7 +287,7 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
     const identity = requireAuth(request);
     await ensureUserProfileRow(ctx, identity.userId);
     const profile = await loadUserProfile(ctx, identity.userId);
-    return { item: toApiProfile(profile) };
+    return { item: toApiProfile(profile, profileDefaults) };
   });
 
   app.post("/api/v1/profile/avatar", async (request) => {
@@ -324,7 +345,7 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
       });
 
       const updatedProfile = await loadUserProfile(ctx, identity.userId);
-      return { item: toApiProfile(updatedProfile) };
+      return { item: toApiProfile(updatedProfile, profileDefaults) };
     } catch (error) {
       if (avatarKey) {
         try {
@@ -377,7 +398,7 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
 
         const updatedProfile = await loadUserProfile(ctx, identity.userId);
         return {
-          item: toApiProfile(updatedProfile)
+          item: toApiProfile(updatedProfile, profileDefaults)
         };
       }
     });
@@ -439,18 +460,29 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
         }
 
         if (hasOwn(body, "timezone")) {
-          updates.timezone = body.timezone?.trim().length ? body.timezone.trim() : "UTC";
+          const nextTimezone = body.timezone?.trim();
+          if (nextTimezone && !isSupportedTimeZone(nextTimezone)) {
+            throw new AppError(400, "INVALID_TIMEZONE", "Timezone must be a valid IANA timezone.");
+          }
+          updates.timezone = nextTimezone?.length ? nextTimezone : profileDefaults.timezone;
           changedFields.push("timezone");
         }
 
         if (hasOwn(body, "locale")) {
-          updates.locale = body.locale?.trim().length ? body.locale.trim() : "en-IN";
+          const nextLocale = body.locale?.trim();
+          if (nextLocale && !isSupportedLocale(nextLocale)) {
+            throw new AppError(400, "INVALID_LOCALE", "Locale must be a valid BCP 47 language tag.");
+          }
+          updates.locale = nextLocale?.length ? nextLocale : profileDefaults.locale;
           changedFields.push("locale");
         }
 
         if (hasOwn(body, "currency")) {
           const normalizedCurrency = body.currency?.trim().toUpperCase();
-          updates.currency = normalizedCurrency && normalizedCurrency.length === 3 ? normalizedCurrency : "INR";
+          if (normalizedCurrency && !isSupportedCurrency(normalizedCurrency)) {
+            throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
+          }
+          updates.currency = normalizedCurrency?.length ? normalizedCurrency : profileDefaults.currency;
           changedFields.push("currency");
         }
 
@@ -521,7 +553,7 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
 
         const profile = await loadUserProfile(ctx, identity.userId);
         return {
-          item: toApiProfile(profile)
+          item: toApiProfile(profile, profileDefaults)
         };
       }
     });

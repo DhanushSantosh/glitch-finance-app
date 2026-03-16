@@ -14,6 +14,10 @@
 - Goal validation rules:
   - minimum name length
   - positive target amount and non-negative current amount
+- Regional utility rules:
+  - timezone-aware month token derivation
+  - timezone month-window boundary generation
+  - currency normalization and support checks
 
 ### API Integration Tests
 
@@ -24,8 +28,10 @@
 - Custom category CRUD with ownership and conflict guardrails.
 - Deterministic auto-categorization and correction-learning behavior.
 - Report summary correctness and cross-user isolation.
+- Report summary timezone + profile-currency default behavior.
 - Report export (CSV/PDF) contract checks.
 - Budget CRUD, per-month spend aggregation, and cross-user isolation.
+- Budget/goal create defaults inherit profile currency when currency is omitted.
 - Savings goals CRUD and cross-user isolation.
 - SMS scan route remains disabled by default.
 - Bootstrap policy checks for SMS disabled default.
@@ -43,6 +49,7 @@
 - SMS intent guardrail behavior.
 - Transaction input validity checks.
 - Budget month token derivation helper for month-scoped queries.
+- Regional preference resolution and timezone-sensitive month token derivation.
 - Theme token and navigation route integrity checks.
 - Screen style guard to block raw hex colors in screen files.
 

@@ -28,7 +28,7 @@ describe("reports validation", () => {
   });
 
   it("resolves current month when month is omitted", () => {
-    const resolved = resolveReportMonth();
+    const resolved = resolveReportMonth(undefined, "UTC");
     expect(resolved).toMatch(/^\d{4}-(0[1-9]|1[0-2])$/);
   });
 });

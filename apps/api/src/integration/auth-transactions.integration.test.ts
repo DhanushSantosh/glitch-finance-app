@@ -292,6 +292,39 @@ describe("auth + transaction integration", () => {
     expect(typeof bootstrapJson.legal.smsDisclosureVersion).toBe("string");
   });
 
+  it("defaults transaction currency from user profile when omitted", async () => {
+    const auth = await authViaOtp(app, `tx-currency-default-${randomUUID()}@example.com`);
+
+    const profilePatchResponse = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        currency: "EUR"
+      }
+    });
+    expect(profilePatchResponse.statusCode).toBe(200);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        direction: "debit",
+        amount: 123.45,
+        occurredAt: "2026-03-11T10:00:00.000Z"
+      }
+    });
+
+    expect(createResponse.statusCode).toBe(200);
+    const json = createResponse.json() as { item: { currency: string } };
+    expect(json.item.currency).toBe("EUR");
+  });
+
   it("supports custom categories and auto-categorization rules", async () => {
     const user = await authViaOtp(app, `categories-${randomUUID()}@example.com`);
 

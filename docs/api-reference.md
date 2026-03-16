@@ -69,6 +69,12 @@ Key guarantee:
 
 - `featureFlags.smsImportEnabledByDefault` is always `false` (SMS feature is disabled).
 
+Also returns default display-region hints:
+
+- `currency` (global fallback)
+- `locale` (global fallback)
+- `timezone` (global fallback)
+
 ## Authentication
 
 ### `POST /api/v1/auth/request-otp`
@@ -316,6 +322,8 @@ Request body:
 }
 ```
 
+`currency` is optional. If omitted, the API uses the authenticated user’s profile currency.
+
 Auto-categorization behavior when `categoryId` is omitted:
 
 - Deterministic keyword rules are applied.
@@ -338,8 +346,8 @@ Requires auth.
 
 Query parameters:
 
-- `month` (`YYYY-MM`, default current UTC month)
-- `currency` (3-char ISO code, default `APP_CURRENCY`)
+- `month` (`YYYY-MM`, default current month in the user profile timezone)
+- `currency` (3-char ISO code, default user profile currency)
 - `top` (number of top debit categories, default `5`, max `10`)
 
 Response includes:
@@ -347,7 +355,7 @@ Response includes:
 - `totals`: income, expense, transfer, net, transactionCount for selected month/currency
 - `topCategories`: top debit categories by spend
 - `dailySeries`: date-wise income/expense/net rows across the month window
-- `period`: resolved UTC start and endExclusive boundaries used for aggregation
+- `period`: resolved UTC start and endExclusive boundaries used for the selected month in the user timezone
 
 ### `GET /api/v1/reports/export`
 
@@ -355,8 +363,8 @@ Requires auth.
 
 Query parameters:
 
-- `month` (`YYYY-MM`, default current UTC month)
-- `currency` (3-char ISO code, default `APP_CURRENCY`)
+- `month` (`YYYY-MM`, default current month in the user profile timezone)
+- `currency` (3-char ISO code, default user profile currency)
 - `top` (number of top debit categories, default `5`, max `10`)
 - `format` (`csv|pdf`, default `csv`)
 
@@ -394,6 +402,7 @@ Request body:
 ```
 
 Budgets are constrained to debit categories and upserted by `(user, category, month)`.
+`currency` is optional and defaults to the authenticated user’s profile currency.
 
 ### `PATCH /api/v1/budgets/:id`
 
@@ -426,6 +435,8 @@ Request body:
   "targetDate": "2026-12-31T00:00:00.000Z"
 }
 ```
+
+`currency` is optional and defaults to the authenticated user’s profile currency.
 
 ### `PATCH /api/v1/goals/:id`
 

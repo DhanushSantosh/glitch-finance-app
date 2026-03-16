@@ -15,15 +15,16 @@ type GoalFormSubmit = {
 
 type GoalFormScreenProps = {
   initial?: Goal | null;
+  defaultCurrency: string;
   onCancel: () => void;
   onSubmit: (payload: GoalFormSubmit) => Promise<void>;
 };
 
-export const GoalFormScreen = ({ initial, onCancel, onSubmit }: GoalFormScreenProps) => {
+export const GoalFormScreen = ({ initial, defaultCurrency, onCancel, onSubmit }: GoalFormScreenProps) => {
   const [name, setName] = useState(initial?.name ?? "");
   const [targetAmount, setTargetAmount] = useState(initial ? String(initial.targetAmount) : "");
   const [currentAmount, setCurrentAmount] = useState(initial ? String(initial.currentAmount) : "0");
-  const [currency, setCurrency] = useState(initial?.currency ?? "INR");
+  const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
   const [targetDate, setTargetDate] = useState(initial?.targetDate ? initial.targetDate.slice(0, 10) : "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

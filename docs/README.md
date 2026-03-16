@@ -23,6 +23,7 @@ All files use lowercase kebab-case names. Update docs in the same PR as the code
 | [architecture.md](./architecture.md) | Module map, request lifecycle, routing and data flow |
 | [api-reference.md](./api-reference.md) | Full request/response contracts for every endpoint |
 | [data-model.md](./data-model.md) | DB schema, relations, indexes, and migration workflow |
+| [regionalization.md](./regionalization.md) | Timezone/currency/locale behavior, defaults, and implementation details |
 
 ## Operations
 

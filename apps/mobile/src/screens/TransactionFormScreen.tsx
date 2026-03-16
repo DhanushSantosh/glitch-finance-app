@@ -19,14 +19,15 @@ type TransactionFormSubmit = {
 type TransactionFormScreenProps = {
   categories: Category[];
   initial?: Transaction | null;
+  defaultCurrency: string;
   onCancel: () => void;
   onSubmit: (payload: TransactionFormSubmit) => Promise<void>;
 };
 
-export const TransactionFormScreen = ({ categories, initial, onCancel, onSubmit }: TransactionFormScreenProps) => {
+export const TransactionFormScreen = ({ categories, initial, defaultCurrency, onCancel, onSubmit }: TransactionFormScreenProps) => {
   const [direction, setDirection] = useState<TransactionDirection>(initial?.direction ?? "debit");
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
-  const [currency, setCurrency] = useState(initial?.currency ?? "INR");
+  const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
   const [categoryId, setCategoryId] = useState<string | null>(initial?.categoryId ?? null);
   const [counterparty, setCounterparty] = useState(initial?.counterparty ?? "");
   const [note, setNote] = useState(initial?.note ?? "");

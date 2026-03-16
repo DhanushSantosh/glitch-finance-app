@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, AppState, BackHandler, Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -35,6 +35,7 @@ import {
 } from "./src/types";
 import { calculateBudgetTotals } from "./src/utils/budgetTotals";
 import { shiftMonthToken } from "./src/utils/month";
+import { resolveRegionalPreferences } from "./src/utils/regional";
 
 const emptyBudgetTotals = {
   budgeted: 0,
@@ -177,6 +178,7 @@ export default function App() {
 
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
+  const regionalPreferences = useMemo(() => resolveRegionalPreferences(profile, bootstrap), [bootstrap, profile]);
 
   useEffect(() => {
     if (Platform.OS !== "android") {
@@ -356,18 +358,21 @@ export default function App() {
     [syncLatestData]
   );
 
-  const loadAuthenticatedData = async (sessionToken: string, budgetMonthToken: string, reportMonthToken: string) => {
+  const loadAuthenticatedData = async (sessionToken: string) => {
     const initialFilters = defaultTransactionFilters;
 
-    const [bootstrapPayload, currentUser, profileData, categoryItems, transactionData, budgetData, goalItems, reportData] = await Promise.all([
+    const [bootstrapPayload, currentUser, profileData, categoryItems, transactionData, goalItems] = await Promise.all([
       apiClient.getBootstrap(),
       apiClient.me(sessionToken),
       apiClient.getProfile(sessionToken),
       apiClient.getCategories(sessionToken),
       apiClient.getTransactions(sessionToken, buildTransactionQuery(initialFilters, 1)),
-      apiClient.getBudgets(sessionToken, budgetMonthToken),
-      apiClient.getGoals(sessionToken),
-      apiClient.getReportSummary(sessionToken, reportMonthToken)
+      apiClient.getGoals(sessionToken)
+    ]);
+    const monthToken = getCurrentMonthToken(profileData.timezone);
+    const [budgetData, reportData] = await Promise.all([
+      apiClient.getBudgets(sessionToken, monthToken),
+      apiClient.getReportSummary(sessionToken, monthToken)
     ]);
 
     setBootstrap(bootstrapPayload);
@@ -395,7 +400,7 @@ export default function App() {
         }
 
         setToken(storedToken);
-        await loadAuthenticatedData(storedToken, budgetMonth, reportMonth);
+        await loadAuthenticatedData(storedToken);
       } catch {
         await clearSessionToken();
         setToken(null);
@@ -495,7 +500,7 @@ export default function App() {
     const result = await apiClient.verifyOtp(pendingEmail, code);
     await saveSessionToken(result.token);
     setToken(result.token);
-    await loadAuthenticatedData(result.token, budgetMonth, reportMonth);
+    await loadAuthenticatedData(result.token);
     setPendingEmail("");
   };
 
@@ -1017,6 +1022,7 @@ export default function App() {
         <TransactionFormScreen
           categories={categories}
           initial={modalRoute.mode === "edit" ? editingTransaction : null}
+          defaultCurrency={regionalPreferences.currency}
           onCancel={() => {
             setEditingTransaction(null);
             setModalRoute(emptyModalRoute);
@@ -1065,6 +1071,7 @@ export default function App() {
           categories={categories}
           initial={modalRoute.mode === "edit" ? editingBudget : null}
           month={budgetMonth}
+          defaultCurrency={regionalPreferences.currency}
           onCancel={() => {
             setEditingBudget(null);
             setModalRoute(emptyModalRoute);
@@ -1078,6 +1085,7 @@ export default function App() {
       return (
         <GoalFormScreen
           initial={modalRoute.mode === "edit" ? editingGoal : null}
+          defaultCurrency={regionalPreferences.currency}
           onCancel={() => {
             setEditingGoal(null);
             setModalRoute(emptyModalRoute);
@@ -1114,6 +1122,7 @@ export default function App() {
           month={reportMonth}
           summary={reportSummary}
           profile={profile}
+          regionalPreferences={regionalPreferences}
           refreshing={refreshing}
           onMonthChange={setReportMonth}
           onApplyMonth={handleApplyReportMonth}
@@ -1128,6 +1137,7 @@ export default function App() {
         <TransactionsScreen
           items={transactions}
           categories={categories}
+          regionalPreferences={regionalPreferences}
           filters={transactionFilters}
           pagination={transactionPagination}
           refreshing={refreshing}
@@ -1156,6 +1166,7 @@ export default function App() {
           month={budgetMonth}
           items={budgets}
           totals={budgetTotals}
+          regionalPreferences={regionalPreferences}
           refreshing={refreshing}
           onMonthChange={setBudgetMonth}
           onApplyMonth={handleApplyBudgetMonth}
@@ -1179,6 +1190,7 @@ export default function App() {
       return (
         <GoalsScreen
           items={goals}
+          regionalPreferences={regionalPreferences}
           refreshing={refreshing}
           onRefresh={refreshAll}
           onAdd={() => {

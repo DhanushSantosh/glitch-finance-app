@@ -3,11 +3,13 @@ import { AppHeader, Button, Card, EmptyState, InlineMessage, ListItem, Screen, S
 import { createStyles, theme } from "../theme";
 import { Budget } from "../types";
 import { formatMoney } from "../utils/format";
+import { RegionalPreferences } from "../utils/regional";
 import { ChevronLeft, ChevronRight, RefreshCw, PieChart, AlertCircle, AlertTriangle, PlayCircle } from "lucide-react-native";
 
 type BudgetsScreenProps = {
   month: string;
   items: Budget[];
+  regionalPreferences: RegionalPreferences;
   totals: {
     budgeted: number;
     spent: number;
@@ -27,6 +29,7 @@ type BudgetsScreenProps = {
 export const BudgetsScreen = ({
   month,
   items,
+  regionalPreferences,
   totals,
   refreshing,
   onMonthChange,
@@ -94,8 +97,8 @@ export const BudgetsScreen = ({
       ) : null}
 
       <View style={styles.statGrid}>
-        <StatTile label="PLANNED" value={formatMoney(totals.budgeted, "INR")} tone="info" />
-        <StatTile label="CONSUMED" value={formatMoney(totals.spent, "INR")} tone="negative" />
+        <StatTile label="PLANNED" value={formatMoney(totals.budgeted, regionalPreferences.currency, regionalPreferences)} tone="info" />
+        <StatTile label="CONSUMED" value={formatMoney(totals.spent, regionalPreferences.currency, regionalPreferences)} tone="negative" />
       </View>
 
       <View style={styles.listHeader}>
@@ -123,7 +126,7 @@ export const BudgetsScreen = ({
               trailing={
                 <View style={styles.amountContainer}>
                   <Text style={[styles.amount, isOver ? styles.negative : isNear ? styles.warn : styles.positive]}>
-                    {formatMoney(item.remainingAmount, item.currency)}
+                    {formatMoney(item.remainingAmount, item.currency, regionalPreferences)}
                   </Text>
                   <Text style={styles.amountLabel}>REMAINING</Text>
                 </View>
@@ -142,11 +145,11 @@ export const BudgetsScreen = ({
               <View style={styles.detailRow}>
                 <View style={styles.detailWrap}>
                   <Text style={styles.detailLabel}>CAP</Text>
-                  <Text style={styles.detailText}>{formatMoney(item.amount, item.currency)}</Text>
+                  <Text style={styles.detailText}>{formatMoney(item.amount, item.currency, regionalPreferences)}</Text>
                 </View>
                 <View style={styles.detailWrapRight}>
                   <Text style={styles.detailLabel}>USED</Text>
-                  <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{formatMoney(item.spentAmount, item.currency)}</Text>
+                  <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{formatMoney(item.spentAmount, item.currency, regionalPreferences)}</Text>
                 </View>
               </View>
 

@@ -4,7 +4,7 @@ export const goalCreateSchema = z.object({
   name: z.string().trim().min(2).max(120),
   targetAmount: z.coerce.number().positive().finite(),
   currentAmount: z.coerce.number().nonnegative().finite().default(0),
-  currency: z.string().length(3).default("INR"),
+  currency: z.string().length(3).optional(),
   targetDate: z.coerce.date().optional()
 });
 

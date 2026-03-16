@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { AppContext } from "../../context.js";
 import { requireAuth } from "../../utils/auth.js";
+import { normalizeCurrency, resolveUserRegionalPreferences } from "../../utils/regional.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import { buildReportCsv, buildReportPdf } from "./export.js";
 import { buildReportSummary } from "./summary.js";
@@ -12,14 +13,20 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
   app.get("/api/v1/reports/summary", async (request) => {
     const identity = requireAuth(request);
     const query = parseOrThrow(reportSummaryQuerySchema, request.query);
-    const month = resolveReportMonth(query.month);
-    const currency = (query.currency ?? ctx.env.APP_CURRENCY).toUpperCase();
+    const regionalPreferences = await resolveUserRegionalPreferences(ctx.db, identity.userId, {
+      timezone: "UTC",
+      locale: "en-IN",
+      currency: ctx.env.APP_CURRENCY
+    });
+    const month = resolveReportMonth(query.month, regionalPreferences.timezone);
+    const currency = normalizeCurrency(query.currency, regionalPreferences.currency);
 
     return buildReportSummary({
       db: ctx.db,
       userId: identity.userId,
       month,
       currency,
+      timezone: regionalPreferences.timezone,
       top: query.top
     });
   });
@@ -27,14 +34,20 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
   app.get("/api/v1/reports/export", async (request, reply) => {
     const identity = requireAuth(request);
     const query = parseOrThrow(reportExportQuerySchema, request.query);
-    const month = resolveReportMonth(query.month);
-    const currency = (query.currency ?? ctx.env.APP_CURRENCY).toUpperCase();
+    const regionalPreferences = await resolveUserRegionalPreferences(ctx.db, identity.userId, {
+      timezone: "UTC",
+      locale: "en-IN",
+      currency: ctx.env.APP_CURRENCY
+    });
+    const month = resolveReportMonth(query.month, regionalPreferences.timezone);
+    const currency = normalizeCurrency(query.currency, regionalPreferences.currency);
 
     const summary = await buildReportSummary({
       db: ctx.db,
       userId: identity.userId,
       month,
       currency,
+      timezone: regionalPreferences.timezone,
       top: query.top
     });
 
@@ -55,4 +68,3 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
       .send(csv);
   });
 };
-

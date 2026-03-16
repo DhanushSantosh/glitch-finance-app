@@ -2,11 +2,13 @@ import { Text, View } from "react-native";
 import { AppHeader, Button, EmptyState, ListItem, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { Goal } from "../types";
-import { formatMoney } from "../utils/format";
+import { formatDateOnly, formatMoney } from "../utils/format";
+import { RegionalPreferences } from "../utils/regional";
 import { Target, CheckCircle, Clock, Zap } from "lucide-react-native";
 
 type GoalsScreenProps = {
   items: Goal[];
+  regionalPreferences: RegionalPreferences;
   refreshing: boolean;
   onRefresh: () => Promise<void>;
   onAdd: () => void;
@@ -17,7 +19,7 @@ type GoalsScreenProps = {
 
 const quickContributeIncrements = [500, 1000, 5000] as const;
 
-export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDelete, onContribute }: GoalsScreenProps) => {
+export const GoalsScreen = ({ items, regionalPreferences, refreshing, onRefresh, onAdd, onEdit, onDelete, onContribute }: GoalsScreenProps) => {
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <AppHeader
@@ -44,13 +46,13 @@ export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDel
             useCard
             title={item.name}
             subtitle={`${item.progressPercent.toFixed(0)}% SECURED`}
-            meta={item.targetDate ? `DEADLINE: ${new Date(item.targetDate).toLocaleDateString()}` : "OPEN ENDED"}
+            meta={item.targetDate ? `DEADLINE: ${formatDateOnly(item.targetDate, regionalPreferences)}` : "OPEN ENDED"}
             trailing={
               <View style={styles.amountContainer}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                   {item.isCompleted ? <CheckCircle size={16} color={theme.color.statusSuccess} /> : <Clock size={16} color={theme.color.actionPrimary} />}
                   <Text style={[styles.amount, item.isCompleted ? styles.completed : styles.info]}>
-                    {formatMoney(item.currentAmount, item.currency)}
+                    {formatMoney(item.currentAmount, item.currency, regionalPreferences)}
                   </Text>
                 </View>
                 <Text style={styles.amountLabel}>CAPTURED</Text>
@@ -70,11 +72,11 @@ export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDel
             <View style={styles.detailRow}>
               <View style={styles.detailWrap}>
                 <Text style={styles.detailLabel}>TARGET</Text>
-                <Text style={styles.detailText}>{formatMoney(item.targetAmount, item.currency)}</Text>
+                <Text style={styles.detailText}>{formatMoney(item.targetAmount, item.currency, regionalPreferences)}</Text>
               </View>
               <View style={styles.detailWrapRight}>
                 <Text style={styles.detailLabel}>DEFICIT</Text>
-                <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{formatMoney(item.remainingAmount, item.currency)}</Text>
+                <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{formatMoney(item.remainingAmount, item.currency, regionalPreferences)}</Text>
               </View>
             </View>
 
@@ -90,7 +92,7 @@ export const GoalsScreen = ({ items, refreshing, onRefresh, onAdd, onEdit, onDel
                       key={`${item.id}-${increment}`}
                       label={
                         <Text style={styles.quickActionText}>
-                          +{formatMoney(increment, item.currency)}
+                          +{formatMoney(increment, item.currency, regionalPreferences)}
                         </Text>
                       }
                       variant="ghost"

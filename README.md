@@ -181,6 +181,7 @@ Before first production deploy:
 | [architecture.md](./docs/architecture.md) | Module map, request lifecycle, routing model |
 | [api-reference.md](./docs/api-reference.md) | Full endpoint contracts |
 | [data-model.md](./docs/data-model.md) | DB schema, relations, migrations |
+| [regionalization.md](./docs/regionalization.md) | Locale/timezone/currency support strategy and implementation |
 | [ui-style-guide.md](./docs/ui-style-guide.md) | Glitch Midnight design system |
 | [ui-screens.md](./docs/ui-screens.md) | Per-screen component contracts |
 | [security.md](./docs/security.md) | Auth, audit logging, production hardening |

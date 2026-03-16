@@ -6,6 +6,7 @@ import { categories, transactions } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
 import { executeIdempotent } from "../../utils/idempotency.js";
+import { isSupportedCurrency, resolveUserRegionalPreferences } from "../../utils/regional.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import { suggestCategoryIdForTransaction } from "./auto-categorize.js";
 import { listQuerySchema, normalizeTransactionPayload, transactionInputSchema, transactionUpdateSchema } from "./validation.js";
@@ -146,7 +147,15 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
       userId: identity.userId,
       execute: async () => {
         const body = parseOrThrow(transactionInputSchema, request.body);
-        const normalizedPayload = normalizeTransactionPayload(body);
+        if (body.currency && !isSupportedCurrency(body.currency.toUpperCase())) {
+          throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
+        }
+        const regionalPreferences = await resolveUserRegionalPreferences(ctx.db, identity.userId, {
+          timezone: "UTC",
+          locale: "en-IN",
+          currency: ctx.env.APP_CURRENCY
+        });
+        const normalizedPayload = normalizeTransactionPayload(body, regionalPreferences.currency);
         let resolvedCategoryId = normalizedPayload.categoryId;
 
         if (!resolvedCategoryId) {
@@ -235,6 +244,10 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
           throw new AppError(404, "TRANSACTION_NOT_FOUND", "Transaction not found.");
         }
 
+        if (body.currency && !isSupportedCurrency(body.currency.toUpperCase())) {
+          throw new AppError(400, "INVALID_CURRENCY", "Currency must be a supported 3-letter ISO code.");
+        }
+
         const nextDirection = body.direction ?? existing.direction;
         const hasCategoryPatch = Object.prototype.hasOwnProperty.call(body, "categoryId");
 
@@ -256,7 +269,7 @@ export const registerTransactionRoutes = async (app: FastifyInstance, ctx: AppCo
           counterparty: body.counterparty ?? existing.counterparty ?? undefined,
           note: body.note ?? existing.note ?? undefined,
           occurredAt: body.occurredAt ?? existing.occurredAt
-        });
+        }, existing.currency);
 
         const updatedRows = await ctx.db
           .update(transactions)

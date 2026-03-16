@@ -2,7 +2,8 @@ import { Text, View, Dimensions } from "react-native";
 import { AppHeader, Button, Card, EmptyState, ListItem, Screen, StatTile, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { ReportSummary, UserProfile } from "../types";
-import { formatDateToken, formatMoney } from "../utils/format";
+import { formatMoney } from "../utils/format";
+import { RegionalPreferences } from "../utils/regional";
 import { Wallet, TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from "lucide-react-native";
 import Svg, { Path, Defs, LinearGradient, Stop, Circle } from "react-native-svg";
 import { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ type DashboardScreenProps = {
   month: string;
   summary: ReportSummary | null;
   profile?: UserProfile | null;
+  regionalPreferences: RegionalPreferences;
   refreshing: boolean;
   onMonthChange: (value: string) => void;
   onApplyMonth: () => Promise<void>;
@@ -50,6 +52,7 @@ export const DashboardScreen = ({
   month,
   summary,
   profile,
+  regionalPreferences,
   refreshing,
   onMonthChange,
   onApplyMonth,
@@ -66,7 +69,7 @@ export const DashboardScreen = ({
     return () => clearInterval(interval);
   }, []);
 
-  const currency = summary?.totals.currency ?? "INR";
+  const currency = summary?.totals.currency ?? regionalPreferences.currency;
   const latestSeries = summary?.dailySeries.slice(-7) ?? [];
   const netFlow = summary?.totals.net ?? 0;
   const isPositiveFlow = netFlow >= 0;
@@ -102,7 +105,7 @@ export const DashboardScreen = ({
         <View style={styles.netFlowContainer}>
           <Text style={styles.netFlowLabel}>CURRENT LIQUIDITY</Text>
           <Text style={[styles.netFlowValue, isPositiveFlow ? styles.positive : styles.negative]}>
-            {formatMoney(netFlow, currency)}
+            {formatMoney(netFlow, currency, regionalPreferences)}
           </Text>
           <View style={styles.heroBadge}>
             <Activity size={12} color={isPositiveFlow ? theme.color.statusSuccess : theme.color.statusError} />
@@ -116,13 +119,13 @@ export const DashboardScreen = ({
       <View style={styles.statGrid}>
         <StatTile 
           label="INFLOW" 
-          value={formatMoney(summary?.totals.income ?? 0, currency)} 
+          value={formatMoney(summary?.totals.income ?? 0, currency, regionalPreferences)} 
           tone="positive" 
           icon={<ArrowUpRight size={14} color={theme.color.statusSuccess} />}
         />
         <StatTile 
           label="OUTFLOW" 
-          value={formatMoney(summary?.totals.expense ?? 0, currency)} 
+          value={formatMoney(summary?.totals.expense ?? 0, currency, regionalPreferences)} 
           tone="negative" 
           icon={<ArrowDownRight size={14} color={theme.color.statusError} />}
         />
@@ -211,7 +214,7 @@ export const DashboardScreen = ({
               trailing={
                 <View style={styles.trailingContainer}>
                   <ArrowDownRight size={16} color={theme.color.statusError} style={{ marginRight: 4 }} />
-                  <Text style={styles.trailingAmount}>{formatMoney(category.amount, currency)}</Text>
+                  <Text style={styles.trailingAmount}>{formatMoney(category.amount, currency, regionalPreferences)}</Text>
                 </View>
               }
             />
@@ -349,5 +352,4 @@ const styles = createStyles(() => ({
     color: theme.color.textPrimary // In premium apps, negative balance is often white/black, just distinguished by minus sign, but we keep it neutral here to not scream ERROR
   }
 }));
-
 

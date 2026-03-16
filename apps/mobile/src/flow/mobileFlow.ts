@@ -1,3 +1,5 @@
+import { getCurrentMonthTokenForTimeZone } from "../utils/regional";
+
 export type AuthStage = "login" | "otp" | "authenticated";
 
 export const deriveAuthStage = (pendingEmail: string, isAuthenticated: boolean): AuthStage => {
@@ -28,9 +30,4 @@ export const canSubmitTransaction = (amountText: string, occurredAtIsoLike: stri
   return !Number.isNaN(parsed.getTime());
 };
 
-export const getCurrentMonthToken = (): string => {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-};
+export const getCurrentMonthToken = (timeZone?: string, now?: Date): string => getCurrentMonthTokenForTimeZone(timeZone, now);

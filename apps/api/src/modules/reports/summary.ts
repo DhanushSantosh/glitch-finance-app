@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { DbClient } from "../../db/client.js";
 import { categories, transactions } from "../../db/schema.js";
-import { getMonthWindow } from "./validation.js";
+import { getMonthWindowForTimeZone } from "../../utils/regional.js";
 
 export type ReportSummaryPayload = {
   month: string;
@@ -36,15 +36,18 @@ export type ReportSummaryPayload = {
 const parseMoney = (value: string | number): number => Number(value);
 const parseCount = (value: string | number): number => Number(value);
 
-const formatDateToken = (value: Date): string => value.toISOString().slice(0, 10);
+const formatDateToken = (year: number, month: number, day: number): string =>
+  `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-const listDateTokens = (start: Date, endExclusive: Date): string[] => {
+const listDateTokensForMonth = (monthToken: string): string[] => {
+  const [yearRaw, monthRaw] = monthToken.split("-");
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
   const tokens: string[] = [];
-  const cursor = new Date(start.getTime());
-
-  while (cursor < endExclusive) {
-    tokens.push(formatDateToken(cursor));
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    tokens.push(formatDateToken(year, month, day));
   }
 
   return tokens;
@@ -55,9 +58,10 @@ export const buildReportSummary = async (input: {
   userId: string;
   month: string;
   currency: string;
+  timezone: string;
   top: number;
 }): Promise<ReportSummaryPayload> => {
-  const { start, end } = getMonthWindow(input.month);
+  const { start, end } = getMonthWindowForTimeZone(input.month, input.timezone);
 
   const windowFilter = and(
     eq(transactions.userId, input.userId),
@@ -129,21 +133,23 @@ export const buildReportSummary = async (input: {
     currency: input.currency
   }));
 
-  const dayBucketExpr = sql`date_trunc('day', timezone('UTC', ${transactions.occurredAt}))`;
+  const escapedTimeZone = input.timezone.replaceAll("'", "''");
+  const timezoneLiteral = sql.raw(`'${escapedTimeZone}'`);
+  const dayTokenExpr = sql<string>`to_char(timezone(${timezoneLiteral}, ${transactions.occurredAt}), 'YYYY-MM-DD')`;
 
   const dailyRows = await input.db
     .select({
-      day: sql<string>`to_char(${dayBucketExpr}, 'YYYY-MM-DD')`,
+      day: dayTokenExpr,
       direction: transactions.direction,
       totalAmount: sql<string>`coalesce(sum(${transactions.amount}), 0)`
     })
     .from(transactions)
     .where(windowFilter)
-    .groupBy(dayBucketExpr, transactions.direction)
-    .orderBy(asc(dayBucketExpr));
+    .groupBy(dayTokenExpr, transactions.direction)
+    .orderBy(asc(dayTokenExpr));
 
   const dailyMap = new Map<string, { income: number; expense: number }>();
-  for (const token of listDateTokens(start, end)) {
+  for (const token of listDateTokensForMonth(input.month)) {
     dailyMap.set(token, { income: 0, expense: 0 });
   }
 
@@ -184,4 +190,3 @@ export const buildReportSummary = async (input: {
     dailySeries
   };
 };
-
