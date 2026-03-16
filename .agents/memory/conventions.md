@@ -70,9 +70,16 @@ apps/mobile/src/
 - Optimistic updates: update local state immediately, reconcile 700ms later
 - Never add loading spinners for operations that take <300ms
 
+### Feedback UX (Toast Standard)
+- Use centralized toast feedback for mutation success/error via `publishToast(...)`.
+- Do not add new per-screen inline success/error banners for mutation outcomes unless the message must remain persistently visible.
+- Keep `Alert.alert` only for user confirmation dialogs (especially destructive actions like delete/account removal).
+- Toast host is global (`ToastViewport`) and should remain mounted at app shell level.
+- Toast placement should stay bottom-safe (avoid status bar and avoid bottom-tab overlap).
+
 ### API Client
 - All calls go through `apps/mobile/src/api/client.ts`
-- Error handling: catch in App.tsx handlers, set error message in state
+- Error handling: catch in App.tsx/screen handlers and surface user-facing failures via centralized toast where applicable
 
 ## Git Conventions
 

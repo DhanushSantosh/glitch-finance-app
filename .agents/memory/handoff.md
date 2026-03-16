@@ -1,4 +1,4 @@
-updated_by: Gemini
+updated_by: Codex
 updated_at: 2026-03-16
 ---
 
@@ -16,28 +16,35 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-16
 
 **Done:**
-- Created a custom `SelectField` component for the mobile UI and updated `ProfileScreen` to use it for Timezone, Locale, and Currency inputs. Generated an exhaustive list of Intl-supported timezones and currencies via a Node script to populate these dropdowns.
-- Upgraded the regional settings form with a searchable Country -> City cascading dropdown system that smartly defaults the timezone, locale, and currency based on the country selection.
-- Added a dynamic, rotating greeting message with the user's name to the `DashboardScreen` that updates periodically.
-- Removed the manual Profile Picture URL text input field from `ProfileScreen` to encourage standard file/gallery uploads.
-- Replaced the 'Settings' icon in the `BottomTabBar` with a 'User' icon, and implemented dynamic rendering of the user's custom profile picture if available.
-- Standardized card action buttons (Edit/Modify and Delete/Clear/Remove) across `BudgetsScreen`, `CategoryManagerScreen`, and `TransactionsScreen` to match the refined styles from `GoalsScreen`.
-- Updated UI on `GoalsScreen` objectives cards: removed hardcoded colors, enhanced progress bar visibility, refined tap targets/borders for secondary actions, and fixed cramped Quick Inject layout with flex-wrap pill buttons.
-- Fixed UI congestion on `GoalFormScreen` (removed split view on balance/deadline, adjusted flex ratios on capital target row).
-- Added API idempotency layer for authenticated mutations (`Idempotency-Key`) with replay support and conflict protection.
-- Added DB migration/table for idempotency storage (`idempotency_keys`).
-- Hardened API error mapping for Fastify parser errors and common Postgres constraint errors so expected client failures stay 4xx.
-- Added resilience integration test suite (idempotency replay/conflict + parser/constraint mapping checks).
-- Fixed mobile iOS safe-area overlap using `react-native-safe-area-context` at app shell.
-- Verified baseline remains green: 136 API tests + 35 mobile tests + workspace typecheck.
-- Updated memory docs to reflect current code and conventions.
+- Implemented a centralized mobile toast system:
+  - Added global bus (`publishToast`) and subscriber model.
+  - Added `ToastViewport` host with queue handling and auto-dismiss.
+  - Routed mutation and action feedback from root handlers and forms into toast.
+- Reworked toast placement and behavior:
+  - Moved to bottom-safe placement to avoid top notification/status interference.
+  - Added subtle enter/exit motion (fade + slight slide).
+  - Added dynamic bottom offset to avoid overlap with floating `BottomTabBar`.
+- Removed scattered nearby mutation feedback in major flows:
+  - Login/OTP request errors, transaction/category/budget/goal form validation errors,
+    profile avatar/save flows, settings preference save outcomes.
+  - Kept destructive confirmations as `Alert.alert` dialogs.
+- Advanced profile and regional UX:
+  - Added large country/city coverage via `country-state-city`.
+  - Added smart country -> city cascading selection with timezone/locale/currency defaults.
+  - Moved profile settings toggles into Settings below Category Studio with immediate persistence (no explicit save button).
+- Bottom tab personalization:
+  - Increased avatar sizing/visibility in inactive state for Settings/User tab icon.
+- Validation baseline verified during implementation:
+  - `pnpm --filter @glitch/mobile typecheck`
+  - `pnpm --filter @glitch/mobile test` (51 passing tests)
 
 **Open threads:**
-- None.
+- Memory was stale; now refreshed in `handoff.md`, `state.md`, `conventions.md`, and `decisions.md`.
 
 **Next session should:**
-- If continuing backend hardening, extend idempotency support to additional write routes if any new ones are added.
-- Continue Sprint work from updated `state.md`.
+- Continue MVP feature work with the centralized toast pattern as default mutation feedback.
+- If touching new mutation paths, route success/error feedback through `publishToast`.
+- Keep memory files updated at session end.
 
 ---
 

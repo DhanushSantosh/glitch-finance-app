@@ -36,6 +36,10 @@ updated_at: 2026-03-16
 | Background sync | 15s interval + AppState listener | Fresh data without hammering API |
 | BottomTabBar | BlurView + spring-animated pill | Premium feel, "Glitch Midnight" brand |
 | Safe area handling | Global `SafeAreaProvider` + top/side `SafeAreaView` in app shell | Prevent iOS notch/status-bar overlap across flows |
+| Action feedback model | Centralized toast bus + global viewport | Consistent UX, less duplicated inline/error UI logic |
+| Toast placement | Bottom-safe with dynamic offset above tab bar | Avoid status bar overlap and avoid collision with floating navigation |
+| Destructive confirmation pattern | Keep `Alert.alert` confirms, use toast for post-action result | Clear user intent confirmation + consistent non-blocking feedback |
+| Regional dataset source | `country-state-city` for country/city options | Broader global coverage than static local lists |
 
 ## Infrastructure
 

@@ -1,4 +1,4 @@
-updated_by: Gemini
+updated_by: Codex
 updated_at: 2026-03-16
 ---
 
@@ -25,17 +25,26 @@ updated_at: 2026-03-16
 - Screens: Dashboard, Transactions, TransactionForm, Budgets, BudgetForm, Goals, GoalForm, Settings, Login, OtpVerify, CategoryManagerScreen, CategoryFormScreen
 - Realtime sync with optimistic updates + 15s background interval
 - BottomTabBar: liquid glass floating pill with BlurView + animated spring
-- 35 mobile tests passing
+- 51 mobile tests passing
 - metro.config.js wired for pnpm monorepo (iOS + Android working)
 - iOS safe-area handling fixed at app shell (`SafeAreaProvider` + `SafeAreaView`) to prevent top notification-bar overlap
 - Fixed UI congestion on `GoalFormScreen` by adjusting field layouts and flex ratios for a cleaner aesthetic
 - Updated UI on `GoalsScreen` objectives cards: improved Quick Inject layout to flex-wrap with refined pill buttons, thickened progress bars, and restyled Clear/Modify buttons for better visual hierarchy and adherence to design tokens
 - Standardized card action buttons (Edit/Modify and Delete/Clear/Remove) across `BudgetsScreen`, `CategoryManagerScreen`, and `TransactionsScreen` to match the refined styles from `GoalsScreen`
 - Replaced the 'Settings' icon in the `BottomTabBar` with a 'User' icon, and implemented dynamic rendering of the user's profile picture if one is uploaded
+- Increased bottom-tab avatar size and made inactive-state avatar fully visible for stronger identity affordance
 - Cleaned up the `ProfileScreen` by removing the manual "Profile Picture URL" text input field as users should rely entirely on device-native file/gallery picker uploads
 - Added a dynamic, rotating greeting message with the user's name to the top of the `DashboardScreen` that cycles every 30 seconds
 - Updated the `ProfileScreen` Regional Preferences section to use a new custom `SelectField` component for Timezone, Locale, and Currency inputs, now populated with an exhaustive, dynamically-generated list of all standard Intl options
 - Added a smart cascading dropdown for Country -> City that automatically pre-fills the corresponding Timezone, Locale, and Currency based on the selected country
+- Expanded regional coverage with full country/city datasets using `country-state-city`
+- Added global centralized toast feedback system:
+  - `ToastViewport` mounted at app shell level
+  - `publishToast` bus used for action success/error flows
+  - Queue + auto-dismiss behavior
+  - Bottom-safe placement with subtle fade/slide animation
+- Settings preferences moved below Category Studio and now persist immediately on toggle (no save button)
+- Major mutation feedback shifted from nearby inline banners to centralized toast UX
 
 ### Infrastructure
 - pnpm monorepo workspaces
@@ -53,7 +62,7 @@ updated_at: 2026-03-16
 - Root README.md is concise with links to full docs
 
 ## What's In Progress
-- Memory sync complete; awaiting next feature thread.
+- Awaiting next feature thread. Shared memory has been refreshed to align with latest mobile commits.
 
 ## Recent Fixes
 - ECONNREFUSED on stack restart (IPv6 + AggregateError retry logic)
@@ -64,3 +73,4 @@ updated_at: 2026-03-16
 - ensureDefaultCategories TOCTOU race condition
 - DELETE-with-empty-JSON parser errors now return explicit 400 envelopes (no accidental 500)
 - Mutation retry safety improved via idempotency key replay behavior
+- Top notification/status-bar toast overlap fixed by moving toast host to bottom-safe position
