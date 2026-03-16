@@ -37,6 +37,7 @@ updated_at: 2026-03-16
 - Added a dynamic, rotating greeting message with the user's name to the top of the `DashboardScreen` that cycles every 30 seconds
 - Updated the `ProfileScreen` Regional Preferences section to use a new custom `SelectField` component for Timezone, Locale, and Currency inputs, now populated with an exhaustive, dynamically-generated list of all standard Intl options
 - Added a smart cascading dropdown for Country -> City that automatically pre-fills the corresponding Timezone, Locale, and Currency based on the selected country
+- Extended the sliding pill animation style from the BottomTabBar to other UI components, including a completely rewritten `SegmentedControl` and a new custom `Switch` component for consistent micro-interactions throughout the app
 - Expanded regional coverage with full country/city datasets using `country-state-city`
 - Added global centralized toast feedback system:
   - `ToastViewport` mounted at app shell level

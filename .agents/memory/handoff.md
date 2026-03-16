@@ -1,4 +1,4 @@
-updated_by: Codex
+updated_by: Gemini
 updated_at: 2026-03-16
 ---
 
@@ -16,6 +16,7 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-16
 
 **Done:**
+- Extended sliding animations across the app: completely refactored `SegmentedControl` to use a sliding pill indicator and created a new custom `Switch` component with smooth spring-animated transitions.
 - Implemented a centralized mobile toast system:
   - Added global bus (`publishToast`) and subscriber model.
   - Added `ToastViewport` host with queue handling and auto-dismiss.

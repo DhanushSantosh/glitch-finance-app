@@ -9,6 +9,7 @@ export { Screen } from "./Screen";
 export { SegmentedControl } from "./SegmentedControl";
 export { SelectField } from "./SelectField";
 export { StatTile } from "./StatTile";
+export { Switch } from "./Switch";
 export { TextField } from "./TextField";
 export { ToastViewport } from "./ToastViewport";
 export { publishToast } from "./toastBus";
