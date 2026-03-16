@@ -3,9 +3,50 @@ import { Image, Switch, Text, View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { AppHeader, Button, Card, InlineMessage, Screen, TextField } from "../components/ui";
+import { AppHeader, Button, Card, InlineMessage, Screen, TextField, SelectField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { UserProfile } from "../types";
+
+// Common timezones
+const timeZoneOptions = [
+  { value: "UTC", label: "UTC" },
+  { value: "America/New_York", label: "Eastern Time (US)" },
+  { value: "America/Chicago", label: "Central Time (US)" },
+  { value: "America/Denver", label: "Mountain Time (US)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (US)" },
+  { value: "Europe/London", label: "London" },
+  { value: "Europe/Paris", label: "Paris" },
+  { value: "Europe/Berlin", label: "Berlin" },
+  { value: "Asia/Dubai", label: "Dubai" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Singapore", label: "Singapore" },
+  { value: "Asia/Tokyo", label: "Tokyo" },
+  { value: "Australia/Sydney", label: "Sydney" }
+];
+
+// Common currencies
+const currencyOptions = [
+  { value: "USD", label: "US Dollar (USD)" },
+  { value: "EUR", label: "Euro (EUR)" },
+  { value: "GBP", label: "British Pound (GBP)" },
+  { value: "INR", label: "Indian Rupee (INR)" },
+  { value: "AUD", label: "Australian Dollar (AUD)" },
+  { value: "CAD", label: "Canadian Dollar (CAD)" },
+  { value: "SGD", label: "Singapore Dollar (SGD)" },
+  { value: "JPY", label: "Japanese Yen (JPY)" },
+  { value: "AED", label: "UAE Dirham (AED)" }
+];
+
+// Common locales
+const localeOptions = [
+  { value: "en-US", label: "English (US)" },
+  { value: "en-GB", label: "English (UK)" },
+  { value: "en-IN", label: "English (India)" },
+  { value: "fr-FR", label: "French" },
+  { value: "de-DE", label: "German" },
+  { value: "es-ES", label: "Spanish" },
+  { value: "ja-JP", label: "Japanese" }
+];
 
 type AvatarUploadPayload = {
   uri: string;
@@ -357,18 +398,31 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
           <TextField label="Country" value={country} onChangeText={setCountry} containerStyle={styles.halfField} />
         </View>
 
-        <TextField label="Timezone" value={timezone} onChangeText={setTimezone} placeholder="Asia/Kolkata" />
+        <SelectField 
+          label="Timezone" 
+          value={timezone} 
+          options={timeZoneOptions} 
+          onSelect={setTimezone} 
+          placeholder="Select Timezone" 
+        />
 
         <View style={styles.rowFields}>
-          <TextField label="Locale" value={locale} onChangeText={setLocale} autoCapitalize="none" containerStyle={styles.halfField} />
-          <TextField
-            label="Currency"
-            value={currency}
-            onChangeText={setCurrency}
-            autoCapitalize="characters"
-            maxLength={3}
-            containerStyle={styles.halfField}
-          />
+          <View style={styles.halfField}>
+            <SelectField 
+              label="Locale" 
+              value={locale} 
+              options={localeOptions} 
+              onSelect={setLocale} 
+            />
+          </View>
+          <View style={styles.halfField}>
+            <SelectField 
+              label="Currency" 
+              value={currency} 
+              options={currencyOptions} 
+              onSelect={setCurrency} 
+            />
+          </View>
         </View>
 
         <TextField

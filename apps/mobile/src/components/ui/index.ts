@@ -7,5 +7,6 @@ export { InlineMessage } from "./InlineMessage";
 export { ListItem } from "./ListItem";
 export { Screen } from "./Screen";
 export { SegmentedControl } from "./SegmentedControl";
+export { SelectField } from "./SelectField";
 export { StatTile } from "./StatTile";
 export { TextField } from "./TextField";
