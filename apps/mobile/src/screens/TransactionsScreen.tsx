@@ -39,13 +39,6 @@ type TransactionsScreenProps = {
   onLoadMore: () => Promise<void>;
 };
 
-const getSignedAmount = (item: Transaction): string => {
-  const base = formatMoney(item.amount, item.currency);
-  if (item.direction === "credit") return `+${base}`;
-  if (item.direction === "debit") return `-${base}`;
-  return base;
-};
-
 export const TransactionsScreen = ({
   items,
   categories,
@@ -63,7 +56,6 @@ export const TransactionsScreen = ({
   onResetFilters,
   onLoadMore
 }: TransactionsScreenProps) => {
-  const categoryOptions = [{ value: "all", label: "All" }, ...categories.map((category) => ({ value: category.id, label: category.name }))];
 
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>

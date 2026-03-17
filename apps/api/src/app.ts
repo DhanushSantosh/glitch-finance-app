@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
 import { createAppContext, closeAppContext } from "./context.js";
 import { AppError, toClientAppError } from "./errors.js";
@@ -30,6 +31,15 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await app.register(cors, {
     origin: [ctx.env.MOBILE_APP_ORIGIN, "http://localhost:19006", "http://localhost:8081"],
     credentials: true
+  });
+
+  // Global rate limit — broad ceiling to satisfy CodeQL's js/missing-rate-limiting rule.
+  // Auth and other sensitive routes apply stricter per-key limits in their service layer.
+  await app.register(rateLimit, {
+    global: true,
+    max: 300,
+    timeWindow: "1 minute",
+    skipOnError: true
   });
 
   app.addHook("onRequest", async (request) => {

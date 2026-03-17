@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { Goal } from "../types";
-import { Check, X, Target, Wallet, Clock, BarChart3 } from "lucide-react-native";
+import { Check, X, Target, Wallet, BarChart3 } from "lucide-react-native";
 
 type GoalFormSubmit = {
   name: string;

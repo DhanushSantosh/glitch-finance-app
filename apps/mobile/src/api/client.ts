@@ -1,7 +1,6 @@
 import { Platform } from "react-native";
 import {
   BootstrapPayload,
-  Budget,
   BudgetListResponse,
   Category,
   Goal,

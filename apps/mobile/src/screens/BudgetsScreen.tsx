@@ -4,7 +4,7 @@ import { createStyles, theme } from "../theme";
 import { Budget } from "../types";
 import { formatMoney } from "../utils/format";
 import { RegionalPreferences } from "../utils/regional";
-import { ChevronLeft, ChevronRight, RefreshCw, PieChart, AlertCircle, AlertTriangle, PlayCircle } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, RefreshCw, PieChart } from "lucide-react-native";
 
 type BudgetsScreenProps = {
   month: string;

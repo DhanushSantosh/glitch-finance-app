@@ -177,7 +177,14 @@ const ensureAvatarDirectory = async (): Promise<void> => {
   await mkdir(avatarStorageDirectory, { recursive: true });
 };
 
-const resolveAvatarFilePath = (avatarKey: string): string => path.join(avatarStorageDirectory, avatarKey);
+const resolveAvatarFilePath = (avatarKey: string): string => {
+  const resolved = path.resolve(avatarStorageDirectory, avatarKey);
+  // Guard against path traversal: resolved path must stay inside storage directory
+  if (!resolved.startsWith(avatarStorageDirectory + path.sep)) {
+    throw new AppError(400, "INVALID_AVATAR_KEY", "Invalid avatar key.");
+  }
+  return resolved;
+};
 
 const extractAvatarKeyFromUrl = (avatarUrl: string | null): string | null => {
   if (!avatarUrl) {

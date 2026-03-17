@@ -4,7 +4,7 @@ import { createStyles, theme } from "../theme";
 import { ReportSummary, UserProfile } from "../types";
 import { formatMoney } from "../utils/format";
 import { RegionalPreferences } from "../utils/regional";
-import { Wallet, TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from "lucide-react-native";
+import { TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from "lucide-react-native";
 import Svg, { Path, Defs, LinearGradient, Stop, Circle } from "react-native-svg";
 import { useEffect, useState } from "react";
 

@@ -1,4 +1,4 @@
-import { Pressable, View, Platform, LayoutChangeEvent, Image, Text } from "react-native";
+import { Pressable, View, LayoutChangeEvent, Image } from "react-native";
 import { AppTabRoute, tabSpecs } from "../../navigation/routes";
 import { createStyles, theme } from "../../theme";
 import { Home, ListOrdered, PieChart, Target, User } from "lucide-react-native";
