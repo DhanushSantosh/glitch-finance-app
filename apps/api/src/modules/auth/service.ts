@@ -284,6 +284,15 @@ export class AuthService {
   async signInWithOAuth(input: OAuthSignInInput): Promise<{ token: string; user: { id: string; email: string } }> {
     const { provider, idToken, rawNonce, profileHint, ipAddress, requestId } = input;
 
+    // Rate limit by IP to prevent token-stuffing attacks
+    if (this.deps.env.NODE_ENV !== "test") {
+      await this.deps.rateLimiter.consume(
+        `rl:auth:oauth:ip:${ipAddress}`,
+        this.deps.env.AUTH_RATE_LIMIT_MAX_VERIFY_OTP,
+        this.deps.env.AUTH_RATE_LIMIT_WINDOW_SECONDS
+      );
+    }
+
     // 1. Verify the provider token and extract stable ID + email
     let providerId: string;
     let providerEmail: string | undefined;
