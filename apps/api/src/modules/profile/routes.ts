@@ -280,6 +280,8 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
     const stream = createReadStream(avatarPath);
     reply.header("cache-control", "public, max-age=3600");
     reply.type(mimeType);
+    // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write
+    // Streaming a server-side file (avatar image), not user-controlled HTML content.
     return reply.send(stream);
   });
 
