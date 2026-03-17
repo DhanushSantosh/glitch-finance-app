@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Glitch",
-    "slug": "glitch-finance",
+    "slug": "glitch-finance-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -41,7 +41,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
+          "iosUrlScheme": "com.googleusercontent.apps.545086023738-aq7dbgn1j0k39e7sftksihvs6b2si4q7"
         }
       ]
     ],
