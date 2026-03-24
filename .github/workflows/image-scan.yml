@@ -40,7 +40,7 @@ jobs:
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$GITHUB_WORKSPACE:/output" \
-            aquasec/trivy:latest image \
+            aquasec/trivy:0.69.3 image \
             --format sarif \
             --output /output/trivy-results.sarif \
             --severity CRITICAL,HIGH \
