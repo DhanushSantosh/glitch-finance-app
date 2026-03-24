@@ -25,7 +25,7 @@ async function mockGoogleToken(sub: string, email: string, emailVerified = true)
   vi.spyOn(jose, "jwtVerify").mockResolvedValueOnce({
     payload: { sub, email, email_verified: emailVerified, name: "Test User" },
     protectedHeader: { alg: "RS256" }
-  } as Awaited<ReturnType<typeof jose.jwtVerify>>);
+  } as unknown as Awaited<ReturnType<typeof jose.jwtVerify>>);
 }
 
 async function mockAppleToken(sub: string, rawNonce: string, email?: string) {
@@ -34,7 +34,7 @@ async function mockAppleToken(sub: string, rawNonce: string, email?: string) {
   vi.spyOn(jose, "jwtVerify").mockResolvedValueOnce({
     payload: { sub, nonce: nonceHash, ...(email ? { email } : {}) },
     protectedHeader: { alg: "RS256" }
-  } as Awaited<ReturnType<typeof jose.jwtVerify>>);
+  } as unknown as Awaited<ReturnType<typeof jose.jwtVerify>>);
 }
 
 // ---------------------------------------------------------------------------
@@ -281,7 +281,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
     vi.spyOn(jose, "jwtVerify").mockResolvedValueOnce({
       payload: { sub: "a-bad-nonce-003", nonce: "wrong-hash" },
       protectedHeader: { alg: "RS256" }
-    } as Awaited<ReturnType<typeof jose.jwtVerify>>);
+    } as unknown as Awaited<ReturnType<typeof jose.jwtVerify>>);
 
     const response = await app.inject({
       method: "POST",
