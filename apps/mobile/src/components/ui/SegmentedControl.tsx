@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View, LayoutChangeEvent } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -20,44 +20,52 @@ type SegmentedControlProps<T extends string> = {
 };
 
 export const SegmentedControl = <T extends string>({ options, selected, onSelect, label }: SegmentedControlProps<T>) => {
-  const [layoutReady, setLayoutReady] = useState(false);
-  const tabWidth = useSharedValue(0);
+  const [segmentWidth, setSegmentWidth] = useState(0);
+  const hasMeasuredRef = useRef(false);
   const pillX = useSharedValue(0);
+  const tabWidth = useSharedValue(0);
 
   const activeIndex = Math.max(0, options.findIndex(o => o.value === selected));
+  const segmentGap = 4;
 
   const onTrackLayout = (event: LayoutChangeEvent) => {
-    // Total width minus horizontal padding (theme.spacing.xs * 2 = 8)
     const padding = theme.spacing.xs * 2;
-    // We also have gap: 4 between segments, total gap = (options.length - 1) * 4
-    const totalGap = (options.length - 1) * 4;
+    const totalGap = (options.length - 1) * segmentGap;
     const availableWidth = event.nativeEvent.layout.width - padding - totalGap;
-    const newTabWidth = availableWidth / options.length;
+    const newSegmentWidth = availableWidth > 0 ? availableWidth / options.length : 0;
 
-    if (tabWidth.value === 0) {
-      tabWidth.value = newTabWidth;
-      // Initial position without spring if we want, but spring is fine too
-      pillX.value = activeIndex * (newTabWidth + 4);
-      setLayoutReady(true);
-    } else {
-      tabWidth.value = newTabWidth;
+    if (newSegmentWidth <= 0) {
+      return;
     }
+
+    setSegmentWidth(newSegmentWidth);
   };
 
   useEffect(() => {
-    if (layoutReady) {
-      pillX.value = withSpring(activeIndex * (tabWidth.value + 4), {
-        damping: 15,
-        stiffness: 300,
-        mass: 0.5,
-      });
+    if (segmentWidth <= 0) {
+      return;
     }
-  }, [activeIndex, layoutReady]);
+
+    const nextX = activeIndex * (segmentWidth + segmentGap);
+    tabWidth.value = segmentWidth;
+
+    if (!hasMeasuredRef.current) {
+      pillX.value = nextX;
+      hasMeasuredRef.current = true;
+      return;
+    }
+
+    pillX.value = withSpring(nextX, {
+      damping: 15,
+      stiffness: 300,
+      mass: 0.5
+    });
+  }, [activeIndex, pillX, segmentWidth, tabWidth]);
 
   const animatedPillStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: pillX.value }],
-      width: tabWidth.value,
+      width: tabWidth.value
     };
   });
 
@@ -65,7 +73,7 @@ export const SegmentedControl = <T extends string>({ options, selected, onSelect
     <View style={styles.container}>
       {label ? <Text style={styles.groupLabel}>{label}</Text> : null}
       <View style={styles.track} onLayout={onTrackLayout}>
-        {layoutReady && (
+        {segmentWidth > 0 && (
           <Animated.View style={[styles.activePill, animatedPillStyle]} />
         )}
         {options.map((option) => {
@@ -143,4 +151,3 @@ const styles = createStyles(() => ({
     transform: [{ scale: 0.96 }]
   }
 }));
-
