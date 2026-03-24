@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
-    "test": "NODE_ENV=test pnpm db:migrate && NODE_ENV=test vitest run",
+    "test": "ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console pnpm db:migrate && ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },
