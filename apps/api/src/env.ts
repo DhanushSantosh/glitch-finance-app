@@ -28,7 +28,7 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
     API_HOST: z.string().default("0.0.0.0"),
-    MOBILE_APP_ORIGIN: z.string().url().default("http://localhost:8081"),
+    MOBILE_APP_ORIGIN: z.string().default("http://localhost:8081,http://localhost:19006"),
     DATABASE_URL: z.string().min(1).default("postgresql://glitch:glitch@localhost:5432/glitch"),
     REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
     OTP_HASH_SECRET: z.string().min(16).default("change-me-in-production-otp-secret"),

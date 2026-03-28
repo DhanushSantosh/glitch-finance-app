@@ -4,6 +4,9 @@
   "main": "index.ts",
   "scripts": {
     "dev": "dotenv -e ../../.env -- expo start",
+    "dev:tunnel": "dotenv -e ../../.env -- expo start --tunnel",
+    "dev:staging": "EXPO_PUBLIC_API_URL=https://api-staging.glitch.finance dotenv -e ../../.env -- expo start --tunnel",
+    "dev:lan": "dotenv -e ../../.env -- expo start --lan",
     "start": "dotenv -e ../../.env -- expo start",
     "android": "dotenv -e ../../.env -- expo start --android",
     "ios": "dotenv -e ../../.env -- expo start --ios",

@@ -28,8 +28,16 @@ export const createApp = async (): Promise<FastifyInstance> => {
 
   app.decorateRequest("auth", null);
 
+  const parseOrigins = (raw: string): (string | RegExp)[] =>
+    raw.split(",").map((o) => {
+      const t = o.trim();
+      return t.includes("*")
+        ? new RegExp("^" + t.replace(/[.]/g, "\\.").replace(/\*/g, "[^.]+") + "$")
+        : t;
+    });
+
   await app.register(cors, {
-    origin: [ctx.env.MOBILE_APP_ORIGIN, "http://localhost:19006", "http://localhost:8081"],
+    origin: parseOrigins(ctx.env.MOBILE_APP_ORIGIN),
     credentials: true
   });
 
