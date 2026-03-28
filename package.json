@@ -4,12 +4,13 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "dev": "bash scripts/dev-local-tunnel.sh",
+    "dev": "bash scripts/dev-tailscale.sh",
+    "dev:tailscale": "bash scripts/dev-tailscale.sh",
     "dev:local": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm --filter @glitch/mobile dev\"",
     "dev:android": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm android:fast\"",
     "dev:api": "pnpm db:up && pnpm db:wait && pnpm --filter @glitch/api dev",
     "dev:mobile": "pnpm --filter @glitch/mobile dev",
-    "dev:phone": "pnpm --filter @glitch/mobile dev:staging",
+    "dev:phone": "bash scripts/dev-tailscale.sh",
     "android:fast": "bash ./scripts/android-fast.sh",
     "android:emulator": "bash ./scripts/android-fast.sh --emulator-only",
     "build": "pnpm -r build",
@@ -28,8 +29,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "dotenv-cli": "^11.0.0",
-    "qrcode-terminal": "^0.12.0"
+    "dotenv-cli": "^11.0.0"
   },
   "pnpm": {
     "overrides": {

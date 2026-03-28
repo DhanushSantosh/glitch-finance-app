@@ -10,7 +10,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/mobile/.env.example apps/mobile/.env
 pnpm db:up
 pnpm --filter @glitch/api db:migrate
-pnpm dev:android
+pnpm dev
 ```
 
 OTP provider mode for local:
@@ -20,15 +20,12 @@ OTP provider mode for local:
 ## Alternative startup
 
 ```bash
+pnpm dev         # default phone workflow — Tailscale + Expo Go
+pnpm dev:tailscale
 pnpm dev:api
-pnpm android:fast
-```
-
-Other options:
-
-```bash
-pnpm dev         # API + mobile
+pnpm dev:android
 pnpm dev:mobile  # Expo only
+pnpm android:fast
 ```
 
 ## API connection
@@ -47,13 +44,23 @@ For Android emulator, use:
 EXPO_PUBLIC_API_URL=http://10.0.2.2:4000
 ```
 
-For physical device testing, use your machine LAN IP:
+For physical device testing on the same Wi-Fi, use your machine LAN IP:
 
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.x.x:4000
 ```
 
 Restart Expo after changing this value.
+
+For physical device testing on any network, use Tailscale instead of editing `EXPO_PUBLIC_API_URL` manually:
+
+1. connect both laptop and phone to the same Tailnet
+2. run `pnpm dev`
+3. scan the Expo QR in Expo Go
+
+The script injects:
+- `EXPO_PUBLIC_API_URL=http://<tailscale-ip>:4000`
+- `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
 
 ## Quick diagnostics
 

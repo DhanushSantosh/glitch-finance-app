@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-16
+updated_at: 2026-03-28
 ---
 
 # Project State
@@ -52,7 +52,7 @@ updated_at: 2026-03-16
 - pnpm monorepo workspaces
 - docker-compose for local Postgres + Redis
 - Render blueprints: staging.yaml + production.yaml
-- `pnpm dev` auto-starts + waits for DB before API
+- `pnpm dev` / `pnpm dev:tailscale` are the default phone workflow: they auto-start DB, detect the machine's Tailscale IPv4, start the API, and launch Expo Go with Tailscale-aware host configuration
 - Expo account connected, project linked to GitHub (EAS available)
   - `eas build` available for dev builds, preview, and production
   - `eas submit` available for App Store / Play Store submission
@@ -64,9 +64,11 @@ updated_at: 2026-03-16
 - Root README.md is concise with links to full docs
 
 ## What's In Progress
-- Awaiting next feature thread. Shared memory has been refreshed to align with latest mobile commits.
+- Tailscale-based phone workflow implementation and validation.
 
 ## Recent Fixes
+- Removed the failed Cloudflare / Expo tunnel experiment and replaced it with a Tailscale-based Expo Go workflow
+- Expo mobile package compatibility aligned to SDK 55 expectations (`expo`, `expo-dev-client`, `expo-image-picker`)
 - ECONNREFUSED on stack restart (IPv6 + AggregateError retry logic)
 - CI NODE_ENV=test missing (rate limiter was active during tests)
 - Rate limiter off-by-one (maxRequests=0) and window boundary (<=)

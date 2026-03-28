@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-16
+updated_at: 2026-03-28
 ---
 
 # Key Decisions Log
@@ -49,6 +49,7 @@ updated_at: 2026-03-16
 | Container registry | GHCR | Free, integrated with GitHub Actions |
 | Deploy target | Render | Simple, managed Postgres + Redis |
 | DATABASE_URL host | 127.0.0.1 not localhost | Avoid IPv6 (::1) resolution on Linux |
+| Cross-network mobile dev | Tailscale + Expo Go LAN mode | Stable across networks without relying on Expo/ngrok or Cloudflare quick tunnels |
 
 ## Testing
 

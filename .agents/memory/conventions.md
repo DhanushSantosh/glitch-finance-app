@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-16
+updated_at: 2026-03-28
 ---
 
 # Project Conventions
@@ -80,6 +80,13 @@ apps/mobile/src/
 ### API Client
 - All calls go through `apps/mobile/src/api/client.ts`
 - Error handling: catch in App.tsx/screen handlers and surface user-facing failures via centralized toast where applicable
+
+### Local Device Workflow
+- For real-phone testing on any network, use `pnpm dev` / `pnpm dev:tailscale`.
+- The default phone workflow should use the machine's Tailscale IPv4 for:
+  - `EXPO_PUBLIC_API_URL=http://<tailscale-ip>:4000`
+  - `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
+- Expo Go-oriented scripts should set `EXPO_NO_REDIRECT_PAGE=1` to avoid browser/interstitial QR codes when `expo-dev-client` is installed.
 
 ## Git Conventions
 

@@ -7,12 +7,14 @@ cd /home/dhanush/Projects/glitch-finance-app
 pnpm install
 pnpm db:up
 pnpm --filter @glitch/api db:migrate
-pnpm dev:android
+pnpm dev
 ```
 
 ## Core Commands
 
 ```bash
+pnpm dev
+pnpm dev:tailscale
 pnpm dev:api
 pnpm android:fast
 pnpm db:logs
@@ -110,6 +112,14 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:4000
 ```
 
 Restart Expo after update.
+
+### Real phone testing on any network
+
+1. Make sure both laptop and phone are connected to the same Tailnet.
+2. Run `pnpm dev`.
+3. Scan the Expo QR in Expo Go.
+
+`pnpm dev` now uses this machine's Tailscale IPv4 for both Metro and the API.
 
 ### OTP works in tests but not local flow
 

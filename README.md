@@ -76,10 +76,18 @@ pnpm --filter @glitch/api db:migrate
 pnpm dev:android    # recommended — starts API + boots Android emulator + Expo
 pnpm dev:api        # API only (hot-reload)
 pnpm android:fast   # emulator + Expo Android
-pnpm dev            # API + Expo (use Expo Go QR for device)
+pnpm dev            # default phone workflow — Tailscale + Expo Go
+pnpm dev:tailscale  # alias for pnpm dev
 ```
 
 The dev scripts automatically start and wait for the database containers before launching the API.
+
+For real-device testing on any network, the default workflow is now Tailscale-based:
+
+- `pnpm dev` detects this machine's Tailscale IPv4
+- the API is exposed at `http://<tailscale-ip>:4000`
+- Expo Go runs in LAN mode with `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
+- your phone can connect from any network as long as both devices are on the same Tailnet
 
 If you pull native module updates (for example image picker/document picker), restart Metro and rebuild the app binary once:
 
@@ -121,7 +129,7 @@ Key variables to configure in `apps/api/.env`:
 | `SLO_OTP_DELIVERY_FAILURE_THRESHOLD` | `5` | OTP delivery failure threshold within SLO window |
 | `SMS_IMPORT_SCAN_ENABLED` | `false` | Keeps SMS scan service disabled unless explicitly enabled |
 
-Mobile: set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env`. Use `http://10.0.2.2:4000` for Android emulator, `http://<LAN-IP>:4000` for a physical device.
+Mobile: set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env`. Use `http://10.0.2.2:4000` for Android emulator. For real-phone testing on any network, prefer `pnpm dev` so the Tailscale IP is injected automatically for that session.
 
 Full variable reference: [`docs/ops-runbook.md`](./docs/ops-runbook.md)
 
