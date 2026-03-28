@@ -6,7 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "./src/api/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "./src/auth/sessionStore";
 import { configureGoogleSignIn, signInWithApple, signInWithGoogle } from "./src/auth/oauthProviders";
-import { BottomTabBar, InlineMessage, publishToast, ToastViewport } from "./src/components/ui";
+import { BottomTabBar, publishToast, ToastViewport } from "./src/components/ui";
 import { deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "./src/flow/mobileFlow";
 import { AppTabRoute, defaultTabRoute, emptyModalRoute, ModalRoute } from "./src/navigation/routes";
 import { BudgetFormScreen } from "./src/screens/BudgetFormScreen";
@@ -1355,9 +1355,6 @@ export default function App() {
     if (!isAuthenticated) {
       return (
         <View style={styles.authShell}>
-          <View style={styles.authMetaWrap}>
-            <InlineMessage tone="info" text={`API Base: ${apiClient.baseUrl}`} />
-          </View>
           <View style={styles.flexFill}>
             {authStage === "login" ? (
               <LoginScreen
@@ -1421,10 +1418,6 @@ const styles = createStyles(() => ({
   authShell: {
     flex: 1,
     gap: theme.spacing.sm
-  },
-  authMetaWrap: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md
   },
   appShell: {
     flex: 1,

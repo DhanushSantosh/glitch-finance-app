@@ -45,6 +45,8 @@ jobs:
       OTP_PROVIDER: console
       MOBILE_APP_ORIGIN: http://localhost:8081
       AUTH_MAX_ACTIVE_SESSIONS: 5
+      GOOGLE_CLIENT_ID: test-google-client-id
+      APPLE_APP_BUNDLE_ID: com.glitch.finance
 
     steps:
       - name: Checkout

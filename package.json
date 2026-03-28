@@ -30,7 +30,9 @@
   },
   "pnpm": {
     "overrides": {
-      "esbuild": ">=0.25.0"
+      "esbuild": ">=0.25.0",
+      "node-forge": ">=1.4.0",
+      "picomatch": ">=4.0.4"
     }
   }
 }
