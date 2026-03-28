@@ -89,4 +89,4 @@ echo "Starting Metro..."
 EXPO_PUBLIC_API_URL="$API_URL" \
   REACT_NATIVE_PACKAGER_HOSTNAME="$METRO_HOST" \
   dotenv -e apps/mobile/../../.env -- \
-  pnpm --filter @glitch/mobile exec expo start --host lan
+  pnpm --filter @glitch/mobile exec expo start --host lan --go
