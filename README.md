@@ -77,6 +77,7 @@ pnpm dev:api        # API only (hot-reload)
 pnpm android:fast   # emulator + Expo Android
 pnpm dev            # default phone workflow — Tailscale + Expo Go
 pnpm dev:tailscale  # alias for pnpm dev
+pnpm dev:staging    # Expo Go against hosted staging API
 ```
 
 The dev scripts automatically start and wait for the database containers before launching the API.
@@ -93,6 +94,18 @@ If you pull native module updates (for example image picker/document picker), re
 ```bash
 pnpm --filter @glitch/mobile exec npx expo prebuild
 ```
+
+For hosted staging testing, use:
+
+```bash
+pnpm dev:staging
+```
+
+This starts Expo Go locally and points the mobile app at:
+
+- `https://glitch-api-staging.onrender.com`
+
+This is the cleanest way to test the real remote backend without starting local API infrastructure.
 
 ---
 

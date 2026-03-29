@@ -79,7 +79,7 @@ Expected behavior:
 - `STATUS_ENDPOINT_ENABLED=true`
 - `METRICS_ENDPOINT_ENABLED=false`
 - `GOOGLE_OAUTH_ENABLED=false`
-- `PUBLIC_API_BASE_URL=https://staging.quantex25.app`
+- `PUBLIC_API_BASE_URL=https://glitch-api-staging.onrender.com`
 - `TRUST_PROXY_HOPS=1`
 
 ### Mobile shape
@@ -87,10 +87,17 @@ Expected behavior:
 - local Expo shortcut:
 
 ```bash
-pnpm --filter @glitch/mobile dev:staging
+pnpm dev:staging
 ```
 
 - EAS preview build uses the staging API URL from [eas.json](../apps/mobile/eas.json)
+
+### How it works in practice
+
+- `pnpm dev:staging` launches Expo Go locally but points the app at the hosted staging backend
+- no local API, Postgres, or Redis are required for this workflow
+- OTP is delivered by the real Resend staging configuration
+- this is the fastest way to validate the mobile app against a production-like backend without touching local infrastructure
 
 ### What staging is for
 
@@ -198,4 +205,8 @@ Use production readiness gates:
 
 The repo has a clean conceptual separation between local, staging, and production.
 
-The main remaining operational gap is that the intended staging custom domain is not currently resolving publicly, so the live staging environment needs domain/deployment cleanup before the full staging workflow can be executed end to end.
+The live staging backend is currently:
+
+- `https://glitch-api-staging.onrender.com`
+
+Use that hostname until custom DNS is live.

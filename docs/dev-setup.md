@@ -22,6 +22,7 @@ OTP provider mode for local:
 ```bash
 pnpm dev         # default phone workflow — Tailscale + Expo Go
 pnpm dev:tailscale
+pnpm dev:staging # Expo Go against hosted staging API
 pnpm dev:api
 pnpm dev:android
 pnpm dev:mobile  # Expo only
@@ -61,6 +62,18 @@ For physical device testing on any network, use Tailscale instead of editing `EX
 The script injects:
 - `EXPO_PUBLIC_API_URL=http://<tailscale-ip>:4000`
 - `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
+
+For hosted staging app validation, use:
+
+```bash
+pnpm dev:staging
+```
+
+That launches Expo Go locally but points the app at:
+
+- `https://glitch-api-staging.onrender.com`
+
+Use this when you want to test the real hosted backend without running local API infrastructure.
 
 ## Quick diagnostics
 

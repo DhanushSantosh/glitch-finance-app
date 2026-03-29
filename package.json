@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bash scripts/dev-tailscale.sh",
     "dev:tailscale": "bash scripts/dev-tailscale.sh",
+    "dev:staging": "pnpm --filter @glitch/mobile dev:staging",
     "dev:local": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm --filter @glitch/mobile dev\"",
     "dev:android": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm android:fast\"",
     "dev:api": "pnpm db:up && pnpm db:wait && pnpm --filter @glitch/api dev",
