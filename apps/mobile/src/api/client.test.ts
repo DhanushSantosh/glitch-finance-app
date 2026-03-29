@@ -301,6 +301,84 @@ describe("apiClient — profile", () => {
     expect(requestInit.method).toBe("GET");
   });
 
+  it("normalizes relative avatar URLs against the current API host", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          item: {
+            id: "user-1",
+            email: "profile@example.com",
+            firstName: null,
+            lastName: null,
+            displayName: null,
+            phoneNumber: null,
+            dateOfBirth: null,
+            avatarUrl: "/api/v1/profile/avatar/avatar-relative.jpg",
+            city: null,
+            country: null,
+            timezone: "UTC",
+            locale: "en-IN",
+            currency: "INR",
+            occupation: null,
+            bio: null,
+            settings: {
+              pushNotificationsEnabled: true,
+              emailNotificationsEnabled: true,
+              weeklySummaryEnabled: true,
+              biometricsEnabled: false,
+              marketingOptIn: false
+            },
+            createdAt: null,
+            updatedAt: null
+          }
+        },
+        true
+      )
+    );
+
+    const profile = await apiClient.getProfile("profile-token");
+    expect(profile.avatarUrl).toBe(`${apiClient.baseUrl}/api/v1/profile/avatar/avatar-relative.jpg`);
+  });
+
+  it("rewrites stale absolute avatar URLs to the current API host", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          item: {
+            id: "user-1",
+            email: "profile@example.com",
+            firstName: null,
+            lastName: null,
+            displayName: null,
+            phoneNumber: null,
+            dateOfBirth: null,
+            avatarUrl: "http://192.168.0.10:4000/api/v1/profile/avatar/avatar-stale.jpg",
+            city: null,
+            country: null,
+            timezone: "UTC",
+            locale: "en-IN",
+            currency: "INR",
+            occupation: null,
+            bio: null,
+            settings: {
+              pushNotificationsEnabled: true,
+              emailNotificationsEnabled: true,
+              weeklySummaryEnabled: true,
+              biometricsEnabled: false,
+              marketingOptIn: false
+            },
+            createdAt: null,
+            updatedAt: null
+          }
+        },
+        true
+      )
+    );
+
+    const profile = await apiClient.getProfile("profile-token");
+    expect(profile.avatarUrl).toBe(`${apiClient.baseUrl}/api/v1/profile/avatar/avatar-stale.jpg`);
+  });
+
   it("updates profile with PATCH /api/v1/profile", async () => {
     mockFetch.mockResolvedValueOnce(
       makeFetchResponse(
@@ -392,7 +470,7 @@ describe("apiClient — profile", () => {
       mimeType: "image/jpeg"
     });
 
-    expect(updated.avatarUrl).toContain("/api/v1/profile/avatar/");
+    expect(updated.avatarUrl).toBe(`${apiClient.baseUrl}/api/v1/profile/avatar/avatar-1.jpg`);
 
     const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(calledUrl).toContain("/api/v1/profile/avatar");

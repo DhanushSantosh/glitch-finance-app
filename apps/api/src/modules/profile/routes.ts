@@ -1,13 +1,10 @@
 import multipart from "@fastify/multipart";
+import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { createReadStream } from "node:fs";
-import { access, mkdir, unlink, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { eq } from "drizzle-orm";
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance } from "fastify";
 import { AppContext } from "../../context.js";
-import { userProfiles, users } from "../../db/schema.js";
+import { avatarAssets, userProfiles, users } from "../../db/schema.js";
 import { AppError } from "../../errors.js";
 import { requireAuth } from "../../utils/auth.js";
 import { executeIdempotent } from "../../utils/idempotency.js";
@@ -50,19 +47,11 @@ type ProfileRow = {
 const maxAvatarFileSizeBytes = 5 * 1024 * 1024;
 const avatarRoutePrefix = "/api/v1/profile/avatar/";
 const avatarKeyPattern = /^[a-zA-Z0-9._-]{10,220}$/;
-const defaultAvatarStorageDirectory = path.join(tmpdir(), "glitch-finance-app", "avatars");
 
 const mimeTypeToExtension: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp"
-};
-
-const extensionToMimeType: Record<string, string> = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp"
 };
 
 const inferImageMimeType = (buffer: Uint8Array): string | null => {
@@ -214,22 +203,6 @@ const isFileTooLargeError = (error: unknown): boolean => {
   );
 };
 
-const resolveAvatarStorageDirectory = (ctx: AppContext): string =>
-  path.resolve(ctx.env.AVATAR_STORAGE_DIR ?? defaultAvatarStorageDirectory);
-
-const ensureAvatarDirectory = async (storageDirectory: string): Promise<void> => {
-  await mkdir(storageDirectory, { recursive: true });
-};
-
-const resolveAvatarFilePath = (storageDirectory: string, avatarKey: string): string => {
-  const resolved = path.resolve(storageDirectory, avatarKey);
-  // Guard against path traversal: resolved path must stay inside storage directory
-  if (!resolved.startsWith(storageDirectory + path.sep)) {
-    throw new AppError(400, "INVALID_AVATAR_KEY", "Invalid avatar key.");
-  }
-  return resolved;
-};
-
 const extractAvatarKeyFromUrl = (avatarUrl: string | null): string | null => {
   if (!avatarUrl) {
     return null;
@@ -256,27 +229,7 @@ const extractAvatarKeyFromUrl = (avatarUrl: string | null): string | null => {
   return key;
 };
 
-const deleteAvatarFileIfExists = async (storageDirectory: string, avatarKey: string): Promise<void> => {
-  const avatarPath = resolveAvatarFilePath(storageDirectory, avatarKey);
-  try {
-    await unlink(avatarPath);
-  } catch (error) {
-    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
-      return;
-    }
-    throw error;
-  }
-};
-
-const buildAvatarPublicUrl = (ctx: AppContext, request: FastifyRequest, avatarKey: string): string => {
-  if (ctx.env.PUBLIC_API_BASE_URL) {
-    return `${ctx.env.PUBLIC_API_BASE_URL.replace(/\/$/, "")}${avatarRoutePrefix}${avatarKey}`;
-  }
-
-  const protocol = request.protocol || "http";
-  const host = request.host || request.headers.host || "localhost:4000";
-  return `${protocol}://${host}${avatarRoutePrefix}${avatarKey}`;
-};
+const buildStoredAvatarPath = (avatarKey: string): string => `${avatarRoutePrefix}${avatarKey}`;
 
 const updateAvatarUrl = async (ctx: AppContext, userId: string, avatarUrl: string | null): Promise<void> => {
   await ctx.db
@@ -286,6 +239,37 @@ const updateAvatarUrl = async (ctx: AppContext, userId: string, avatarUrl: strin
       updatedAt: new Date()
     })
     .where(eq(userProfiles.userId, userId));
+};
+
+const upsertAvatarAsset = async (
+  ctx: AppContext,
+  userId: string,
+  avatarKey: string,
+  mimeType: string,
+  contentBase64: string
+): Promise<void> => {
+  await ctx.db
+    .insert(avatarAssets)
+    .values({
+      userId,
+      avatarKey,
+      mimeType,
+      contentBase64,
+      updatedAt: new Date()
+    })
+    .onConflictDoUpdate({
+      target: avatarAssets.userId,
+      set: {
+        avatarKey,
+        mimeType,
+        contentBase64,
+        updatedAt: new Date()
+      }
+    });
+};
+
+const deleteAvatarAssetIfExists = async (ctx: AppContext, userId: string): Promise<void> => {
+  await ctx.db.delete(avatarAssets).where(eq(avatarAssets.userId, userId));
 };
 
 export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContext): Promise<void> => {
@@ -304,7 +288,6 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
   });
 
   app.get("/api/v1/profile/avatar/:key", async (request, reply) => {
-    const avatarStorageDirectory = resolveAvatarStorageDirectory(ctx);
     const params = request.params as { key?: string };
     const key = params.key ?? "";
 
@@ -312,23 +295,24 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
       throw new AppError(404, "AVATAR_NOT_FOUND", "Avatar not found.");
     }
 
-    const avatarPath = resolveAvatarFilePath(avatarStorageDirectory, key);
-    const extension = path.extname(key).toLowerCase();
-    const mimeType = extensionToMimeType[extension] ?? "application/octet-stream";
+    const rows = await ctx.db
+      .select({
+        mimeType: avatarAssets.mimeType,
+        contentBase64: avatarAssets.contentBase64
+      })
+      .from(avatarAssets)
+      .where(eq(avatarAssets.avatarKey, key))
+      .limit(1);
 
-    try {
-      await access(avatarPath);
-    } catch {
+    const avatar = rows[0];
+    if (!avatar) {
       throw new AppError(404, "AVATAR_NOT_FOUND", "Avatar not found.");
     }
 
-    const stream = createReadStream(avatarPath);
     reply.header("cache-control", "no-store");
     reply.header("x-content-type-options", "nosniff");
-    reply.type(mimeType);
-    // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write
-    // Streaming a server-side file (avatar image), not user-controlled HTML content.
-    return reply.send(stream);
+    reply.type(avatar.mimeType);
+    return reply.send(Buffer.from(avatar.contentBase64, "base64"));
   });
 
   app.get("/api/v1/profile", async (request) => {
@@ -341,16 +325,10 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
   app.post("/api/v1/profile/avatar", async (request) => {
     const identity = requireAuth(request);
     await ensureUserProfileRow(ctx, identity.userId);
-    const avatarStorageDirectory = resolveAvatarStorageDirectory(ctx);
 
     if (!request.isMultipart()) {
       throw new AppError(400, "AVATAR_FILE_REQUIRED", "Select an image file to upload.");
     }
-
-    const existingProfile = await loadUserProfile(ctx, identity.userId);
-    const previousAvatarKey = extractAvatarKeyFromUrl(existingProfile.avatarUrl);
-
-    let avatarKey: string | null = null;
 
     try {
       const file = await request.file();
@@ -365,22 +343,9 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
       }
       const extension = mimeTypeToExtension[detectedMimeType];
 
-      avatarKey = `${identity.userId}-${Date.now()}-${randomUUID()}.${extension}`;
-      await ensureAvatarDirectory(avatarStorageDirectory);
-
-      const destinationPath = resolveAvatarFilePath(avatarStorageDirectory, avatarKey);
-      await writeFile(destinationPath, fileBuffer);
-
-      const avatarUrl = buildAvatarPublicUrl(ctx, request, avatarKey);
-      await updateAvatarUrl(ctx, identity.userId, avatarUrl);
-
-      if (previousAvatarKey && previousAvatarKey !== avatarKey) {
-        try {
-          await deleteAvatarFileIfExists(avatarStorageDirectory, previousAvatarKey);
-        } catch (error) {
-          request.log.warn({ error, previousAvatarKey }, "Unable to delete previous avatar file.");
-        }
-      }
+      const avatarKey = `${identity.userId}-${Date.now()}-${randomUUID()}.${extension}`;
+      await upsertAvatarAsset(ctx, identity.userId, avatarKey, detectedMimeType, fileBuffer.toString("base64"));
+      await updateAvatarUrl(ctx, identity.userId, buildStoredAvatarPath(avatarKey));
 
       await ctx.auditService.log({
         userId: identity.userId,
@@ -398,14 +363,6 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
       const updatedProfile = await loadUserProfile(ctx, identity.userId);
       return { item: toApiProfile(updatedProfile, profileDefaults) };
     } catch (error) {
-      if (avatarKey) {
-        try {
-          await deleteAvatarFileIfExists(avatarStorageDirectory, avatarKey);
-        } catch (cleanupError) {
-          request.log.warn({ cleanupError, avatarKey }, "Unable to clean up failed avatar upload file.");
-        }
-      }
-
       if (isFileTooLargeError(error)) {
         throw new AppError(413, "AVATAR_FILE_TOO_LARGE", `Avatar image must be under ${maxAvatarFileSizeBytes} bytes.`);
       }
@@ -416,7 +373,6 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
 
   app.delete("/api/v1/profile/avatar", async (request, reply) => {
     const identity = requireAuth(request);
-    const avatarStorageDirectory = resolveAvatarStorageDirectory(ctx);
 
     return executeIdempotent({
       ctx,
@@ -426,18 +382,8 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
       execute: async () => {
         await ensureUserProfileRow(ctx, identity.userId);
 
-        const existingProfile = await loadUserProfile(ctx, identity.userId);
-        const previousAvatarKey = extractAvatarKeyFromUrl(existingProfile.avatarUrl);
-
         await updateAvatarUrl(ctx, identity.userId, null);
-
-        if (previousAvatarKey) {
-          try {
-            await deleteAvatarFileIfExists(avatarStorageDirectory, previousAvatarKey);
-          } catch (error) {
-            request.log.warn({ error, previousAvatarKey }, "Unable to delete avatar file while clearing profile picture.");
-          }
-        }
+        await deleteAvatarAssetIfExists(ctx, identity.userId);
 
         await ctx.auditService.log({
           userId: identity.userId,

@@ -69,6 +69,24 @@ export const userProfiles = pgTable(
   })
 );
 
+export const avatarAssets = pgTable(
+  "avatar_assets",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    avatarKey: varchar("avatar_key", { length: 220 }).notNull(),
+    mimeType: varchar("mime_type", { length: 32 }).notNull(),
+    contentBase64: text("content_base64").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => ({
+    avatarAssetsKeyUnique: uniqueIndex("avatar_assets_key_unique").on(table.avatarKey)
+  })
+);
+
 export const sessions = pgTable(
   "sessions",
   {

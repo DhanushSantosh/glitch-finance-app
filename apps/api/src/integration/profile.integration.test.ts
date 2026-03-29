@@ -278,6 +278,30 @@ describe("profile integration", () => {
     expect(removedJson.item.avatarUrl).toBeNull();
   });
 
+  it("persists avatar content across app restarts", async () => {
+    const auth = await authViaOtp(app, `profile-avatar-persist-${randomUUID()}@example.com`);
+
+    const uploadResponse = await uploadTestAvatar(app, auth.token);
+    expect(uploadResponse.statusCode).toBe(200);
+
+    const uploaded = uploadResponse.json() as { item: { avatarUrl: string | null } };
+    expect(uploaded.item.avatarUrl).toContain("/api/v1/profile/avatar/");
+
+    const avatarPath = uploaded.item.avatarUrl ?? "";
+
+    await app.close();
+    app = await createApp();
+    await app.ready();
+
+    const avatarResponse = await app.inject({
+      method: "GET",
+      url: avatarPath
+    });
+
+    expect(avatarResponse.statusCode).toBe(200);
+    expect(avatarResponse.headers["content-type"]).toContain("image/png");
+  });
+
   it("rejects direct avatarUrl patches even when the URL looks valid", async () => {
     const auth = await authViaOtp(app, `profile-avatar-direct-${randomUUID()}@example.com`);
 
@@ -296,7 +320,7 @@ describe("profile integration", () => {
     expect(response.json<{ error: { code: string } }>().error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("ignores spoofed forwarded host headers when generating avatar URLs", async () => {
+  it("stores avatar URLs as app-relative paths even when spoofed forwarded headers are sent", async () => {
     const auth = await authViaOtp(app, `profile-avatar-host-${randomUUID()}@example.com`);
 
     const pngBytes = Buffer.from([
@@ -321,8 +345,7 @@ describe("profile integration", () => {
 
     expect(response.statusCode).toBe(200);
     const uploaded = response.json() as { item: { avatarUrl: string | null } };
-    expect(uploaded.item.avatarUrl).toBeTruthy();
-    expect(uploaded.item.avatarUrl).not.toContain("evil.example.com");
+    expect(uploaded.item.avatarUrl).toMatch(/^\/api\/v1\/profile\/avatar\//);
   });
 
   it("rejects files whose content does not match an allowed image signature", async () => {

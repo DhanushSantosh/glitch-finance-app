@@ -87,6 +87,9 @@ updated_at: 2026-03-29
 - Added explicit staging and production readiness checklists with env validation and rollout gates
 - Added `docs/environment-workflows.md` to explain how local dev, staging, production, and maintenance flows are separated in practice
 - Staging docs and mobile preview config now target the live Render staging hostname until custom DNS is live
+- Local uncommitted fix in progress for avatar persistence:
+  - avatar blobs moved from filesystem storage to Postgres-backed `avatar_assets`
+  - mobile client normalizes avatar URLs against the current API origin to survive host/IP changes between sessions
 
 ## What's In Progress
 - No platform-blocking issue on local dev.

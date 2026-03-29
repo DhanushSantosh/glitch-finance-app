@@ -57,6 +57,7 @@ updated_at: 2026-03-29
 | Hosted staging mobile testing | `pnpm dev:staging` is the default staging app workflow; `pnpm dev:staging:tailscale` is the cross-network variant | Keep staging app validation simple for all devs while preserving the Tailnet option when needed |
 | Public asset origin | `PUBLIC_API_BASE_URL` over request forwarded headers | Prevent host-header poisoning in stored avatar URLs |
 | Hosted avatar file storage | Default to system temp dir unless `AVATAR_STORAGE_DIR` is explicitly set | Render containers may not allow writes under `/app`; avatar uploads need a writable runtime path |
+| Avatar durability | Persist avatar content in Postgres and store app-relative avatar paths | Survives local/staging restarts and avoids stale absolute hosts baked into profile records |
 | Production observability exposure | `/health` public, `/api/v1/status` and `/api/v1/metrics` gated by env | Reduce recon surface in production |
 | Fresh hosted DB bootstrap | Apply Drizzle runtime migrations before app context seeding | Brand-new staging/prod databases must not fail before tables exist |
 

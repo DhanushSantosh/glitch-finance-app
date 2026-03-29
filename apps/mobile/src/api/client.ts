@@ -58,6 +58,39 @@ const resolveApiBaseUrl = (): string => {
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
+const avatarRoutePrefix = "/api/v1/profile/avatar/";
+
+const normalizeAvatarUrl = (avatarUrl: string | null): string | null => {
+  if (!avatarUrl) {
+    return null;
+  }
+
+  const normalized = avatarUrl.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  if (normalized.startsWith(avatarRoutePrefix)) {
+    return `${API_BASE_URL}${normalized}`;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    const markerIndex = parsed.pathname.indexOf(avatarRoutePrefix);
+    if (markerIndex >= 0) {
+      const routePath = parsed.pathname.slice(markerIndex);
+      return `${API_BASE_URL}${routePath}`;
+    }
+    return normalized;
+  } catch {
+    return normalized;
+  }
+};
+
+const normalizeUserProfile = (profile: UserProfile): UserProfile => ({
+  ...profile,
+  avatarUrl: normalizeAvatarUrl(profile.avatarUrl)
+});
 
 const toQueryString = (query: Record<string, string | number | undefined>): string => {
   const params = new URLSearchParams();
@@ -150,7 +183,7 @@ export const apiClient = {
     const result = await request<{ item: UserProfile }>("/api/v1/profile", {
       token
     });
-    return result.item;
+    return normalizeUserProfile(result.item);
   },
 
   async updateProfile(
@@ -176,7 +209,7 @@ export const apiClient = {
       token,
       body: payload
     });
-    return result.item;
+    return normalizeUserProfile(result.item);
   },
 
   async uploadProfileAvatar(token: string, payload: UploadAvatarPayload): Promise<UserProfile> {
@@ -201,7 +234,7 @@ export const apiClient = {
       throw new Error(message);
     }
 
-    return json.item;
+    return normalizeUserProfile(json.item);
   },
 
   async removeProfileAvatar(token: string): Promise<UserProfile> {
@@ -209,7 +242,7 @@ export const apiClient = {
       method: "DELETE",
       token
     });
-    return result.item;
+    return normalizeUserProfile(result.item);
   },
 
   async logout(token: string): Promise<void> {
