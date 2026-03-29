@@ -29,6 +29,7 @@ const envSchema = z
     API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
     API_HOST: z.string().default("0.0.0.0"),
     PUBLIC_API_BASE_URL: z.string().url().optional(),
+    AVATAR_STORAGE_DIR: z.string().min(1).optional(),
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
     MOBILE_APP_ORIGIN: z.string().default("http://localhost:8081,http://localhost:19006"),
     DATABASE_URL: z.string().min(1).default("postgresql://glitch:glitch@localhost:5432/glitch"),

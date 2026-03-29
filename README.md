@@ -129,6 +129,7 @@ Key variables to configure in the root `.env`:
 | `REDIS_URL` | `redis://127.0.0.1:6379` | Optional — falls back to in-memory |
 | `OTP_HASH_SECRET` | `change-me-in-production-otp-secret` | **Must change in production** |
 | `PUBLIC_API_BASE_URL` | _(empty)_ | Canonical public API origin used for generated asset URLs |
+| `AVATAR_STORAGE_DIR` | _(system temp dir)_ | Optional writable directory for uploaded avatar files in hosted environments |
 | `TRUST_PROXY_HOPS` | `0` | Set to proxy hop count in deployed environments |
 | `DEBUG_OTP_EXPOSURE` | `true` (local) | Keep `false` outside local development |
 | `OTP_PROVIDER` | `console` | `console` or `resend` |

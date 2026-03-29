@@ -19,6 +19,7 @@ updated_at: 2026-03-29
   - debug OTP exposure narrowed to explicit local/test configuration
   - profile `avatarUrl` can no longer be patched directly
   - avatar uploads are signature-validated and served with `nosniff`
+  - avatar uploads now default to a writable system temp directory in hosted environments, with `AVATAR_STORAGE_DIR` available for persistent mounts
   - trusted public avatar URLs derive from `PUBLIC_API_BASE_URL` / configured origin, not raw forwarded headers
   - `/api/v1/status` and `/api/v1/metrics` can be disabled per environment
   - proxy-aware IP handling now uses `TRUST_PROXY_HOPS`

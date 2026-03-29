@@ -55,6 +55,7 @@ updated_at: 2026-03-29
 | Cross-network mobile dev | Tailscale + Expo Go LAN mode | Stable across networks without relying on Expo/ngrok or Cloudflare quick tunnels |
 | Hosted staging mobile testing | Root `pnpm dev:staging` launches Expo Go against the hosted Render backend | Keep staging app validation as simple as local dev, without local API dependencies |
 | Public asset origin | `PUBLIC_API_BASE_URL` over request forwarded headers | Prevent host-header poisoning in stored avatar URLs |
+| Hosted avatar file storage | Default to system temp dir unless `AVATAR_STORAGE_DIR` is explicitly set | Render containers may not allow writes under `/app`; avatar uploads need a writable runtime path |
 | Production observability exposure | `/health` public, `/api/v1/status` and `/api/v1/metrics` gated by env | Reduce recon surface in production |
 | Fresh hosted DB bootstrap | Apply Drizzle runtime migrations before app context seeding | Brand-new staging/prod databases must not fail before tables exist |
 

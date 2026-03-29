@@ -37,6 +37,7 @@ apps/api/src/modules/<name>/
 - Run `pnpm --filter @glitch/api db:generate` after schema changes
 - Never modify existing migration files
 - Hosted environments must be able to bootstrap a brand-new database: keep runtime migration support intact when changing API startup or Docker packaging
+- Hosted environments must use a writable avatar storage path. Prefer the default temp-directory behavior unless a persistent volume is explicitly mounted and exposed via `AVATAR_STORAGE_DIR`.
 
 ### Testing
 - Integration tests use `createApp()` helper — see existing test files for pattern
