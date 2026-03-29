@@ -27,13 +27,14 @@ This file is updated at the END of every work session. It captures exactly what 
   - `pnpm --filter @glitch/mobile typecheck` -> passed
   - `pnpm --filter @glitch/api test` -> 180 passed
   - `pnpm --filter @glitch/mobile test` -> 51 passed
+- Added `docs/project-health.md` as the current maintenance/source-of-truth snapshot for repo health and next priorities.
 
 **Open threads:**
-- Security dependency fixes are implemented locally but not yet committed in this session.
+- No active maintenance blocker at the moment.
 
 **Next session should:**
-- Commit and push the dependency security patch if the user wants it published.
-- Continue product feature work from the now-clean dependency baseline.
+- Use `docs/project-health.md` for maintenance status checks.
+- Continue either release-readiness maintenance or the next fully shippable product slice.
 
 ---
 

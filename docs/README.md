@@ -32,6 +32,7 @@ All files use lowercase kebab-case names. Update docs in the same PR as the code
 | [dev-setup.md](./dev-setup.md) | First-time local setup for API and mobile |
 | [ops-runbook.md](./ops-runbook.md) | Env vars, startup, backup/restore, secrets rotation, troubleshooting |
 | [platform-readiness.md](./platform-readiness.md) | CI/CD pipeline, infra provisioning, monitoring, and DR baseline |
+| [project-health.md](./project-health.md) | Current maintenance snapshot, verification status, and next ops/product priorities |
 | [security.md](./security.md) | Auth controls, audit logging, data isolation, production hardening |
 | [testing.md](./testing.md) | Test strategy, coverage map, and acceptance scenarios |
 
