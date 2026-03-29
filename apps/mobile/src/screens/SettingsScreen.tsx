@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Switch, Text, View } from "react-native";
+import { Alert, Switch, Text, View, Image } from "react-native";
 import { AppHeader, Button, Card, InlineMessage, publishToast, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User, SlidersHorizontal } from "lucide-react-native";
@@ -154,7 +154,7 @@ export const SettingsScreen = ({
 
   return (
     <Screen>
-      <AppHeader title="System" subtitle="Security and configuration." />
+      <AppHeader title="Settings" subtitle="Security and configuration." />
 
       <Card variant="glass" style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
@@ -165,8 +165,17 @@ export const SettingsScreen = ({
           <Text style={styles.sectionSubtitle}>Manage identity and regional profile details.</Text>
         </View>
         <View style={styles.profileSummary}>
-          <Text style={styles.profileName}>{resolvedProfileName}</Text>
-          <Text style={styles.profileEmail}>{profile?.email ?? "Loading profile..."}</Text>
+          {profile?.avatarUrl ? (
+            <Image source={{ uri: profile.avatarUrl }} style={styles.profileAvatar} />
+          ) : (
+            <View style={styles.profileAvatar}>
+              <User size={24} color={theme.color.textMuted} />
+            </View>
+          )}
+          <View style={styles.profileTextContainer}>
+            <Text style={styles.profileName}>{resolvedProfileName}</Text>
+            <Text style={styles.profileEmail}>{profile?.email ?? "Loading profile..."}</Text>
+          </View>
         </View>
         <Button label="EDIT PROFILE" variant="secondary" onPress={onOpenProfile} />
       </Card>
@@ -388,12 +397,29 @@ const styles = createStyles(() => ({
     letterSpacing: 1
   },
   profileSummary: {
-    gap: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
     padding: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.color.borderSubtle,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.color.surfaceMuted
+  },
+  profileAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.bgBase,
+    borderWidth: 1,
+    borderColor: theme.color.borderSubtle,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  profileTextContainer: {
+    flex: 1,
+    gap: 2,
+    justifyContent: "center"
   },
   profileName: {
     color: theme.color.textPrimary,
