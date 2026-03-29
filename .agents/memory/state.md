@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-28
+updated_at: 2026-03-29
 ---
 
 # Project State
@@ -9,7 +9,7 @@ updated_at: 2026-03-28
 ### API (apps/api)
 - Fastify v5 REST API fully implemented and tested
 - Modules: auth (OTP + session), categories, transactions, budgets, goals, reports (summary + export), imports (SMS), consents, audit, alerts, SLO monitor, metrics
-- 136 tests passing (unit + integration)
+- 180 API tests passing (unit + integration)
 - Idempotent mutation protection implemented for authenticated write routes (transactions, budgets, goals, categories, consent intent)
 - New persistence table for idempotency records: `idempotency_keys`
 - Error normalization improved: Fastify JSON parser + Postgres constraint errors now map to stable 4xx envelopes where applicable
@@ -53,6 +53,7 @@ updated_at: 2026-03-28
 - docker-compose for local Postgres + Redis
 - Render blueprints: staging.yaml + production.yaml
 - `pnpm dev` / `pnpm dev:tailscale` are the default phone workflow: they auto-start DB, detect the machine's Tailscale IPv4, start the API, and launch Expo Go with Tailscale-aware host configuration
+- Dependency audit is clean: direct Fastify vulnerability patched and transitive pnpm overrides applied for `brace-expansion` and `yaml`
 - Expo account connected, project linked to GitHub (EAS available)
   - `eas build` available for dev builds, preview, and production
   - `eas submit` available for App Store / Play Store submission
@@ -64,11 +65,12 @@ updated_at: 2026-03-28
 - Root README.md is concise with links to full docs
 
 ## What's In Progress
-- Tailscale-based phone workflow implementation and validation.
+- No active platform-blocking issue; next work can continue from a clean dependency and phone-dev baseline.
 
 ## Recent Fixes
 - Removed the failed Cloudflare / Expo tunnel experiment and replaced it with a Tailscale-based Expo Go workflow
 - Expo mobile package compatibility aligned to SDK 55 expectations (`expo`, `expo-dev-client`, `expo-image-picker`)
+- Cleared moderate dependency advisories by patching Fastify and pinning safe transitive versions through pnpm overrides
 - ECONNREFUSED on stack restart (IPv6 + AggregateError retry logic)
 - CI NODE_ENV=test missing (rate limiter was active during tests)
 - Rate limiter off-by-one (maxRequests=0) and window boundary (<=)

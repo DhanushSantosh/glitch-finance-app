@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-28
+updated_at: 2026-03-29
 ---
 
 # Key Decisions Log
@@ -46,6 +46,7 @@ updated_at: 2026-03-28
 | Decision | Choice | Rationale |
 |---|---|---|
 | Package manager | pnpm workspaces | Disk efficient, strict dependency isolation |
+| Security patching | Direct patch bumps first, `pnpm.overrides` for stable transitive fixes | Clears advisories without forcing broad framework churn |
 | Container registry | GHCR | Free, integrated with GitHub Actions |
 | Deploy target | Render | Simple, managed Postgres + Redis |
 | DATABASE_URL host | 127.0.0.1 not localhost | Avoid IPv6 (::1) resolution on Linux |

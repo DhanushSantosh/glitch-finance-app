@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-28
+updated_at: 2026-03-29
 ---
 
 # Handoff Log
@@ -13,29 +13,27 @@ This file is updated at the END of every work session. It captures exactly what 
 
 ---
 
-## Last Session — 2026-03-28
+## Last Session — 2026-03-29
 
 **Done:**
-- Removed the Cloudflare / Expo tunnel experiment entirely and reset the repo back to `origin/main`.
-- Replaced the default phone workflow with a Tailscale-based Expo Go path:
-  - added `scripts/dev-tailscale.sh`
-  - `pnpm dev` and `pnpm dev:tailscale` now use Tailscale
-  - `pnpm dev:phone` now points to the same Tailscale workflow
-- Updated mobile Expo scripts to be Expo Go-first and disable the redirect page.
-- Removed tunnel-only dependencies:
-  - root `qrcode-terminal`
-  - mobile `@expo/ngrok`
-- Restored Expo package compatibility updates:
-  - `expo` -> `~55.0.9`
-  - `expo-dev-client` -> `~55.0.19`
-  - `expo-image-picker` -> `~55.0.14`
+- Validated and pushed the Tailscale-based Expo Go workflow as the default real-phone development path.
+- Cleared the GitHub dependency alerts by:
+  - bumping `fastify` to `^5.8.3`
+  - adding root pnpm security overrides for vulnerable transitive `brace-expansion` and `yaml` ranges
+- Re-ran full verification after the dependency changes:
+  - `pnpm audit --prod` -> clean
+  - `pnpm audit` -> clean
+  - `pnpm --filter @glitch/api typecheck` -> passed
+  - `pnpm --filter @glitch/mobile typecheck` -> passed
+  - `pnpm --filter @glitch/api test` -> 180 passed
+  - `pnpm --filter @glitch/mobile test` -> 51 passed
 
 **Open threads:**
-- Need to run install/typecheck and a real `pnpm dev` smoke test on the new Tailscale workflow.
+- Security dependency fixes are implemented locally but not yet committed in this session.
 
 **Next session should:**
-- Validate `pnpm dev` end to end with Expo Go over Tailscale.
-- Continue app work once the cross-network phone workflow is confirmed stable.
+- Commit and push the dependency security patch if the user wants it published.
+- Continue product feature work from the now-clean dependency baseline.
 
 ---
 

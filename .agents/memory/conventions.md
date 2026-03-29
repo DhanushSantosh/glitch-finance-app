@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-28
+updated_at: 2026-03-29
 ---
 
 # Project Conventions
@@ -94,6 +94,19 @@ apps/mobile/src/
 - Types: feat, fix, docs, style, refactor, test, chore
 - No `--no-verify`, no `--force` to main
 - Only Claude commits — external agents propose, Claude writes and commits
+
+## Dependency Maintenance
+
+- Prefer the smallest safe dependency update that resolves the issue:
+  - direct dependency patch/minor bump first
+  - root `pnpm.overrides` for vulnerable transitives when upstream trees are otherwise stable
+- After dependency changes, rerun:
+  - `pnpm audit --prod`
+  - `pnpm audit`
+  - `pnpm --filter @glitch/api typecheck`
+  - `pnpm --filter @glitch/mobile typecheck`
+  - `pnpm --filter @glitch/api test`
+  - `pnpm --filter @glitch/mobile test`
 
 ## Naming
 - API files: camelCase `.ts`
