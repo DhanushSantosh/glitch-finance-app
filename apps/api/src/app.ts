@@ -33,9 +33,10 @@ export const createApp = async (): Promise<FastifyInstance> => {
   const parseOrigins = (raw: string): (string | RegExp)[] =>
     raw.split(",").map((o) => {
       const t = o.trim();
-      return t.includes("*")
-        ? new RegExp("^" + t.replace(/[.]/g, "\\.").replace(/\*/g, "[^.]+") + "$")
-        : t;
+      if (!t.includes("*")) return t;
+      // Escape all regex metacharacters except *, then convert * to subdomain wildcard.
+      const escaped = t.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+");
+      return new RegExp("^" + escaped + "$");
     });
 
   await app.register(cors, {

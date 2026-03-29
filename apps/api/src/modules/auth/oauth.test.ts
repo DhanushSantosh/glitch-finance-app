@@ -1,61 +1,6 @@
 import { createHash } from "node:crypto";
-import { SignJWT, generateKeyPair } from "jose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { verifyGoogleIdToken, verifyAppleIdToken } from "./oauth.js";
-import { AppError } from "../../errors.js";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-async function makeGoogleToken(
-  claims: Record<string, unknown>,
-  { expired = false }: { expired?: boolean } = {}
-): Promise<{ idToken: string; clientId: string }> {
-  const { privateKey } = await generateKeyPair("RS256");
-  const clientId = "test-client-id.apps.googleusercontent.com";
-  const now = Math.floor(Date.now() / 1000);
-
-  const token = await new SignJWT({
-    iss: "https://accounts.google.com",
-    aud: clientId,
-    sub: "google-user-123",
-    email: "user@example.com",
-    email_verified: true,
-    ...claims
-  })
-    .setProtectedHeader({ alg: "RS256" })
-    .setIssuedAt(expired ? now - 7200 : now)
-    .setExpirationTime(expired ? now - 3600 : now + 3600)
-    .sign(privateKey);
-
-  return { idToken: token, clientId };
-}
-
-async function makeAppleToken(
-  rawNonce: string,
-  claims: Record<string, unknown> = {},
-  { expired = false }: { expired?: boolean } = {}
-): Promise<{ identityToken: string; bundleId: string }> {
-  const { privateKey } = await generateKeyPair("RS256");
-  const bundleId = "com.glitch.finance";
-  const nonceHash = createHash("sha256").update(rawNonce).digest("hex");
-  const now = Math.floor(Date.now() / 1000);
-
-  const token = await new SignJWT({
-    iss: "https://appleid.apple.com",
-    aud: bundleId,
-    sub: "apple-user-abc.123",
-    nonce: nonceHash,
-    ...claims
-  })
-    .setProtectedHeader({ alg: "RS256" })
-    .setIssuedAt(expired ? now - 7200 : now)
-    .setExpirationTime(expired ? now - 3600 : now + 3600)
-    .sign(privateKey);
-
-  return { identityToken: token, bundleId };
-}
 
 // ---------------------------------------------------------------------------
 // Mock JWKS — replace the remote JWKS fetch with a local key set that matches

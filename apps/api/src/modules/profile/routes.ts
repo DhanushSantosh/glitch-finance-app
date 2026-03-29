@@ -203,32 +203,6 @@ const isFileTooLargeError = (error: unknown): boolean => {
   );
 };
 
-const extractAvatarKeyFromUrl = (avatarUrl: string | null): string | null => {
-  if (!avatarUrl) {
-    return null;
-  }
-
-  let pathname = avatarUrl;
-  try {
-    pathname = new URL(avatarUrl).pathname;
-  } catch {
-    // Keep raw value when avatarUrl is already a path-like string.
-  }
-
-  const markerIndex = pathname.indexOf(avatarRoutePrefix);
-  if (markerIndex < 0) {
-    return null;
-  }
-
-  const key = pathname.slice(markerIndex + avatarRoutePrefix.length).split("/")[0] ?? "";
-
-  if (!avatarKeyPattern.test(key)) {
-    return null;
-  }
-
-  return key;
-};
-
 const buildStoredAvatarPath = (avatarKey: string): string => `${avatarRoutePrefix}${avatarKey}`;
 
 const updateAvatarUrl = async (ctx: AppContext, userId: string, avatarUrl: string | null): Promise<void> => {
