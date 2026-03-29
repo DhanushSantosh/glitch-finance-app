@@ -174,7 +174,7 @@ export class AuthService {
       ipAddress: input.ipAddress
     });
 
-    return ctxAwareOtpResponse(this.deps.env.NODE_ENV, otpCode);
+    return ctxAwareOtpResponse(this.deps.env.NODE_ENV, otpCode, this.deps.env.DEBUG_OTP_EXPOSURE);
   }
 
   async verifyOtp(input: VerifyOtpInput): Promise<{ token: string; user: { id: string; email: string } }> {
@@ -298,10 +298,16 @@ export class AuthService {
     let providerEmail: string | undefined;
 
     if (provider === "google") {
+      if (!this.deps.env.GOOGLE_OAUTH_ENABLED) {
+        throw new AppError(503, "OAUTH_DISABLED", "Google Sign-In is temporarily unavailable.");
+      }
       if (!this.deps.env.GOOGLE_CLIENT_ID) {
         throw new AppError(503, "OAUTH_NOT_CONFIGURED", "Google Sign-In is not configured.");
       }
-      const payload = await verifyGoogleIdToken(idToken, this.deps.env.GOOGLE_CLIENT_ID);
+      if (!rawNonce) {
+        throw new AppError(400, "MISSING_NONCE", "nonce is required for Google Sign-In.");
+      }
+      const payload = await verifyGoogleIdToken(idToken, this.deps.env.GOOGLE_CLIENT_ID, rawNonce);
       providerId = payload.sub;
       providerEmail = payload.email;
     } else {
@@ -313,7 +319,7 @@ export class AuthService {
       }
       const payload = await verifyAppleIdToken(idToken, rawNonce, this.deps.env.APPLE_APP_BUNDLE_ID);
       providerId = payload.sub;
-      providerEmail = payload.email ?? profileHint?.email;
+      providerEmail = payload.email;
     }
 
     const normalizedEmail = providerEmail ? this.normalizeEmail(providerEmail) : undefined;
@@ -361,7 +367,11 @@ export class AuthService {
       // 4. No match anywhere — create new user
       if (!existingUser) {
         if (!normalizedEmail) {
-          throw new AppError(422, "EMAIL_REQUIRED", "Unable to determine email from OAuth provider.");
+          throw new AppError(
+            422,
+            "VERIFIED_EMAIL_REQUIRED",
+            "A verified email from the OAuth provider is required to create or link an account."
+          );
         }
         const created = await this.deps.db
           .insert(users)
@@ -490,8 +500,12 @@ export class AuthService {
   }
 }
 
-const ctxAwareOtpResponse = (nodeEnv: AppEnv["NODE_ENV"], otpCode: string): { message: string; debugOtpCode?: string } => {
-  if (nodeEnv !== "production") {
+const ctxAwareOtpResponse = (
+  nodeEnv: AppEnv["NODE_ENV"],
+  otpCode: string,
+  exposeDebugOtp = nodeEnv === "test"
+): { message: string; debugOtpCode?: string } => {
+  if (exposeDebugOtp) {
     return {
       message: "If this email is valid, an OTP has been sent.",
       debugOtpCode: otpCode

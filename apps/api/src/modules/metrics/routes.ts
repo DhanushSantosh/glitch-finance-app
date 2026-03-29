@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { collectDefaultMetrics, Counter, Histogram, Registry } from "prom-client";
+import { AppError } from "../../errors.js";
 
 const metricsRegistry = new Registry();
 collectDefaultMetrics({ register: metricsRegistry, prefix: "glitch_api_" });
@@ -30,7 +31,7 @@ const getRouteLabel = (request: FastifyRequest): string => {
   return queryIndex >= 0 ? rawUrl.slice(0, queryIndex) : rawUrl;
 };
 
-export const registerMetricsRoutes = async (app: FastifyInstance): Promise<void> => {
+export const registerMetricsRoutes = async (app: FastifyInstance, metricsEnabled = true): Promise<void> => {
   app.addHook("onResponse", async (request, reply) => {
     const route = getRouteLabel(request);
     const labels = {
@@ -44,6 +45,9 @@ export const registerMetricsRoutes = async (app: FastifyInstance): Promise<void>
   });
 
   app.get("/api/v1/metrics", async (_, reply) => {
+    if (!metricsEnabled) {
+      throw new AppError(404, "METRICS_ENDPOINT_DISABLED", "Not found.");
+    }
     reply.header("content-type", metricsRegistry.contentType);
     return metricsRegistry.metrics();
   });

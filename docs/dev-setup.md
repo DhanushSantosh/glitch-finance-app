@@ -6,16 +6,16 @@
 git clone <your-fork-or-repo-url>
 cd glitch-finance-app
 pnpm install
-cp apps/api/.env.example apps/api/.env
-cp apps/mobile/.env.example apps/mobile/.env
+cp .env.example .env
 pnpm db:up
 pnpm --filter @glitch/api db:migrate
 pnpm dev
 ```
 
 OTP provider mode for local:
-- Keep `OTP_PROVIDER=console` in `apps/api/.env` to use debug OTP.
+- Keep `OTP_PROVIDER=console` in the root `.env` to use debug OTP.
 - Use `OTP_PROVIDER=resend` only when validating real email delivery with `RESEND_API_KEY`.
+- Keep `DEBUG_OTP_EXPOSURE=true` only for local development. Shared environments should set it to `false`.
 
 ## Alternative startup
 
@@ -30,7 +30,7 @@ pnpm android:fast
 
 ## API connection
 
-The mobile app reads `EXPO_PUBLIC_API_URL` from `apps/mobile/.env`.
+The mobile app reads `EXPO_PUBLIC_API_URL` from the root `.env`.
 
 Default for local API:
 

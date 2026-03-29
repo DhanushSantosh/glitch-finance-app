@@ -165,6 +165,12 @@ describe("verifyGoogleIdToken — payload validation", () => {
     expect(result).toEqual({ sub: "uid-123", email: "a@b.com", emailVerified: true, name: "Alice" });
   });
 
+  it("accepts a matching nonce when provided", async () => {
+    await mockJwtVerify({ sub: "uid-123", email: "a@b.com", email_verified: true, nonce: "nonce-123" });
+    const result = await verifyGoogleIdToken("token", "client-id", "nonce-123");
+    expect(result).toEqual({ sub: "uid-123", email: "a@b.com", emailVerified: true, name: undefined });
+  });
+
   it("returns payload without name when name claim is absent", async () => {
     await mockJwtVerify({ sub: "uid-123", email: "a@b.com", email_verified: true });
     const result = await verifyGoogleIdToken("token", "client-id");
@@ -196,6 +202,20 @@ describe("verifyGoogleIdToken — payload validation", () => {
     await mockJwtVerify({ sub: "uid-123", email: "a@b.com" });
     await expect(verifyGoogleIdToken("token", "client-id")).rejects.toMatchObject({
       code: "EMAIL_NOT_VERIFIED"
+    });
+  });
+
+  it("throws NONCE_MISMATCH when nonce does not match", async () => {
+    await mockJwtVerify({ sub: "uid-123", email: "a@b.com", email_verified: true, nonce: "wrong-nonce" });
+    await expect(verifyGoogleIdToken("token", "client-id", "expected-nonce")).rejects.toMatchObject({
+      code: "NONCE_MISMATCH"
+    });
+  });
+
+  it("throws NONCE_MISMATCH when nonce claim is absent but one is required", async () => {
+    await mockJwtVerify({ sub: "uid-123", email: "a@b.com", email_verified: true });
+    await expect(verifyGoogleIdToken("token", "client-id", "expected-nonce")).rejects.toMatchObject({
+      code: "NONCE_MISMATCH"
     });
   });
 });

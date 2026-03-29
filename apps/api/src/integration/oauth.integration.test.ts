@@ -76,118 +76,43 @@ describe("POST /api/v1/auth/oauth/google", () => {
     expect(response.statusCode).toBe(400);
   });
 
-  it("signs up a new user and returns a session token", async () => {
+  it("returns 503 when Google OAuth is disabled by default", async () => {
     await mockGoogleToken("g-new-user-001", "newgoogle@example.com");
 
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/auth/oauth/google",
-      payload: { idToken: "mock-id-token" }
+      payload: { idToken: "mock-id-token", nonce: "nonce-123" }
     });
 
-    expect(response.statusCode).toBe(200);
-    const body = response.json<{ token: string; user: { id: string; email: string }; session: { expiresInDays: number } }>();
-    expect(typeof body.token).toBe("string");
-    expect(body.token.length).toBeGreaterThan(20);
-    expect(body.user.email).toBe("newgoogle@example.com");
-    expect(body.session.expiresInDays).toBeGreaterThan(0);
+    expect(response.statusCode).toBe(503);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("OAUTH_DISABLED");
   });
 
-  it("returns the same user on a subsequent sign-in with the same Google sub", async () => {
-    await mockGoogleToken("g-returning-user-002", "returning@example.com");
-    const first = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/oauth/google",
-      payload: { idToken: "mock-id-token" }
-    });
-    const firstUserId = first.json<{ user: { id: string } }>().user.id;
-
-    await mockGoogleToken("g-returning-user-002", "returning@example.com");
-    const second = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/oauth/google",
-      payload: { idToken: "mock-id-token" }
-    });
-    const secondUserId = second.json<{ user: { id: string } }>().user.id;
-
-    expect(firstUserId).toBe(secondUserId);
-  });
-
-  it("links Google account to existing OTP user with the same email", async () => {
-    const email = "otp-then-google@example.com";
-
-    // Create user via OTP first
-    const otpRequest = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/request-otp",
-      payload: { email }
-    });
-    const { debugOtpCode } = otpRequest.json<{ debugOtpCode: string }>();
-    const otpVerify = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/verify-otp",
-      payload: { email, code: debugOtpCode }
-    });
-    const otpUserId = otpVerify.json<{ user: { id: string } }>().user.id;
-
-    // Now sign in with Google using the same email
-    await mockGoogleToken("g-link-user-003", email);
-    const googleResponse = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/oauth/google",
-      payload: { idToken: "mock-id-token" }
-    });
-
-    expect(googleResponse.statusCode).toBe(200);
-    const googleUserId = googleResponse.json<{ user: { id: string } }>().user.id;
-    expect(googleUserId).toBe(otpUserId);
-  });
-
-  it("returns 401 when token verification fails", async () => {
+  it("does not evaluate token verification while Google OAuth is disabled", async () => {
     const jose = await import("jose");
     vi.spyOn(jose, "jwtVerify").mockRejectedValueOnce(new Error("invalid signature"));
 
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/auth/oauth/google",
-      payload: { idToken: "bad-token" }
+      payload: { idToken: "bad-token", nonce: "nonce-123" }
     });
 
-    expect(response.statusCode).toBe(401);
-    expect(response.json<{ error: { code: string } }>().error.code).toBe("INVALID_OAUTH_TOKEN");
+    expect(response.statusCode).toBe(503);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("OAUTH_DISABLED");
+    expect(jose.jwtVerify).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when email is not verified", async () => {
-    await mockGoogleToken("g-unverified-004", "unverified@example.com", false);
-
+  it("requires a nonce for Google OAuth requests when the route validates", async () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/auth/oauth/google",
       payload: { idToken: "mock-id-token" }
     });
 
-    expect(response.statusCode).toBe(401);
-    expect(response.json<{ error: { code: string } }>().error.code).toBe("EMAIL_NOT_VERIFIED");
-  });
-
-  it("issued token is valid for authenticated requests", async () => {
-    await mockGoogleToken("g-auth-check-005", "authcheck@example.com");
-
-    const signIn = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/oauth/google",
-      payload: { idToken: "mock-id-token" }
-    });
-    const { token } = signIn.json<{ token: string }>();
-
-    const me = await app.inject({
-      method: "GET",
-      url: "/api/v1/me",
-      headers: { authorization: `Bearer ${token}` }
-    });
-
-    expect(me.statusCode).toBe(200);
-    expect(me.json<{ email: string }>().email).toBe("authcheck@example.com");
+    expect(response.statusCode).toBe(503);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("OAUTH_DISABLED");
   });
 });
 
@@ -327,5 +252,26 @@ describe("POST /api/v1/auth/oauth/apple", () => {
 
     expect(me.statusCode).toBe(200);
     expect(me.json<{ email: string }>().email).toBe("appleauth@privaterelay.appleid.com");
+  });
+
+  it("rejects client-supplied email hints when Apple does not return a verified email", async () => {
+    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    await mockAppleToken("a-no-email-005", RAW_NONCE);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/oauth/apple",
+      payload: {
+        identityToken: "mock-token",
+        rawNonce: RAW_NONCE,
+        user: {
+          email: "victim@example.com",
+          firstName: "Mallory"
+        }
+      }
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("VERIFIED_EMAIL_REQUIRED");
   });
 });

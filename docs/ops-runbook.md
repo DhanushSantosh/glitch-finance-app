@@ -28,10 +28,13 @@ API (`apps/api/.env`):
 - `NODE_ENV`
 - `API_PORT`
 - `API_HOST`
+- `PUBLIC_API_BASE_URL`
+- `TRUST_PROXY_HOPS`
 - `MOBILE_APP_ORIGIN`
 - `DATABASE_URL`
 - `REDIS_URL`
 - `OTP_HASH_SECRET`
+- `DEBUG_OTP_EXPOSURE`
 - `OTP_PROVIDER` (`console` or `resend`)
 - `OTP_EMAIL_FROM`
 - `OTP_PROVIDER_REQUEST_TIMEOUT_MS` (outbound OTP provider request timeout)
@@ -55,9 +58,10 @@ API (`apps/api/.env`):
 - `SMS_DISCLOSURE_VERSION`
 - `APP_CURRENCY`
 
-Mobile (`apps/mobile/.env`):
+Mobile (root `.env`):
 
 - `EXPO_PUBLIC_API_URL`
+- `EXPO_PUBLIC_GOOGLE_OAUTH_ENABLED`
 
 ## Health Checks
 
@@ -74,6 +78,10 @@ curl http://localhost:4000/api/v1/metrics
 - `otpDelivery.provider`
 - `otpDelivery.ready`
 - `otpDelivery.requestTimeoutMs`
+
+Production note:
+- `/health` is the public liveness endpoint.
+- `/api/v1/status` and `/api/v1/metrics` may be disabled outside local/staging depending on `STATUS_ENDPOINT_ENABLED` and `METRICS_ENDPOINT_ENABLED`.
 
 ## Staging and Perf Smoke Commands
 
@@ -125,6 +133,7 @@ Restart Expo after update.
 
 - In development, OTP is delivered via API logs.
 - Check API terminal output for generated OTP code.
+- If you are testing a shared environment and no OTP is returned, confirm `DEBUG_OTP_EXPOSURE=false` is expected and that a real provider is configured instead.
 
 ### Production OTP email delivery
 
@@ -156,6 +165,8 @@ Validate deployment env before release:
 DATABASE_URL=... \
 REDIS_URL=... \
 OTP_HASH_SECRET=... \
+PUBLIC_API_BASE_URL=https://app.example.com \
+TRUST_PROXY_HOPS=1 \
 OTP_PROVIDER=resend \
 OTP_EMAIL_FROM="Glitch Finance <noreply@app.example.com>" \
 ALERTS_WEBHOOK_URL=https://alerts.example.com/glitch \
@@ -169,7 +180,9 @@ pnpm secrets:validate
 1. All tests green in CI.
 2. Migrations applied in target environment.
 3. Secrets configured with production values.
-4. SMS remains disabled by default until explicit release gate.
+4. `OTP_HASH_SECRET` is not the placeholder value and `DEBUG_OTP_EXPOSURE=false`.
+5. `PUBLIC_API_BASE_URL`, `TRUST_PROXY_HOPS`, `STATUS_ENDPOINT_ENABLED`, and `METRICS_ENDPOINT_ENABLED` match the deployment topology.
+6. SMS remains disabled by default until explicit release gate.
 
 ## CI Workflow
 

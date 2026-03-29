@@ -1,9 +1,8 @@
 import multipart from "@fastify/multipart";
 import { randomUUID } from "node:crypto";
-import { createReadStream, createWriteStream } from "node:fs";
-import { access, mkdir, unlink } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { access, mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pipeline } from "node:stream/promises";
 import { eq } from "drizzle-orm";
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { AppContext } from "../../context.js";
@@ -63,6 +62,47 @@ const extensionToMimeType: Record<string, string> = {
   ".jpeg": "image/jpeg",
   ".png": "image/png",
   ".webp": "image/webp"
+};
+
+const inferImageMimeType = (buffer: Uint8Array): string | null => {
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return "image/jpeg";
+  }
+
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+
+  if (
+    buffer.length >= 12 &&
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+
+  return null;
 };
 
 const toNullableText = (value: string | undefined): string | null => {
@@ -224,20 +264,13 @@ const deleteAvatarFileIfExists = async (avatarKey: string): Promise<void> => {
   }
 };
 
-const buildAvatarPublicUrl = (request: FastifyRequest, avatarKey: string): string => {
-  const forwardedProtoHeader = request.headers["x-forwarded-proto"];
-  const forwardedHostHeader = request.headers["x-forwarded-host"];
+const buildAvatarPublicUrl = (ctx: AppContext, request: FastifyRequest, avatarKey: string): string => {
+  if (ctx.env.PUBLIC_API_BASE_URL) {
+    return `${ctx.env.PUBLIC_API_BASE_URL.replace(/\/$/, "")}${avatarRoutePrefix}${avatarKey}`;
+  }
 
-  const protocol =
-    (typeof forwardedProtoHeader === "string" && forwardedProtoHeader.split(",")[0]?.trim()) ||
-    request.protocol ||
-    "http";
-
-  const host =
-    (typeof forwardedHostHeader === "string" && forwardedHostHeader.split(",")[0]?.trim()) ||
-    request.headers.host ||
-    "localhost:4000";
-
+  const protocol = request.protocol || "http";
+  const host = request.host || request.headers.host || "localhost:4000";
   return `${protocol}://${host}${avatarRoutePrefix}${avatarKey}`;
 };
 
@@ -285,7 +318,8 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
     }
 
     const stream = createReadStream(avatarPath);
-    reply.header("cache-control", "public, max-age=3600");
+    reply.header("cache-control", "no-store");
+    reply.header("x-content-type-options", "nosniff");
     reply.type(mimeType);
     // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write
     // Streaming a server-side file (avatar image), not user-controlled HTML content.
@@ -318,18 +352,20 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
         throw new AppError(400, "AVATAR_FILE_REQUIRED", "Select an image file to upload.");
       }
 
-      const extension = mimeTypeToExtension[file.mimetype];
-      if (!extension) {
+      const fileBuffer = await file.toBuffer();
+      const detectedMimeType = inferImageMimeType(fileBuffer);
+      if (!detectedMimeType) {
         throw new AppError(400, "INVALID_AVATAR_FILE_TYPE", "Only JPEG, PNG, or WEBP images are supported.");
       }
+      const extension = mimeTypeToExtension[detectedMimeType];
 
       avatarKey = `${identity.userId}-${Date.now()}-${randomUUID()}.${extension}`;
       await ensureAvatarDirectory();
 
       const destinationPath = resolveAvatarFilePath(avatarKey);
-      await pipeline(file.file, createWriteStream(destinationPath));
+      await writeFile(destinationPath, fileBuffer);
 
-      const avatarUrl = buildAvatarPublicUrl(request, avatarKey);
+      const avatarUrl = buildAvatarPublicUrl(ctx, request, avatarKey);
       await updateAvatarUrl(ctx, identity.userId, avatarUrl);
 
       if (previousAvatarKey && previousAvatarKey !== avatarKey) {
@@ -347,7 +383,7 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
         entityId: identity.userId,
         metadata: {
           avatarKey,
-          mimeType: file.mimetype
+          mimeType: detectedMimeType
         },
         requestId: request.id,
         ipAddress: request.ip
@@ -451,11 +487,6 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
         if (hasOwn(body, "dateOfBirth")) {
           updates.dateOfBirth = body.dateOfBirth;
           changedFields.push("dateOfBirth");
-        }
-
-        if (hasOwn(body, "avatarUrl")) {
-          updates.avatarUrl = toNullableText(body.avatarUrl);
-          changedFields.push("avatarUrl");
         }
 
         if (hasOwn(body, "city")) {

@@ -28,7 +28,7 @@ export type AppleSignInResult = {
 };
 
 export function isGoogleSignInAvailable(): boolean {
-  return _googleSignin !== null;
+  return _googleSignin !== null && process.env.EXPO_PUBLIC_GOOGLE_OAUTH_ENABLED === "true";
 }
 
 export function configureGoogleSignIn(webClientId: string): void {

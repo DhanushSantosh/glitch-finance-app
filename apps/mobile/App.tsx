@@ -187,7 +187,7 @@ export default function App() {
 
   useEffect(() => {
     const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-    if (googleClientId) {
+    if (googleClientId && process.env.EXPO_PUBLIC_GOOGLE_OAUTH_ENABLED === "true") {
       configureGoogleSignIn(googleClientId);
     }
   }, []);
@@ -993,7 +993,6 @@ export default function App() {
     displayName: string;
     phoneNumber: string;
     dateOfBirth: string | null;
-    avatarUrl: string;
     city: string;
     country: string;
     timezone: string;

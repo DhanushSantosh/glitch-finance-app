@@ -17,7 +17,11 @@ export type AppleTokenPayload = {
   email?: string;
 };
 
-export async function verifyGoogleIdToken(idToken: string, clientId: string): Promise<GoogleTokenPayload> {
+export async function verifyGoogleIdToken(
+  idToken: string,
+  clientId: string,
+  expectedNonce?: string
+): Promise<GoogleTokenPayload> {
   try {
     const { payload } = await jwtVerify(idToken, GOOGLE_JWKS, {
       issuer: ["accounts.google.com", "https://accounts.google.com"],
@@ -34,6 +38,12 @@ export async function verifyGoogleIdToken(idToken: string, clientId: string): Pr
 
     if (payload.email_verified !== true) {
       throw new AppError(401, "EMAIL_NOT_VERIFIED", "Google account email is not verified.");
+    }
+
+    if (expectedNonce !== undefined) {
+      if (typeof payload.nonce !== "string" || payload.nonce !== expectedNonce) {
+        throw new AppError(401, "NONCE_MISMATCH", "Google token nonce verification failed.");
+      }
     }
 
     return {

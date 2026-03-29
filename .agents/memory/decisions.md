@@ -9,7 +9,8 @@ updated_at: 2026-03-29
 | Decision | Choice | Rationale |
 |---|---|---|
 | Routing model | Manual tab routing via `activeTab` state in App.tsx | No React Navigation — keeps mobile lightweight |
-| Auth | Email OTP → session token → AsyncStorage | No passwords, simpler onboarding |
+| Auth | Email OTP → session token → SecureStore | No passwords, simpler onboarding with stronger mobile secret storage |
+| Google OAuth rollout | Keep disabled by default until a nonce-safe client flow is available | Current Expo Go / native setup does not yet provide a shippable end-to-end nonce-bound Google path |
 | OTP delivery | ConsoleOtpProvider (dev) / ResendOtpProvider (prod) | Env-switched, no code changes needed |
 | Rate limiting | Redis-backed with in-memory fallback | Redis optional — app works without it |
 | Default categories | Seeded at startup, immutable to users | Consistent baseline for all users |
@@ -51,6 +52,8 @@ updated_at: 2026-03-29
 | Deploy target | Render | Simple, managed Postgres + Redis |
 | DATABASE_URL host | 127.0.0.1 not localhost | Avoid IPv6 (::1) resolution on Linux |
 | Cross-network mobile dev | Tailscale + Expo Go LAN mode | Stable across networks without relying on Expo/ngrok or Cloudflare quick tunnels |
+| Public asset origin | `PUBLIC_API_BASE_URL` over request forwarded headers | Prevent host-header poisoning in stored avatar URLs |
+| Production observability exposure | `/health` public, `/api/v1/status` and `/api/v1/metrics` gated by env | Reduce recon surface in production |
 
 ## Testing
 

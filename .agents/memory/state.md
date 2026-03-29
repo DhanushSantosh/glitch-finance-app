@@ -9,11 +9,21 @@ updated_at: 2026-03-29
 ### API (apps/api)
 - Fastify v5 REST API fully implemented and tested
 - Modules: auth (OTP + session), categories, transactions, budgets, goals, reports (summary + export), imports (SMS), consents, audit, alerts, SLO monitor, metrics
-- 180 API tests passing (unit + integration)
+- 184 API tests passing (unit + integration)
 - Idempotent mutation protection implemented for authenticated write routes (transactions, budgets, goals, categories, consent intent)
 - New persistence table for idempotency records: `idempotency_keys`
 - Error normalization improved: Fastify JSON parser + Postgres constraint errors now map to stable 4xx envelopes where applicable
 - Auth hardening: active session cap (AUTH_MAX_ACTIVE_SESSIONS=5), recovery OTP path, rate limiting
+- Security hardening pass completed:
+  - production startup now rejects placeholder `OTP_HASH_SECRET`
+  - debug OTP exposure narrowed to explicit local/test configuration
+  - profile `avatarUrl` can no longer be patched directly
+  - avatar uploads are signature-validated and served with `nosniff`
+  - trusted public avatar URLs derive from `PUBLIC_API_BASE_URL` / configured origin, not raw forwarded headers
+  - `/api/v1/status` and `/api/v1/metrics` can be disabled per environment
+  - proxy-aware IP handling now uses `TRUST_PROXY_HOPS`
+  - Apple OAuth no longer trusts client-supplied email hints
+  - Google OAuth remains disabled by default and backend nonce enforcement is in place for any future re-enable
 - AlertsService wired to webhook (ALERTS_WEBHOOK_URL)
 - SLO monitor with rolling-window evaluation
 - Drizzle ORM migrations in place
@@ -26,6 +36,7 @@ updated_at: 2026-03-29
 - Realtime sync with optimistic updates + 15s background interval
 - BottomTabBar: liquid glass floating pill with BlurView + animated spring
 - 51 mobile tests passing
+- Mobile session storage migrated from AsyncStorage to `expo-secure-store`
 - metro.config.js wired for pnpm monorepo (iOS + Android working)
 - iOS safe-area handling fixed at app shell (`SafeAreaProvider` + `SafeAreaView`) to prevent top notification-bar overlap
 - Fixed UI congestion on `GoalFormScreen` by adjusting field layouts and flex ratios for a cleaner aesthetic

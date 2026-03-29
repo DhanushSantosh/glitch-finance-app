@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { Buffer } from "node:buffer";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../app.js";
@@ -38,6 +39,41 @@ const authViaOtp = async (app: FastifyInstance, email: string): Promise<AuthResu
     token: verifyJson.token,
     userId: verifyJson.user.id
   };
+};
+
+const createMultipartAvatarPayload = (fileName: string, mimeType: string, content: Buffer) => {
+  const boundary = `----glitch-avatar-${randomUUID()}`;
+  const header = Buffer.from(
+    `--${boundary}\r\n` +
+      `Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
+      `Content-Type: ${mimeType}\r\n\r\n`
+  );
+  const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
+
+  return {
+    boundary,
+    body: Buffer.concat([header, content, footer])
+  };
+};
+
+const uploadTestAvatar = async (app: FastifyInstance, token: string) => {
+  const pngBytes = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47,
+    0x0d, 0x0a, 0x1a, 0x0a,
+    0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52
+  ]);
+  const multipartPayload = createMultipartAvatarPayload("avatar.png", "image/png", pngBytes);
+
+  return app.inject({
+    method: "POST",
+    url: "/api/v1/profile/avatar",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": `multipart/form-data; boundary=${multipartPayload.boundary}`
+    },
+    payload: multipartPayload.body
+  });
 };
 
 describe("profile integration", () => {
@@ -104,7 +140,6 @@ describe("profile integration", () => {
         displayName: "Dhanush K",
         phoneNumber: "+919999999999",
         dateOfBirth: "2002-08-21",
-        avatarUrl: "https://images.example.com/avatar.png",
         city: "Bengaluru",
         country: "India",
         timezone: "Asia/Kolkata",
@@ -185,7 +220,7 @@ describe("profile integration", () => {
         authorization: `Bearer ${auth.token}`
       },
       payload: {
-        avatarUrl: "ftp://invalid.example.com/avatar.png"
+        avatarUrl: "https://invalid.example.com/avatar.png"
       }
     });
 
@@ -227,17 +262,7 @@ describe("profile integration", () => {
   it("supports avatar removal endpoint", async () => {
     const auth = await authViaOtp(app, `profile-avatar-remove-${randomUUID()}@example.com`);
 
-    const seedResponse = await app.inject({
-      method: "PATCH",
-      url: "/api/v1/profile",
-      headers: {
-        authorization: `Bearer ${auth.token}`
-      },
-      payload: {
-        avatarUrl: "https://images.example.com/avatar-to-remove.png"
-      }
-    });
-
+    const seedResponse = await uploadTestAvatar(app, auth.token);
     expect(seedResponse.statusCode).toBe(200);
 
     const removeResponse = await app.inject({
@@ -251,5 +276,71 @@ describe("profile integration", () => {
     expect(removeResponse.statusCode).toBe(200);
     const removedJson = removeResponse.json() as { item: { avatarUrl: string | null } };
     expect(removedJson.item.avatarUrl).toBeNull();
+  });
+
+  it("rejects direct avatarUrl patches even when the URL looks valid", async () => {
+    const auth = await authViaOtp(app, `profile-avatar-direct-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/profile",
+      headers: {
+        authorization: `Bearer ${auth.token}`
+      },
+      payload: {
+        avatarUrl: "https://images.example.com/avatar.png"
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("ignores spoofed forwarded host headers when generating avatar URLs", async () => {
+    const auth = await authViaOtp(app, `profile-avatar-host-${randomUUID()}@example.com`);
+
+    const pngBytes = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47,
+      0x0d, 0x0a, 0x1a, 0x0a,
+      0x00, 0x00, 0x00, 0x0d,
+      0x49, 0x48, 0x44, 0x52
+    ]);
+    const multipartPayload = createMultipartAvatarPayload("avatar.png", "image/png", pngBytes);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/profile/avatar",
+      headers: {
+        authorization: `Bearer ${auth.token}`,
+        "content-type": `multipart/form-data; boundary=${multipartPayload.boundary}`,
+        "x-forwarded-host": "evil.example.com",
+        "x-forwarded-proto": "https"
+      },
+      payload: multipartPayload.body
+    });
+
+    expect(response.statusCode).toBe(200);
+    const uploaded = response.json() as { item: { avatarUrl: string | null } };
+    expect(uploaded.item.avatarUrl).toBeTruthy();
+    expect(uploaded.item.avatarUrl).not.toContain("evil.example.com");
+  });
+
+  it("rejects files whose content does not match an allowed image signature", async () => {
+    const auth = await authViaOtp(app, `profile-avatar-invalid-${randomUUID()}@example.com`);
+    const badBytes = Buffer.from("not-a-real-image");
+    const multipartPayload = createMultipartAvatarPayload("avatar.png", "image/png", badBytes);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/profile/avatar",
+      headers: {
+        authorization: `Bearer ${auth.token}`,
+        "content-type": `multipart/form-data; boundary=${multipartPayload.boundary}`
+      },
+      payload: multipartPayload.body
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("INVALID_AVATAR_FILE_TYPE");
   });
 });

@@ -28,14 +28,19 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
     API_HOST: z.string().default("0.0.0.0"),
+    PUBLIC_API_BASE_URL: z.string().url().optional(),
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
     MOBILE_APP_ORIGIN: z.string().default("http://localhost:8081,http://localhost:19006"),
     DATABASE_URL: z.string().min(1).default("postgresql://glitch:glitch@localhost:5432/glitch"),
     REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
     OTP_HASH_SECRET: z.string().min(16).default("change-me-in-production-otp-secret"),
     OTP_PROVIDER: z.enum(["console", "resend"]).default("console"),
+    DEBUG_OTP_EXPOSURE: booleanFromEnv.optional(),
     OTP_EMAIL_FROM: z.string().min(3).default("Glitch Finance <noreply@glitch.local>"),
     OTP_PROVIDER_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000),
     RESEND_API_KEY: z.string().min(1).optional(),
+    STATUS_ENDPOINT_ENABLED: booleanFromEnv.optional(),
+    METRICS_ENDPOINT_ENABLED: booleanFromEnv.optional(),
     ALERTS_WEBHOOK_URL: z.string().url().optional(),
     ALERTS_COOLDOWN_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),
     SLO_MONITOR_ENABLED: booleanFromEnv.default(false),
@@ -54,6 +59,7 @@ const envSchema = z
     SMS_IMPORT_SCAN_ENABLED: booleanFromEnv.default(false),
     SMS_DISCLOSURE_VERSION: z.string().default("sms_disclosure_v1"),
     APP_CURRENCY: z.string().length(3).default("INR"),
+    GOOGLE_OAUTH_ENABLED: booleanFromEnv.default(false),
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     APPLE_APP_BUNDLE_ID: z.string().min(1).optional()
   })
@@ -65,6 +71,22 @@ const envSchema = z
         path: ["RESEND_API_KEY"]
       });
     }
+
+    if (value.NODE_ENV === "production" && value.OTP_HASH_SECRET === "change-me-in-production-otp-secret") {
+      refinementContext.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "OTP_HASH_SECRET must be explicitly set in production and cannot use the default placeholder.",
+        path: ["OTP_HASH_SECRET"]
+      });
+    }
+
+    if (value.NODE_ENV === "production" && value.DEBUG_OTP_EXPOSURE === true) {
+      refinementContext.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "DEBUG_OTP_EXPOSURE must be disabled in production.",
+        path: ["DEBUG_OTP_EXPOSURE"]
+      });
+    }
   });
 
 const parsed = envSchema.safeParse(process.env);
@@ -74,5 +96,10 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  DEBUG_OTP_EXPOSURE: parsed.data.DEBUG_OTP_EXPOSURE ?? parsed.data.NODE_ENV === "test",
+  STATUS_ENDPOINT_ENABLED: parsed.data.STATUS_ENDPOINT_ENABLED ?? parsed.data.NODE_ENV !== "production",
+  METRICS_ENDPOINT_ENABLED: parsed.data.METRICS_ENDPOINT_ENABLED ?? parsed.data.NODE_ENV !== "production"
+};
 export type AppEnv = typeof env;

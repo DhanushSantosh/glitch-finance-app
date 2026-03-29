@@ -18,15 +18,6 @@ const validDateOnly = (value: string): boolean => {
 
 const optionalTextField = (max: number) => z.string().trim().max(max).optional();
 
-const optionalHttpUrl = z
-  .string()
-  .trim()
-  .max(2048)
-  .refine((value) => value.length === 0 || /^https?:\/\//i.test(value), {
-    message: "Avatar URL must start with http:// or https://."
-  })
-  .optional();
-
 const profileSettingsPatchSchema = z
   .object({
     pushNotificationsEnabled: z.boolean().optional(),
@@ -46,7 +37,6 @@ export const profileUpdateSchema = z
     dateOfBirth: z
       .union([z.string().trim().refine(validDateOnly, "Date of birth must be a valid YYYY-MM-DD value."), z.null()])
       .optional(),
-    avatarUrl: optionalHttpUrl,
     city: optionalTextField(120),
     country: optionalTextField(120),
     timezone: optionalTextField(80),

@@ -77,6 +77,9 @@ Secrets that must be managed centrally:
 - `DATABASE_URL`
 - `REDIS_URL`
 - `OTP_HASH_SECRET`
+- `PUBLIC_API_BASE_URL`
+- `TRUST_PROXY_HOPS`
+- `DEBUG_OTP_EXPOSURE`
 - Email OTP provider secrets (for production provider)
 - `ALERTS_WEBHOOK_URL`
 - SLO monitor policy values (`SLO_MONITOR_*`)
@@ -115,7 +118,7 @@ Minimum production telemetry:
 
 Implemented telemetry endpoints:
 - `GET /api/v1/status` for dependency health
-- `GET /api/v1/metrics` for Prometheus scrape metrics
+- `GET /api/v1/metrics` for Prometheus scrape metrics (disable public exposure in production)
 - Webhook alerting service for unhandled API 5xx errors and OTP delivery failures (`ALERTS_WEBHOOK_URL`)
 - Rolling-window SLO monitor for 5xx rate and OTP delivery failure thresholds (`SLO_MONITOR_ENABLED=true`)
 

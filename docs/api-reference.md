@@ -504,6 +504,11 @@ Guardrails:
 
 Prometheus-compatible metrics endpoint for request rate, status distribution, and latency histograms.
 
+Notes:
+
+- Intended for internal scrapers, not public browser access.
+- May return `404 METRICS_ENDPOINT_DISABLED` when disabled for the current environment.
+
 ## Rate Limits (Auth)
 
 - Request OTP and Verify OTP routes are rate-limited by IP and email.

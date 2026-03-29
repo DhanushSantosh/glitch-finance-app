@@ -16,25 +16,30 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-29
 
 **Done:**
-- Validated and pushed the Tailscale-based Expo Go workflow as the default real-phone development path.
-- Cleared the GitHub dependency alerts by:
-  - bumping `fastify` to `^5.8.3`
-  - adding root pnpm security overrides for vulnerable transitive `brace-expansion` and `yaml` ranges
-- Re-ran full verification after the dependency changes:
-  - `pnpm audit --prod` -> clean
-  - `pnpm audit` -> clean
+- Completed a full security remediation pass across API and mobile:
+  - production startup now rejects placeholder `OTP_HASH_SECRET`
+  - debug OTP exposure narrowed to explicit local/test use
+  - console OTP logging now masks email and avoids broad raw-code exposure
+  - proxy trust is configurable via `TRUST_PROXY_HOPS`
+  - avatar URLs no longer trust forwarded host headers and cannot be patched directly
+  - avatar uploads now validate file signatures and serve with `nosniff`
+  - status and metrics endpoints are env-gated for production hardening
+  - Apple OAuth no longer accepts client-supplied email fallback
+  - Google OAuth remains disabled by default, with backend nonce verification added for any future re-enable
+  - mobile session tokens now use `expo-secure-store`
+- Updated security, architecture, ops, API, and README docs to match the hardened behavior.
+- Re-ran verification after the security changes:
   - `pnpm --filter @glitch/api typecheck` -> passed
   - `pnpm --filter @glitch/mobile typecheck` -> passed
-  - `pnpm --filter @glitch/api test` -> 180 passed
+  - `pnpm --filter @glitch/api test` -> 184 passed
   - `pnpm --filter @glitch/mobile test` -> 51 passed
-- Added `docs/project-health.md` as the current maintenance/source-of-truth snapshot for repo health and next priorities.
+- Removed the now-unused `@react-native-async-storage/async-storage` dependency after migrating session storage to `expo-secure-store`.
 
 **Open threads:**
-- No active maintenance blocker at the moment.
+- No active blocker from the security remediation pass.
 
 **Next session should:**
-- Use `docs/project-health.md` for maintenance status checks.
-- Continue either release-readiness maintenance or the next fully shippable product slice.
+- Start from the green security baseline and continue with the next product slice or release-readiness hardening.
 
 ---
 

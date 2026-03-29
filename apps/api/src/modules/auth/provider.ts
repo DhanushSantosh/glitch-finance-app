@@ -5,10 +5,23 @@ export interface OtpDeliveryProvider {
 }
 
 export class ConsoleOtpProvider implements OtpDeliveryProvider {
-  constructor(private readonly logger: FastifyBaseLogger) {}
+  constructor(
+    private readonly logger: FastifyBaseLogger,
+    private readonly options: { exposeDebugOtp: boolean }
+  ) {}
 
   async sendOtp(email: string, code: string): Promise<void> {
-    this.logger.info({ email, code }, "OTP generated for development delivery channel");
+    const [localPart = "", domainPart = ""] = email.split("@");
+    const maskedEmail =
+      localPart.length > 1 ? `${localPart[0]}***${localPart[localPart.length - 1]}@${domainPart}` : `${localPart}***@${domainPart}`;
+
+    this.logger.info(
+      {
+        email: maskedEmail,
+        ...(this.options.exposeDebugOtp ? { code } : {})
+      },
+      "OTP generated for development delivery channel"
+    );
   }
 }
 

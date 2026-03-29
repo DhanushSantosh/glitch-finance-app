@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
 import { createAppContext, closeAppContext } from "./context.js";
+import { env } from "./env.js";
 import { AppError, toClientAppError } from "./errors.js";
 import { registerHealthRoutes } from "./modules/health/routes.js";
 import { registerAuthRoutes } from "./modules/auth/routes.js";
@@ -18,6 +19,7 @@ import { registerProfileRoutes } from "./modules/profile/routes.js";
 
 export const createApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
+    trustProxy: env.TRUST_PROXY_HOPS > 0 ? env.TRUST_PROXY_HOPS : false,
     logger: {
       level: process.env.NODE_ENV === "development" ? "info" : "warn"
     }
@@ -125,7 +127,7 @@ export const createApp = async (): Promise<FastifyInstance> => {
   await registerProfileRoutes(app, ctx);
   await registerConsentRoutes(app, ctx);
   await registerImportRoutes(app, ctx);
-  await registerMetricsRoutes(app);
+  await registerMetricsRoutes(app, ctx.env.METRICS_ENDPOINT_ENABLED);
 
   app.addHook("onClose", async () => {
     await closeAppContext(ctx);

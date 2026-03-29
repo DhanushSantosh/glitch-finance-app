@@ -161,7 +161,6 @@ export const apiClient = {
       displayName: string;
       phoneNumber: string;
       dateOfBirth: string | null;
-      avatarUrl: string;
       city: string;
       country: string;
       timezone: string;

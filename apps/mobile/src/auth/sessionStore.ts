@@ -1,15 +1,15 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 const SESSION_TOKEN_KEY = "glitch_session_token";
 
 export const saveSessionToken = async (token: string): Promise<void> => {
-  await AsyncStorage.setItem(SESSION_TOKEN_KEY, token);
+  await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
 };
 
 export const readSessionToken = async (): Promise<string | null> => {
-  return AsyncStorage.getItem(SESSION_TOKEN_KEY);
+  return SecureStore.getItemAsync(SESSION_TOKEN_KEY);
 };
 
 export const clearSessionToken = async (): Promise<void> => {
-  await AsyncStorage.removeItem(SESSION_TOKEN_KEY);
+  await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
 };

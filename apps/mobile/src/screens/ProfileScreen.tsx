@@ -21,7 +21,6 @@ type ProfileFormSubmit = {
   displayName: string;
   phoneNumber: string;
   dateOfBirth: string | null;
-  avatarUrl: string;
   city: string;
   country: string;
   timezone: string;
@@ -295,7 +294,6 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
         displayName,
         phoneNumber,
         dateOfBirth: dateOfBirth.trim().length > 0 ? dateOfBirth.trim() : null,
-        avatarUrl,
         city,
         country: finalCountryName,
         timezone,

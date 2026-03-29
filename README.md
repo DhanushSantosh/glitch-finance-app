@@ -62,8 +62,7 @@ glitch-finance-app/
 git clone <repo-url>
 cd glitch-finance-app
 pnpm install
-cp apps/api/.env.example apps/api/.env
-cp apps/mobile/.env.example apps/mobile/.env
+cp .env.example .env
 pnpm db:up
 pnpm --filter @glitch/api db:migrate
 ```
@@ -109,13 +108,16 @@ OTP delivery defaults to `console` mode — no email is sent.
 
 ## Environment variables
 
-Key variables to configure in `apps/api/.env`:
+Key variables to configure in the root `.env`:
 
 | Variable | Default | Notes |
 |---|---|---|
 | `DATABASE_URL` | `postgresql://glitch:glitch@127.0.0.1:5432/glitch` | |
 | `REDIS_URL` | `redis://127.0.0.1:6379` | Optional — falls back to in-memory |
 | `OTP_HASH_SECRET` | `change-me-in-production-otp-secret` | **Must change in production** |
+| `PUBLIC_API_BASE_URL` | _(empty)_ | Canonical public API origin used for generated asset URLs |
+| `TRUST_PROXY_HOPS` | `0` | Set to proxy hop count in deployed environments |
+| `DEBUG_OTP_EXPOSURE` | `true` (local) | Keep `false` outside local development |
 | `OTP_PROVIDER` | `console` | `console` or `resend` |
 | `OTP_PROVIDER_REQUEST_TIMEOUT_MS` | `10000` | Outbound OTP provider timeout in milliseconds |
 | `RESEND_API_KEY` | _(empty)_ | Required when `OTP_PROVIDER=resend` |
@@ -129,7 +131,9 @@ Key variables to configure in `apps/api/.env`:
 | `SLO_OTP_DELIVERY_FAILURE_THRESHOLD` | `5` | OTP delivery failure threshold within SLO window |
 | `SMS_IMPORT_SCAN_ENABLED` | `false` | Keeps SMS scan service disabled unless explicitly enabled |
 
-Mobile: set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env`. Use `http://10.0.2.2:4000` for Android emulator. For real-phone testing on any network, prefer `pnpm dev` so the Tailscale IP is injected automatically for that session.
+Mobile: set `EXPO_PUBLIC_API_URL` in the root `.env`. Use `http://10.0.2.2:4000` for Android emulator. For real-phone testing on any network, prefer `pnpm dev` so the Tailscale IP is injected automatically for that session.
+
+Google Sign-In stays disabled by default in the current app because the secure nonce-bound native flow is not yet enabled for production use.
 
 Full variable reference: [`docs/ops-runbook.md`](./docs/ops-runbook.md)
 

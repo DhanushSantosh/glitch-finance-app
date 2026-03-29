@@ -23,9 +23,11 @@ apps/api/src/modules/<name>/
 - Response shape: `{ item: T }` for single, `{ items: T[] }` for list, pagination is `{ items, pagination: { page, pageSize, hasMore, nextPage } }`.
 - Error shape: `{ error: { code: string, message: string, details? }, requestId }`.
 - Authenticated mutation routes should support `Idempotency-Key` via shared `executeIdempotent(...)` utility.
+- Generated public URLs must come from trusted env/config (`PUBLIC_API_BASE_URL`) rather than forwarded request headers unless proxy trust has been explicitly configured.
 
 ### Validation
 - All inputs validated with Zod schemas defined in `validation.ts`
+- Unknown fields on strict security-sensitive payloads should be rejected rather than ignored.
 - Currency amounts stored as integers (cents) or decimals — check existing schema before adding
 - Dates as ISO strings (`occurredAt`, `targetDate`)
 
@@ -69,6 +71,7 @@ apps/mobile/src/
 - No Redux, no Context, no Zustand
 - Optimistic updates: update local state immediately, reconcile 700ms later
 - Never add loading spinners for operations that take <300ms
+- Store auth/session secrets in `expo-secure-store`, not AsyncStorage.
 
 ### Feedback UX (Toast Standard)
 - Use centralized toast feedback for mutation success/error via `publishToast(...)`.
@@ -87,6 +90,7 @@ apps/mobile/src/
   - `EXPO_PUBLIC_API_URL=http://<tailscale-ip>:4000`
   - `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
 - Expo Go-oriented scripts should set `EXPO_NO_REDIRECT_PAGE=1` to avoid browser/interstitial QR codes when `expo-dev-client` is installed.
+- Google Sign-In must remain disabled until the mobile client can supply a nonce that the backend verifies against the ID token.
 
 ## Git Conventions
 

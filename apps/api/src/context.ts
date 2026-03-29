@@ -144,7 +144,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
           requestTimeoutMs: env.OTP_PROVIDER_REQUEST_TIMEOUT_MS,
           logger
         })
-      : new ConsoleOtpProvider(logger);
+      : new ConsoleOtpProvider(logger, { exposeDebugOtp: env.DEBUG_OTP_EXPOSURE });
 
   const authService = new AuthService({
     db,
