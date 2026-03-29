@@ -4,6 +4,8 @@ const API_BASE_URL = (process.env.API_BASE_URL ?? "http://localhost:4000").repla
 const SMOKE_TEST_EMAIL = process.env.SMOKE_TEST_EMAIL ?? `smoke-${Date.now()}@example.com`;
 const SMOKE_BEARER_TOKEN = process.env.SMOKE_BEARER_TOKEN ?? "";
 const REQUEST_TIMEOUT_MS = Number.parseInt(process.env.SMOKE_REQUEST_TIMEOUT_MS ?? "12000", 10);
+const EXPECT_STATUS_ENDPOINT = (process.env.SMOKE_EXPECT_STATUS_ENDPOINT ?? "true").toLowerCase() === "true";
+const EXPECT_METRICS_ENDPOINT = (process.env.SMOKE_EXPECT_METRICS_ENDPOINT ?? "false").toLowerCase() === "true";
 
 const nowIso = new Date().toISOString();
 const monthToken = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
@@ -67,11 +69,19 @@ const run = async () => {
   console.log("[smoke] /health ok");
 
   const status = await requestJson({ method: "GET", path: "/api/v1/status" });
-  ensureStatus(status.response, status.json, 200, "GET /api/v1/status");
-  console.log("[smoke] /api/v1/status ok");
+  if (EXPECT_STATUS_ENDPOINT) {
+    ensureStatus(status.response, status.json, 200, "GET /api/v1/status");
+    console.log("[smoke] /api/v1/status ok");
 
-  if (status.json?.otpDelivery?.provider === "resend" && !status.json?.otpDelivery?.ready) {
-    throw new Error("OTP provider is set to resend but reported as not ready.");
+    if (status.json?.otpDelivery?.provider === "resend" && !status.json?.otpDelivery?.ready) {
+      throw new Error("OTP provider is set to resend but reported as not ready.");
+    }
+  } else {
+    ensureStatus(status.response, status.json, 404, "GET /api/v1/status");
+    if (status.json?.error?.code !== "STATUS_ENDPOINT_DISABLED") {
+      throw new Error("Status endpoint returned 404 but did not expose STATUS_ENDPOINT_DISABLED.");
+    }
+    console.log("[smoke] /api/v1/status disabled as expected");
   }
 
   const bootstrap = await requestJson({ method: "GET", path: "/api/v1/bootstrap" });
@@ -79,14 +89,25 @@ const run = async () => {
   console.log("[smoke] /api/v1/bootstrap ok");
 
   const metricsResponse = await fetchWithTimeout(`${API_BASE_URL}/api/v1/metrics`);
-  if (metricsResponse.status !== 200) {
-    throw new Error(`GET /api/v1/metrics failed with status ${metricsResponse.status}`);
+  if (EXPECT_METRICS_ENDPOINT) {
+    if (metricsResponse.status !== 200) {
+      throw new Error(`GET /api/v1/metrics failed with status ${metricsResponse.status}`);
+    }
+    const metricsText = await metricsResponse.text();
+    if (!metricsText.includes("glitch_api_http_requests_total")) {
+      throw new Error("Metrics endpoint missing glitch_api_http_requests_total.");
+    }
+    console.log("[smoke] /api/v1/metrics ok");
+  } else {
+    const metricsJson = await readJson(metricsResponse);
+    if (metricsResponse.status !== 404) {
+      throw new Error(`GET /api/v1/metrics expected 404 when disabled, got ${metricsResponse.status}`);
+    }
+    if (metricsJson?.error?.code !== "METRICS_ENDPOINT_DISABLED") {
+      throw new Error("Metrics endpoint returned 404 but did not expose METRICS_ENDPOINT_DISABLED.");
+    }
+    console.log("[smoke] /api/v1/metrics disabled as expected");
   }
-  const metricsText = await metricsResponse.text();
-  if (!metricsText.includes("glitch_api_http_requests_total")) {
-    throw new Error("Metrics endpoint missing glitch_api_http_requests_total.");
-  }
-  console.log("[smoke] /api/v1/metrics ok");
 
   const otpRequest = await requestJson({
     method: "POST",

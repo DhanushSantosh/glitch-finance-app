@@ -74,6 +74,7 @@ updated_at: 2026-03-29
 - All docs renamed to kebab-case in docs/
 - docs/README.md is clean grouped index
 - Root README.md is concise with links to full docs
+- Added explicit staging and production readiness checklists with env validation and rollout gates
 
 ## What's In Progress
 - No active platform-blocking issue; next work can continue from a clean dependency and phone-dev baseline.

@@ -33,6 +33,8 @@ All files use lowercase kebab-case names. Update docs in the same PR as the code
 | [ops-runbook.md](./ops-runbook.md) | Env vars, startup, backup/restore, secrets rotation, troubleshooting |
 | [platform-readiness.md](./platform-readiness.md) | CI/CD pipeline, infra provisioning, monitoring, and DR baseline |
 | [project-health.md](./project-health.md) | Current maintenance snapshot, verification status, and next ops/product priorities |
+| [production-readiness.md](./production-readiness.md) | Production env checklist, rollout gate, and rollback readiness |
+| [staging-readiness.md](./staging-readiness.md) | Staging env checklist, smoke commands, and promotion gate |
 | [security.md](./security.md) | Auth controls, audit logging, data isolation, production hardening |
 | [testing.md](./testing.md) | Test strategy, coverage map, and acceptance scenarios |
 

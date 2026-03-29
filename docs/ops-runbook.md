@@ -89,6 +89,8 @@ Production note:
 API_BASE_URL=https://staging-api.example.com \
 SMOKE_TEST_EMAIL=smoke-check@example.com \
 SMOKE_BEARER_TOKEN=<token_if_resend_has_no_debug_otp> \
+SMOKE_EXPECT_STATUS_ENDPOINT=true \
+SMOKE_EXPECT_METRICS_ENDPOINT=false \
 pnpm smoke:staging
 ```
 

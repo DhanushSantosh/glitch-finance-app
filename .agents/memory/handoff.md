@@ -34,12 +34,18 @@ This file is updated at the END of every work session. It captures exactly what 
   - `pnpm --filter @glitch/api test` -> 184 passed
   - `pnpm --filter @glitch/mobile test` -> 51 passed
 - Removed the now-unused `@react-native-async-storage/async-storage` dependency after migrating session storage to `expo-secure-store`.
+- Added release-readiness maintenance artifacts:
+  - staging smoke script now understands expected `/api/v1/status` and `/api/v1/metrics` exposure
+  - runtime secret validation now enforces `PUBLIC_API_BASE_URL`, `TRUST_PROXY_HOPS`, and hardened endpoint/debug flags
+  - added `docs/staging-readiness.md`
+  - added `docs/production-readiness.md`
+  - updated ops workflow/docs to match the hardened staging/production model
 
 **Open threads:**
-- No active blocker from the security remediation pass.
+- No active blocker from the maintenance pass. Next meaningful step is executing the staging checklist against the live environment.
 
 **Next session should:**
-- Start from the green security baseline and continue with the next product slice or release-readiness hardening.
+- Either execute the live staging-readiness checklist or continue with the next product slice from the hardened baseline.
 
 ---
 

@@ -23,6 +23,7 @@ This is no longer a fragile prototype. The main work ahead is product completion
 - Recent maintenance:
   - Tailscale-based Expo Go workflow is the default real-phone path
   - dependency advisories were patched and verified
+  - security remediation pass is merged and verified
 
 ### Backend
 
@@ -79,7 +80,7 @@ Latest validated results:
 - `pnpm audit` -> clean
 - `pnpm --filter @glitch/api typecheck` -> passed
 - `pnpm --filter @glitch/mobile typecheck` -> passed
-- `pnpm --filter @glitch/api test` -> 180 passed
+- `pnpm --filter @glitch/api test` -> 184 passed
 - `pnpm --filter @glitch/mobile test` -> 51 passed
 
 ## What Is Stable

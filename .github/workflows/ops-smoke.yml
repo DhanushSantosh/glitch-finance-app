@@ -17,6 +17,16 @@ on:
         required: true
         default: false
         type: boolean
+      expect_status_endpoint:
+        description: "Whether /api/v1/status should be enabled in the target environment"
+        required: true
+        default: true
+        type: boolean
+      expect_metrics_endpoint:
+        description: "Whether /api/v1/metrics should be enabled in the target environment"
+        required: true
+        default: false
+        type: boolean
       perf_iterations:
         description: "Performance smoke iterations"
         required: false
@@ -55,6 +65,8 @@ jobs:
           API_BASE_URL: ${{ inputs.api_base_url }}
           SMOKE_TEST_EMAIL: ${{ inputs.smoke_test_email }}
           SMOKE_BEARER_TOKEN: ${{ secrets.SMOKE_BEARER_TOKEN }}
+          SMOKE_EXPECT_STATUS_ENDPOINT: ${{ inputs.expect_status_endpoint }}
+          SMOKE_EXPECT_METRICS_ENDPOINT: ${{ inputs.expect_metrics_endpoint }}
         run: pnpm smoke:staging
 
   perf-smoke:

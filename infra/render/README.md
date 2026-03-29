@@ -14,7 +14,8 @@ Provisioning manifests:
    - `OTP_HASH_SECRET`
    - `ALERTS_WEBHOOK_URL` (recommended for staging/production)
 4. Configure auth + SLO policy env vars explicitly (TTL, max attempts, session lifetime, active session cap, rate limits, SLO thresholds).
-5. Apply blueprint and verify service health at `/api/v1/status`.
+5. Set `PUBLIC_API_BASE_URL`, `TRUST_PROXY_HOPS`, `DEBUG_OTP_EXPOSURE`, `STATUS_ENDPOINT_ENABLED`, and `METRICS_ENDPOINT_ENABLED` to match the target environment.
+6. Apply blueprint and verify public liveness at `/health` plus gated internal endpoints according to the manifest.
 
 ## Notes
 

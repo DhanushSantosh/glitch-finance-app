@@ -86,3 +86,4 @@ pnpm smoke:perf
 1. Add UI component tests for screen rendering and interaction events.
 2. Add end-to-end mobile flow tests on emulator.
 3. Add scheduled smoke execution against staging with trend history retention.
+4. Add a protected-internal metrics smoke path so production telemetry can be validated without reopening the public metrics endpoint.
