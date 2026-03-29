@@ -70,8 +70,10 @@ updated_at: 2026-03-29
   - Key Value: `glitch-redis-staging`
   - `/health`, `/api/v1/status`, and `/api/v1/bootstrap` verified healthy
   - `/api/v1/metrics` intentionally disabled in staging
-- `pnpm dev` / `pnpm dev:tailscale` are the default phone workflow: they auto-start DB, detect the machine's Tailscale IPv4, start the API, and launch Expo Go with Tailscale-aware host configuration
-- `pnpm dev:staging` now launches Expo Go against the hosted staging backend without starting local API infrastructure
+- `pnpm dev` / `pnpm dev:local` are the default local workflow: they auto-start DB, start the API, and launch Expo Go without requiring Tailscale
+- `pnpm dev:tailscale` remains the cross-network local-backend workflow using the machine's Tailscale IPv4
+- `pnpm dev:staging` launches Expo Go against the hosted staging backend without requiring Tailscale
+- `pnpm dev:staging:tailscale` is the cross-network staging workflow using the machine's Tailscale IPv4
 - Dependency audit is clean: direct Fastify vulnerability patched and transitive pnpm overrides applied for `brace-expansion` and `yaml`
 - Expo account connected, project linked to GitHub (EAS available)
   - `eas build` available for dev builds, preview, and production

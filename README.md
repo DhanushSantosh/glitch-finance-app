@@ -75,16 +75,17 @@ pnpm --filter @glitch/api db:migrate
 pnpm dev:android    # recommended — starts API + boots Android emulator + Expo
 pnpm dev:api        # API only (hot-reload)
 pnpm android:fast   # emulator + Expo Android
-pnpm dev            # default phone workflow — Tailscale + Expo Go
-pnpm dev:tailscale  # alias for pnpm dev
-pnpm dev:staging    # Expo Go against hosted staging API
+pnpm dev            # default local workflow — local API + Expo Go
+pnpm dev:tailscale  # local API + Expo Go over Tailscale
+pnpm dev:staging    # Expo Go against hosted staging API (same network / simulator friendly)
+pnpm dev:staging:tailscale  # Expo Go against hosted staging API over Tailscale
 ```
 
-The dev scripts automatically start and wait for the database containers before launching the API.
+The local dev scripts automatically start and wait for the database containers before launching the API.
 
-For real-device testing on any network, the default workflow is now Tailscale-based:
+For real-device testing on any network, use the explicit Tailscale workflow:
 
-- `pnpm dev` detects this machine's Tailscale IPv4
+- `pnpm dev:tailscale` detects this machine's Tailscale IPv4
 - the API is exposed at `http://<tailscale-ip>:4000`
 - Expo Go runs in LAN mode with `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
 - your phone can connect from any network as long as both devices are on the same Tailnet
@@ -106,6 +107,12 @@ This starts Expo Go locally and points the mobile app at:
 - `https://glitch-api-staging.onrender.com`
 
 This is the cleanest way to test the real remote backend without starting local API infrastructure.
+
+For cross-network staging app testing over Tailscale, use:
+
+```bash
+pnpm dev:staging:tailscale
+```
 
 ---
 

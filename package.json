@@ -4,9 +4,10 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "dev": "bash scripts/dev-tailscale.sh",
+    "dev": "pnpm dev:local",
     "dev:tailscale": "bash scripts/dev-tailscale.sh",
     "dev:staging": "pnpm --filter @glitch/mobile dev:staging",
+    "dev:staging:tailscale": "bash scripts/dev-staging-tailscale.sh",
     "dev:local": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm --filter @glitch/mobile dev\"",
     "dev:android": "pnpm db:up && pnpm db:wait && concurrently -n api,mobile -c cyan,magenta \"pnpm --filter @glitch/api dev\" \"pnpm android:fast\"",
     "dev:api": "pnpm db:up && pnpm db:wait && pnpm --filter @glitch/api dev",

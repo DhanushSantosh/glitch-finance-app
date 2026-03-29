@@ -52,8 +52,9 @@ updated_at: 2026-03-29
 | Deploy target | Render | Simple, managed Postgres + Redis |
 | Active staging hostname | Use the Render default hostname until custom DNS is verified live | Avoid blocked rollout on unresolved `staging.quantex25.app` |
 | DATABASE_URL host | 127.0.0.1 not localhost | Avoid IPv6 (::1) resolution on Linux |
-| Cross-network mobile dev | Tailscale + Expo Go LAN mode | Stable across networks without relying on Expo/ngrok or Cloudflare quick tunnels |
-| Hosted staging mobile testing | Root `pnpm dev:staging` launches Expo Go against the hosted Render backend | Keep staging app validation as simple as local dev, without local API dependencies |
+| Default local dev workflow | `pnpm dev` should not require Tailscale | New teammates must be able to run the project on emulator/simulator/LAN without Tailnet setup |
+| Cross-network mobile dev | `pnpm dev:tailscale` uses Tailscale + Expo Go LAN mode | Stable across networks without relying on Expo/ngrok or Cloudflare quick tunnels |
+| Hosted staging mobile testing | `pnpm dev:staging` is the default staging app workflow; `pnpm dev:staging:tailscale` is the cross-network variant | Keep staging app validation simple for all devs while preserving the Tailnet option when needed |
 | Public asset origin | `PUBLIC_API_BASE_URL` over request forwarded headers | Prevent host-header poisoning in stored avatar URLs |
 | Hosted avatar file storage | Default to system temp dir unless `AVATAR_STORAGE_DIR` is explicitly set | Render containers may not allow writes under `/app`; avatar uploads need a writable runtime path |
 | Production observability exposure | `/health` public, `/api/v1/status` and `/api/v1/metrics` gated by env | Reduce recon surface in production |
