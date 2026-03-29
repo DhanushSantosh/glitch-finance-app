@@ -1,6 +1,7 @@
 import type { FastifyBaseLogger } from "fastify";
 import { Redis } from "ioredis";
 import { createDbClient } from "./db/client.js";
+import { applyRuntimeMigrations } from "./db/migrate.js";
 import { env, AppEnv } from "./env.js";
 import { RateLimiter } from "./rate-limit/rate-limiter.js";
 import { AuditService } from "./modules/audit/service.js";
@@ -100,6 +101,7 @@ const waitForDatabase = async (
 export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppContext> => {
   const { db, sql } = createDbClient(env.DATABASE_URL);
   await waitForDatabase(sql, logger);
+  await applyRuntimeMigrations(db, logger);
   await ensureDefaultCategories(db);
 
   let redis: Redis | null = null;

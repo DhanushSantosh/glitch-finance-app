@@ -21,6 +21,7 @@ ENV NODE_ENV=production
 
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
+COPY --from=build /app/apps/api/drizzle ./apps/api/drizzle
 
 # Re-install production-only deps — keeps drizzle-kit and other devDeps out of the image
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
