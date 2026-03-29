@@ -14,9 +14,8 @@ RUN pnpm --filter @glitch/api build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
-# Patch OS-level packages (zlib CVE-2026-22184 etc.) and upgrade npm for patched tar
+# Patch OS-level packages (zlib CVE-2026-22184 etc.) and create a non-root runtime user.
 RUN apk upgrade --no-cache && \
-    npm install -g npm@latest && \
     addgroup -S glitch && adduser -S glitch -G glitch
 ENV NODE_ENV=production
 
