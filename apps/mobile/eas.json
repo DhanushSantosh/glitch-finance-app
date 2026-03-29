@@ -18,13 +18,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api-staging.glitch.finance"
+        "EXPO_PUBLIC_API_URL": "https://staging.quantex25.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.glitch.finance"
+        "EXPO_PUBLIC_API_URL": "https://app.quantex25.com"
       }
     }
   },

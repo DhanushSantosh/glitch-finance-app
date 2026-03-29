@@ -75,6 +75,7 @@ updated_at: 2026-03-29
 - docs/README.md is clean grouped index
 - Root README.md is concise with links to full docs
 - Added explicit staging and production readiness checklists with env validation and rollout gates
+- Added `docs/environment-workflows.md` to explain how local dev, staging, production, and maintenance flows are separated in practice
 
 ## What's In Progress
 - No active platform-blocking issue; next work can continue from a clean dependency and phone-dev baseline.

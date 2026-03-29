@@ -39,6 +39,7 @@ This file is updated at the END of every work session. It captures exactly what 
   - runtime secret validation now enforces `PUBLIC_API_BASE_URL`, `TRUST_PROXY_HOPS`, and hardened endpoint/debug flags
   - added `docs/staging-readiness.md`
   - added `docs/production-readiness.md`
+  - added `docs/environment-workflows.md` to describe dev/staging/prod separation practically
   - updated ops workflow/docs to match the hardened staging/production model
 
 **Open threads:**

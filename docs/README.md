@@ -30,6 +30,7 @@ All files use lowercase kebab-case names. Update docs in the same PR as the code
 | File | What's in it |
 |---|---|
 | [dev-setup.md](./dev-setup.md) | First-time local setup for API and mobile |
+| [environment-workflows.md](./environment-workflows.md) | How local, staging, production, and maintenance workflows are separated |
 | [ops-runbook.md](./ops-runbook.md) | Env vars, startup, backup/restore, secrets rotation, troubleshooting |
 | [platform-readiness.md](./platform-readiness.md) | CI/CD pipeline, infra provisioning, monitoring, and DR baseline |
 | [project-health.md](./project-health.md) | Current maintenance snapshot, verification status, and next ops/product priorities |
