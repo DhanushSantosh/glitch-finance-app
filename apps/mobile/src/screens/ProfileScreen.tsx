@@ -3,11 +3,9 @@ import { Image, Text, View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { AppHeader, Button, Card, publishToast, Screen, TextField, SelectField } from "../components/ui";
+import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { UserProfile } from "../types";
-import { timeZoneOptions, currencyOptions, localeOptions } from "../utils/regionalOptions";
-import { countryOptions, getCityOptionsForCountry, getCountryByCode, getCountryCodeFromValue } from "../utils/smartRegions";
 
 type AvatarUploadPayload = {
   uri: string;
@@ -21,11 +19,6 @@ type ProfileFormSubmit = {
   displayName: string;
   phoneNumber: string;
   dateOfBirth: string | null;
-  city: string;
-  country: string;
-  timezone: string;
-  locale: string;
-  currency: string;
   occupation: string;
   bio: string;
 };
@@ -95,41 +88,12 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   const [dateOfBirth, setDateOfBirth] = useState(profile.dateOfBirth ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? "");
   
-  // Try to map existing country back to code, or fallback to empty
-  const [countryCode, setCountryCode] = useState(getCountryCodeFromValue(profile.country ?? "") || "");
-  const [city, setCity] = useState(profile.city ?? "");
-  
-  const [timezone, setTimezone] = useState(profile.timezone);
-  const [locale, setLocale] = useState(profile.locale);
-  const [currency, setCurrency] = useState(profile.currency);
-  
   const [occupation, setOccupation] = useState(profile.occupation ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
 
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [removingAvatar, setRemovingAvatar] = useState(false);
-
-  // Derived city options based on selected country
-  const cityOptions = useMemo(() => {
-    return getCityOptionsForCountry(countryCode);
-  }, [countryCode]);
-
-  const handleCountrySelect = (newCode: string) => {
-    setCountryCode(newCode);
-    const data = getCountryByCode(newCode);
-    if (data) {
-      setCity(""); // Reset city since country changed
-      setTimezone(data.timezone);
-      setLocale(data.locale);
-      setCurrency(data.currency);
-      // Optional: auto-select first city
-      const nextCities = getCityOptionsForCountry(newCode);
-      if (nextCities.length > 0) {
-        setCity(nextCities[0].value);
-      }
-    }
-  };
 
   const avatarPreview = useMemo(() => {
     const normalized = avatarUrl.trim();
@@ -245,35 +209,6 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
   };
 
   const handleSave = async () => {
-    const normalizedCurrency = currency.trim().toUpperCase();
-
-    if (normalizedCurrency.length !== 3) {
-      publishToast({
-        tone: "error",
-        title: "Profile",
-        message: "Currency must be a valid 3-letter code (for example INR)."
-      });
-      return;
-    }
-
-    if (timezone.trim().length === 0) {
-      publishToast({
-        tone: "error",
-        title: "Profile",
-        message: "Timezone is required."
-      });
-      return;
-    }
-
-    if (locale.trim().length === 0) {
-      publishToast({
-        tone: "error",
-        title: "Profile",
-        message: "Locale is required."
-      });
-      return;
-    }
-
     if (dateOfBirth.trim().length > 0 && !isValidDateOnly(dateOfBirth.trim())) {
       publishToast({
         tone: "error",
@@ -282,8 +217,6 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
       });
       return;
     }
-
-    const finalCountryName = getCountryByCode(countryCode)?.name ?? profile.country ?? "";
 
     setSaving(true);
 
@@ -294,11 +227,6 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
         displayName,
         phoneNumber,
         dateOfBirth: dateOfBirth.trim().length > 0 ? dateOfBirth.trim() : null,
-        city,
-        country: finalCountryName,
-        timezone,
-        locale,
-        currency: normalizedCurrency,
         occupation,
         bio
       });
@@ -386,73 +314,7 @@ export const ProfileScreen = ({ profile, onBack, onSave, onUploadAvatar, onRemov
           placeholder="YYYY-MM-DD"
         />
         <TextField label="Occupation" value={occupation} onChangeText={setOccupation} placeholder="Student, Engineer, Designer..." />
-      </Card>
-
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>REGIONAL PREFERENCES</Text>
-
-        <View style={styles.rowFields}>
-          <View style={styles.halfField}>
-            <SelectField 
-              label="Country" 
-              value={countryCode} 
-              options={countryOptions} 
-              onSelect={handleCountrySelect} 
-              placeholder="Select Country" 
-              searchable
-            />
-          </View>
-          <View style={styles.halfField}>
-            {cityOptions.length > 0 ? (
-              <SelectField 
-                label="City" 
-                value={city} 
-                options={cityOptions} 
-                onSelect={setCity} 
-                placeholder="Select City" 
-                searchable
-              />
-            ) : (
-              <TextField 
-                label="City" 
-                value={city} 
-                onChangeText={setCity} 
-                placeholder="Enter City" 
-              />
-            )}
-          </View>
-        </View>
-
-        <SelectField 
-          label="Timezone" 
-          value={timezone} 
-          options={timeZoneOptions} 
-          onSelect={setTimezone} 
-          placeholder="Select Timezone" 
-          searchable
-        />
-
-        <View style={styles.rowFields}>
-          <View style={styles.halfField}>
-            <SelectField 
-              label="Locale" 
-              value={locale} 
-              options={localeOptions} 
-              onSelect={setLocale} 
-              searchable
-            />
-          </View>
-          <View style={styles.halfField}>
-            <SelectField 
-              label="Currency" 
-              value={currency} 
-              options={currencyOptions} 
-              onSelect={setCurrency} 
-              searchable
-            />
-          </View>
-        </View>
-
+        
         <TextField
           label="Bio"
           value={bio}

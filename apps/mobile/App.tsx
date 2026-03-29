@@ -987,7 +987,7 @@ export default function App() {
     ]);
   };
 
-  const handleSaveProfile = async (payload: {
+  const handleSaveProfile = async (payload: Partial<{
     firstName: string;
     lastName: string;
     displayName: string;
@@ -1000,7 +1000,7 @@ export default function App() {
     currency: string;
     occupation: string;
     bio: string;
-  }) => {
+  }>) => {
     if (!token) return;
 
     const updatedProfile = await apiClient.updateProfile(token, payload);
