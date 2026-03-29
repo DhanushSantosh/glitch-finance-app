@@ -14,12 +14,16 @@ Confirm that staging matches the intended hardened deployment shape:
 
 ## Required Staging Environment
 
-Expected values from [staging.yaml](../infra/render/staging.yaml):
+Expected values from [staging.yaml](../infra/render/staging.yaml).
+
+Until custom DNS is live, use the Render default hostname:
+
+- `https://glitch-api-staging.onrender.com`
 
 | Variable | Expected value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `PUBLIC_API_BASE_URL` | `https://staging.quantex25.app` |
+| `PUBLIC_API_BASE_URL` | `https://glitch-api-staging.onrender.com` |
 | `TRUST_PROXY_HOPS` | `1` |
 | `OTP_PROVIDER` | `resend` |
 | `DEBUG_OTP_EXPOSURE` | `false` |
@@ -57,7 +61,7 @@ OTP_HASH_SECRET=... \
 OTP_PROVIDER=resend \
 OTP_EMAIL_FROM="Glitch Finance <noreply@staging.quantex25.app>" \
 RESEND_API_KEY=... \
-PUBLIC_API_BASE_URL=https://staging.quantex25.app \
+PUBLIC_API_BASE_URL=https://glitch-api-staging.onrender.com \
 TRUST_PROXY_HOPS=1 \
 DEBUG_OTP_EXPOSURE=false \
 STATUS_ENDPOINT_ENABLED=true \
@@ -72,7 +76,7 @@ SLO_MONITOR_ENABLED=true \
 If staging does not expose debug OTPs, provide a known-good bearer token:
 
 ```bash
-API_BASE_URL=https://staging.quantex25.app \
+API_BASE_URL=https://glitch-api-staging.onrender.com \
 SMOKE_TEST_EMAIL=smoke-check@example.com \
 SMOKE_BEARER_TOKEN=<staging-token> \
 SMOKE_EXPECT_STATUS_ENDPOINT=true \
@@ -93,7 +97,7 @@ What this validates:
 ## Optional Performance Check
 
 ```bash
-API_BASE_URL=https://staging.quantex25.app \
+API_BASE_URL=https://glitch-api-staging.onrender.com \
 PERF_BEARER_TOKEN=<staging-token> \
 PERF_ITERATIONS=20 \
 PERF_P95_THRESHOLD_MS=300 \

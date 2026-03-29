@@ -16,37 +16,32 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-29
 
 **Done:**
-- Completed a full security remediation pass across API and mobile:
-  - production startup now rejects placeholder `OTP_HASH_SECRET`
-  - debug OTP exposure narrowed to explicit local/test use
-  - console OTP logging now masks email and avoids broad raw-code exposure
-  - proxy trust is configurable via `TRUST_PROXY_HOPS`
-  - avatar URLs no longer trust forwarded host headers and cannot be patched directly
-  - avatar uploads now validate file signatures and serve with `nosniff`
-  - status and metrics endpoints are env-gated for production hardening
-  - Apple OAuth no longer accepts client-supplied email fallback
-  - Google OAuth remains disabled by default, with backend nonce verification added for any future re-enable
-  - mobile session tokens now use `expo-secure-store`
-- Updated security, architecture, ops, API, and README docs to match the hardened behavior.
-- Re-ran verification after the security changes:
-  - `pnpm --filter @glitch/api typecheck` -> passed
-  - `pnpm --filter @glitch/mobile typecheck` -> passed
-  - `pnpm --filter @glitch/api test` -> 184 passed
-  - `pnpm --filter @glitch/mobile test` -> 51 passed
-- Removed the now-unused `@react-native-async-storage/async-storage` dependency after migrating session storage to `expo-secure-store`.
-- Added release-readiness maintenance artifacts:
-  - staging smoke script now understands expected `/api/v1/status` and `/api/v1/metrics` exposure
-  - runtime secret validation now enforces `PUBLIC_API_BASE_URL`, `TRUST_PROXY_HOPS`, and hardened endpoint/debug flags
-  - added `docs/staging-readiness.md`
-  - added `docs/production-readiness.md`
-  - added `docs/environment-workflows.md` to describe dev/staging/prod separation practically
-  - updated ops workflow/docs to match the hardened staging/production model
+- Executed the first real hosted staging rollout on Render:
+  - created `glitch-api-staging` web service from `apps/api/Dockerfile`
+  - created managed Postgres `glitch-postgres-staging`
+  - created managed Key Value instance `glitch-redis-staging`
+  - configured staging env vars and `/health` health check
+- Fixed first-hosted-deploy startup failure by adding runtime DB migrations before startup and copying migration SQL into the API Docker image.
+- Verified the live staging backend at `https://glitch-api-staging.onrender.com`:
+  - `/health` -> `200`
+  - `/api/v1/status` -> `200`
+  - `/api/v1/bootstrap` -> `200`
+  - `/api/v1/metrics` -> `404` with metrics intentionally disabled
+- Verified OTP delivery on staging via Resend after env correction:
+  - first failure was invalid `OTP_EMAIL_FROM` format
+  - current staging sender works and OTP mail is received
+- Updated local repo staging references away from the non-working custom hostname and toward the live Render hostname:
+  - `apps/mobile/package.json` `dev:staging`
+  - `apps/mobile/eas.json` preview API URL
+  - staging docs/runbook command examples
 
 **Open threads:**
-- No active blocker from the maintenance pass. Next meaningful step is executing the staging checklist against the live environment.
+- Custom staging DNS is still not live. Use `https://glitch-api-staging.onrender.com` until the custom domain is actually configured and resolvable.
+- The staging-alignment file changes are ready to commit/push.
 
 **Next session should:**
-- Either execute the live staging-readiness checklist or continue with the next product slice from the hardened baseline.
+- Continue from a working hosted staging baseline.
+- Either finish committing/pushing the staging URL alignment and memory sync, or move on to staging smoke/perf validation and mobile-against-staging testing.
 
 ---
 

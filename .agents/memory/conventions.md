@@ -36,6 +36,7 @@ apps/api/src/modules/<name>/
 - Migrations in `apps/api/drizzle/`
 - Run `pnpm --filter @glitch/api db:generate` after schema changes
 - Never modify existing migration files
+- Hosted environments must be able to bootstrap a brand-new database: keep runtime migration support intact when changing API startup or Docker packaging
 
 ### Testing
 - Integration tests use `createApp()` helper — see existing test files for pattern
@@ -91,6 +92,7 @@ apps/mobile/src/
   - `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
 - Expo Go-oriented scripts should set `EXPO_NO_REDIRECT_PAGE=1` to avoid browser/interstitial QR codes when `expo-dev-client` is installed.
 - Google Sign-In must remain disabled until the mobile client can supply a nonce that the backend verifies against the ID token.
+- For hosted staging testing, prefer the live Render hostname until custom DNS is proven live; keep mobile preview/dev-staging configs aligned with the actual reachable backend host.
 
 ## Git Conventions
 

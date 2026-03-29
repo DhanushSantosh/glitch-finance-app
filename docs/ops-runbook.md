@@ -86,7 +86,7 @@ Production note:
 ## Staging and Perf Smoke Commands
 
 ```bash
-API_BASE_URL=https://staging-api.example.com \
+API_BASE_URL=https://glitch-api-staging.onrender.com \
 SMOKE_TEST_EMAIL=smoke-check@example.com \
 SMOKE_BEARER_TOKEN=<token_if_resend_has_no_debug_otp> \
 SMOKE_EXPECT_STATUS_ENDPOINT=true \
@@ -95,7 +95,7 @@ pnpm smoke:staging
 ```
 
 ```bash
-API_BASE_URL=https://staging-api.example.com \
+API_BASE_URL=https://glitch-api-staging.onrender.com \
 PERF_BEARER_TOKEN=<token> \
 PERF_ITERATIONS=20 \
 PERF_P95_THRESHOLD_MS=300 \

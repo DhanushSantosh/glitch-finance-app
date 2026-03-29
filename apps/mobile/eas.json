@@ -18,7 +18,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://staging.quantex25.app"
+        "EXPO_PUBLIC_API_URL": "https://glitch-api-staging.onrender.com"
       }
     },
     "production": {

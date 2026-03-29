@@ -4,7 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "dev": "EXPO_NO_REDIRECT_PAGE=1 dotenv -e ../../.env -- expo start --go",
-    "dev:staging": "EXPO_NO_REDIRECT_PAGE=1 EXPO_PUBLIC_API_URL=https://staging.quantex25.app dotenv -e ../../.env -- expo start --go",
+    "dev:staging": "EXPO_NO_REDIRECT_PAGE=1 EXPO_PUBLIC_API_URL=https://glitch-api-staging.onrender.com dotenv -e ../../.env -- expo start --go",
     "dev:lan": "EXPO_NO_REDIRECT_PAGE=1 dotenv -e ../../.env -- expo start --lan --go",
     "start": "EXPO_NO_REDIRECT_PAGE=1 dotenv -e ../../.env -- expo start --go",
     "android": "EXPO_NO_REDIRECT_PAGE=1 dotenv -e ../../.env -- expo start --android --go",

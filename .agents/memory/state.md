@@ -63,6 +63,12 @@ updated_at: 2026-03-29
 - pnpm monorepo workspaces
 - docker-compose for local Postgres + Redis
 - Render blueprints: staging.yaml + production.yaml
+- Hosted staging is now live on Render at `https://glitch-api-staging.onrender.com`
+  - service: `glitch-api-staging`
+  - Postgres: `glitch-postgres-staging`
+  - Key Value: `glitch-redis-staging`
+  - `/health`, `/api/v1/status`, and `/api/v1/bootstrap` verified healthy
+  - `/api/v1/metrics` intentionally disabled in staging
 - `pnpm dev` / `pnpm dev:tailscale` are the default phone workflow: they auto-start DB, detect the machine's Tailscale IPv4, start the API, and launch Expo Go with Tailscale-aware host configuration
 - Dependency audit is clean: direct Fastify vulnerability patched and transitive pnpm overrides applied for `brace-expansion` and `yaml`
 - Expo account connected, project linked to GitHub (EAS available)
@@ -76,9 +82,11 @@ updated_at: 2026-03-29
 - Root README.md is concise with links to full docs
 - Added explicit staging and production readiness checklists with env validation and rollout gates
 - Added `docs/environment-workflows.md` to explain how local dev, staging, production, and maintenance flows are separated in practice
+- Staging docs and mobile preview config now target the live Render staging hostname until custom DNS is live
 
 ## What's In Progress
-- No active platform-blocking issue; next work can continue from a clean dependency and phone-dev baseline.
+- No platform-blocking issue on local dev.
+- Hosted staging exists and works; remaining ops maturity work is custom DNS, staging smoke/perf, and finalizing production-domain rollout.
 
 ## Recent Fixes
 - Removed the failed Cloudflare / Expo tunnel experiment and replaced it with a Tailscale-based Expo Go workflow
@@ -89,6 +97,7 @@ updated_at: 2026-03-29
 - Rate limiter off-by-one (maxRequests=0) and window boundary (<=)
 - Audit event name mismatch in docs
 - Dockerfile stale node_modules COPY
+- First hosted Render deploy failed on empty DB because startup seeded categories before schema existed; fixed with runtime migrations before app bootstrap
 - ensureDefaultCategories TOCTOU race condition
 - DELETE-with-empty-JSON parser errors now return explicit 400 envelopes (no accidental 500)
 - Mutation retry safety improved via idempotency key replay behavior
