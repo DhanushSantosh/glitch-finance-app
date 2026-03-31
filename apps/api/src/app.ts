@@ -35,8 +35,9 @@ export const createApp = async (): Promise<FastifyInstance> => {
       const t = o.trim();
       if (!t.includes("*")) return t;
       // Escape all regex metacharacters except *, then convert * to subdomain wildcard.
+      // Input is server-controlled (MOBILE_APP_ORIGIN env var), not user-supplied.
       const escaped = t.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+");
-      return new RegExp("^" + escaped + "$");
+      return new RegExp("^" + escaped + "$"); // nosemgrep: detect-non-literal-regexp
     });
 
   await app.register(cors, {

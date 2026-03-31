@@ -54,6 +54,8 @@ const mimeTypeToExtension: Record<string, string> = {
   "image/webp": "webp"
 };
 
+const allowedMimeTypes = new Set(Object.keys(mimeTypeToExtension));
+
 const inferImageMimeType = (buffer: Uint8Array): string | null => {
   if (
     buffer.length >= 3 &&
@@ -280,6 +282,13 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
 
     const avatar = rows[0];
     if (!avatar) {
+      throw new AppError(404, "AVATAR_NOT_FOUND", "Avatar not found.");
+    }
+
+    // Validate against the server-side allowlist before setting Content-Type.
+    // mimeType was inferred from magic bytes at upload time, but we re-verify here
+    // to ensure only known image types are ever reflected into response headers.
+    if (!allowedMimeTypes.has(avatar.mimeType)) {
       throw new AppError(404, "AVATAR_NOT_FOUND", "Avatar not found.");
     }
 

@@ -43,6 +43,13 @@
       "when": 1774792678147,
       "tag": "0005_lovely_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774936391958,
+      "tag": "0006_free_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

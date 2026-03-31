@@ -15,17 +15,15 @@ const defaultCategories: Array<{ name: string; direction: "debit" | "credit" | "
 
 export const ensureDefaultCategories = async (db: DbClient): Promise<void> => {
   for (const category of defaultCategories) {
-    // Single atomic INSERT WHERE NOT EXISTS prevents duplicate rows when multiple
-    // app instances start concurrently (e.g. parallel integration test runs).
+    // ON CONFLICT DO NOTHING relies on the partial unique index
+    // categories_global_name_direction_unique (name, direction) WHERE user_id IS NULL,
+    // which makes this truly atomic and safe under concurrent startup (e.g. parallel
+    // integration test workers all calling createApp() at the same time).
     await db.execute(
       sql`INSERT INTO categories (name, direction)
-          SELECT ${category.name}, ${category.direction}::transaction_direction
-          WHERE NOT EXISTS (
-            SELECT 1 FROM categories
-            WHERE name = ${category.name}
-              AND direction = ${category.direction}::transaction_direction
-              AND user_id IS NULL
-          )`
+          VALUES (${category.name}, ${category.direction}::transaction_direction)
+          ON CONFLICT (name, direction) WHERE user_id IS NULL
+          DO NOTHING`
     );
   }
 };

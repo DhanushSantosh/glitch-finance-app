@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -133,7 +134,12 @@ export const categories = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
   },
   (table) => ({
-    categoriesUserIdIndex: index("categories_user_id_idx").on(table.userId)
+    categoriesUserIdIndex: index("categories_user_id_idx").on(table.userId),
+    // Prevents duplicate global (user_id IS NULL) categories when multiple app instances
+    // start concurrently (e.g. parallel integration test workers all calling createApp()).
+    categoriesGlobalUnique: uniqueIndex("categories_global_name_direction_unique")
+      .on(table.name, table.direction)
+      .where(sql`"user_id" IS NULL`)
   })
 );
 
