@@ -16,6 +16,7 @@ updated_at: 2026-03-29
 | Default categories | Seeded at startup, immutable to users | Consistent baseline for all users |
 | Auto-categorization | Keyword rules + counterparty history | Deterministic, no ML dependency |
 | DB cascade | Postgres ON DELETE CASCADE | Account deletion is one query, no app-level cleanup |
+| Display currency model | Keep original record currency, convert into profile-selected display currency at read/render time | Preserves data fidelity while letting the UI and summaries switch currencies instantly |
 
 ## API
 
@@ -27,6 +28,7 @@ updated_at: 2026-03-29
 | Transaction direction | debit / credit / transfer enum | Clear, no ambiguity |
 | Mutation retry safety | Header-based idempotency (`Idempotency-Key`) + response replay cache | Prevent duplicate writes on network retries |
 | Client error normalization | Map Fastify parser and common Postgres constraint errors to stable 4xx envelopes | Avoid unexpected 500s for client/input faults |
+| Exchange-rate provider | ECB daily feed with Redis + in-memory cache | No API key required, deterministic enough for staging/dev, simple hosted ops footprint |
 
 ## Mobile
 
@@ -41,6 +43,7 @@ updated_at: 2026-03-29
 | Toast placement | Bottom-safe with dynamic offset above tab bar | Avoid status bar overlap and avoid collision with floating navigation |
 | Destructive confirmation pattern | Keep `Alert.alert` confirms, use toast for post-action result | Clear user intent confirmation + consistent non-blocking feedback |
 | Regional dataset source | `country-state-city` for country/city options | Broader global coverage than static local lists |
+| Currency switching UX | Change display currency from Settings with immediate persistence | Keeps currency switching lightweight and app-wide without overloading the profile-edit flow |
 
 ## Infrastructure
 

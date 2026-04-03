@@ -121,7 +121,7 @@ describe("reports integration", () => {
 
     await createTx({
       direction: "debit",
-      amount: 999,
+      amount: 10,
       categoryId: debitCategory?.id,
       occurredAt: "2026-03-04T10:00:00.000Z",
       currency: "USD"
@@ -162,13 +162,13 @@ describe("reports integration", () => {
     expect(summaryJson.month).toBe("2026-03");
     expect(summaryJson.totals.currency).toBe("INR");
     expect(summaryJson.totals.income).toBe(3000);
-    expect(summaryJson.totals.expense).toBe(1500);
+    expect(summaryJson.totals.expense).toBe(2448.12);
     expect(summaryJson.totals.transfer).toBe(700);
-    expect(summaryJson.totals.net).toBe(1500);
-    expect(summaryJson.totals.transactionCount).toBe(4);
+    expect(summaryJson.totals.net).toBe(551.88);
+    expect(summaryJson.totals.transactionCount).toBe(5);
 
-    expect(summaryJson.topCategories[0]?.amount).toBe(1500);
-    expect(summaryJson.topCategories[0]?.transactionCount).toBe(2);
+    expect(summaryJson.topCategories[0]?.amount).toBe(2448.12);
+    expect(summaryJson.topCategories[0]?.transactionCount).toBe(3);
 
     const march3 = summaryJson.dailySeries.find((item) => item.date === "2026-03-03");
     expect(march3).toBeDefined();
@@ -177,6 +177,86 @@ describe("reports integration", () => {
     expect(march3?.net).toBe(2500);
 
     expect(summaryJson.dailySeries).toHaveLength(31);
+  });
+
+  it("converts mixed-currency month summaries into the requested display currency", async () => {
+    const user = await authViaOtp(app, `reports-convert-${randomUUID()}@example.com`);
+
+    const responseA = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        direction: "credit",
+        amount: 100,
+        occurredAt: "2026-03-08T10:00:00.000Z",
+        currency: "USD"
+      }
+    });
+    expect(responseA.statusCode).toBe(200);
+
+    const responseB = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      },
+      payload: {
+        direction: "debit",
+        amount: 1000,
+        occurredAt: "2026-03-08T12:00:00.000Z",
+        currency: "INR"
+      }
+    });
+    expect(responseB.statusCode).toBe(200);
+
+    const summaryResponse = await app.inject({
+      method: "GET",
+      url: "/api/v1/reports/summary?month=2026-03&currency=USD",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(summaryResponse.statusCode).toBe(200);
+    const summaryJson = summaryResponse.json() as {
+      totals: { income: number; expense: number; net: number; currency: string; transactionCount: number };
+    };
+
+    expect(summaryJson.totals.currency).toBe("USD");
+    expect(summaryJson.totals.income).toBe(100);
+    expect(summaryJson.totals.expense).toBe(10.55);
+    expect(summaryJson.totals.net).toBe(89.45);
+    expect(summaryJson.totals.transactionCount).toBe(2);
+  });
+
+  it("returns the latest exchange-rate snapshot in the requested base currency", async () => {
+    const user = await authViaOtp(app, `reports-fx-${randomUUID()}@example.com`);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/fx/latest?base=USD",
+      headers: {
+        authorization: `Bearer ${user.token}`
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    const json = response.json() as {
+      provider: string;
+      asOf: string;
+      baseCurrency: string;
+      rates: Record<string, number>;
+    };
+
+    expect(json.provider).toBe("ecb");
+    expect(json.asOf).toBeTruthy();
+    expect(json.baseCurrency).toBe("USD");
+    expect(json.rates.USD).toBe(1);
+    expect(json.rates.INR).toBeGreaterThan(90);
+    expect(json.rates.EUR).toBeLessThan(1);
   });
 
   it("enforces user isolation for report summary", async () => {

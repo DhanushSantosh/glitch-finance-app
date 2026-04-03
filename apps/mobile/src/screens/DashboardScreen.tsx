@@ -1,9 +1,10 @@
 import { Text, View, Dimensions } from "react-native";
 import { AppHeader, Button, Card, EmptyState, ListItem, Screen, StatTile, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { ReportSummary, UserProfile } from "../types";
+import { ExchangeRateSnapshot, ReportSummary, UserProfile } from "../types";
 import { formatMoney } from "../utils/format";
 import { RegionalPreferences } from "../utils/regional";
+import { shouldShowConvertedAmount } from "../utils/exchange";
 import { TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from "lucide-react-native";
 import Svg, { Path, Defs, LinearGradient, Stop, Circle } from "react-native-svg";
 import { useEffect, useState } from "react";
@@ -12,6 +13,7 @@ type DashboardScreenProps = {
   month: string;
   summary: ReportSummary | null;
   profile?: UserProfile | null;
+  exchangeRates: ExchangeRateSnapshot | null;
   regionalPreferences: RegionalPreferences;
   refreshing: boolean;
   onMonthChange: (value: string) => void;
@@ -52,6 +54,7 @@ export const DashboardScreen = ({
   month,
   summary,
   profile,
+  exchangeRates,
   regionalPreferences,
   refreshing,
   onMonthChange,
@@ -70,6 +73,7 @@ export const DashboardScreen = ({
   }, []);
 
   const currency = summary?.totals.currency ?? regionalPreferences.currency;
+  const showsConvertedPortfolio = shouldShowConvertedAmount(profile?.currency ?? currency, exchangeRates);
   const latestSeries = summary?.dailySeries.slice(-7) ?? [];
   const netFlow = summary?.totals.net ?? 0;
   const isPositiveFlow = netFlow >= 0;
@@ -113,6 +117,10 @@ export const DashboardScreen = ({
               {isPositiveFlow ? "OPTIMIZED" : "ATTENTION"}
             </Text>
           </View>
+          <Text style={styles.currencyContext}>
+            DISPLAYING {currency}
+            {showsConvertedPortfolio ? ` · FX ${exchangeRates?.asOf ?? "LIVE"}` : ""}
+          </Text>
         </View>
       </View>
 
@@ -270,6 +278,13 @@ const styles = createStyles(() => ({
     fontWeight: "900",
     letterSpacing: 1
   },
+  currencyContext: {
+    marginTop: theme.spacing.sm,
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.4
+  },
   statGrid: {
     flexDirection: "row",
     gap: theme.spacing.md,
@@ -352,4 +367,3 @@ const styles = createStyles(() => ({
     color: theme.color.textPrimary // In premium apps, negative balance is often white/black, just distinguished by minus sign, but we keep it neutral here to not scream ERROR
   }
 }));
-

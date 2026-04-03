@@ -3,6 +3,7 @@ import { AppContext } from "../../context.js";
 import { requireAuth } from "../../utils/auth.js";
 import { normalizeCurrency, resolveUserRegionalPreferences } from "../../utils/regional.js";
 import { parseOrThrow } from "../../utils/validation.js";
+import { getExchangeRateSnapshot } from "../fx/service.js";
 import { buildReportCsv, buildReportPdf } from "./export.js";
 import { buildReportSummary } from "./summary.js";
 import { reportExportQuerySchema, reportSummaryQuerySchema, resolveReportMonth } from "./validation.js";
@@ -20,6 +21,11 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
     });
     const month = resolveReportMonth(query.month, regionalPreferences.timezone);
     const currency = normalizeCurrency(query.currency, regionalPreferences.currency);
+    const exchangeSnapshot = await getExchangeRateSnapshot({
+      redis: ctx.redis,
+      logger: request.log,
+      nodeEnv: ctx.env.NODE_ENV
+    });
 
     return buildReportSummary({
       db: ctx.db,
@@ -27,7 +33,8 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
       month,
       currency,
       timezone: regionalPreferences.timezone,
-      top: query.top
+      top: query.top,
+      exchangeSnapshot
     });
   });
 
@@ -41,6 +48,11 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
     });
     const month = resolveReportMonth(query.month, regionalPreferences.timezone);
     const currency = normalizeCurrency(query.currency, regionalPreferences.currency);
+    const exchangeSnapshot = await getExchangeRateSnapshot({
+      redis: ctx.redis,
+      logger: request.log,
+      nodeEnv: ctx.env.NODE_ENV
+    });
 
     const summary = await buildReportSummary({
       db: ctx.db,
@@ -48,7 +60,8 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
       month,
       currency,
       timezone: regionalPreferences.timezone,
-      top: query.top
+      top: query.top,
+      exchangeSnapshot
     });
 
     const fileName = buildExportFileName(query.format, month);

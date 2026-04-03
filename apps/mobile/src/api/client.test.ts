@@ -523,3 +523,69 @@ describe("apiClient — profile", () => {
     expect(requestInit.method).toBe("DELETE");
   });
 });
+
+describe("apiClient — reporting and exchange rates", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("passes the selected display currency to report summary requests", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          month: "2026-03",
+          period: {
+            start: "2026-02-28T18:30:00.000Z",
+            endExclusive: "2026-03-31T18:30:00.000Z"
+          },
+          totals: {
+            income: 100,
+            expense: 40,
+            transfer: 0,
+            net: 60,
+            transactionCount: 2,
+            currency: "USD"
+          },
+          topCategories: [],
+          dailySeries: []
+        },
+        true
+      )
+    );
+
+    await apiClient.getReportSummary("report-token", "2026-03", "usd");
+
+    const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toContain("/api/v1/reports/summary");
+    expect(calledUrl).toContain("month=2026-03");
+    expect(calledUrl).toContain("currency=USD");
+    const headers = requestInit.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBe("Bearer report-token");
+  });
+
+  it("fetches exchange rates in the requested base currency", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeFetchResponse(
+        {
+          provider: "ecb",
+          asOf: "2026-03-27",
+          baseCurrency: "USD",
+          rates: {
+            USD: 1,
+            INR: 94.81,
+            EUR: 0.86
+          }
+        },
+        true
+      )
+    );
+
+    const result = await apiClient.getExchangeRates("report-token", "usd");
+
+    expect(result.baseCurrency).toBe("USD");
+    const [calledUrl, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toContain("/api/v1/fx/latest?base=USD");
+    const headers = requestInit.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBe("Bearer report-token");
+  });
+});

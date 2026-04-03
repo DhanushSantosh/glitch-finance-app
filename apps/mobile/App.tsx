@@ -27,6 +27,7 @@ import {
   BootstrapPayload,
   Budget,
   Category,
+  ExchangeRateSnapshot,
   Goal,
   ReportSummary,
   Transaction,
@@ -35,6 +36,7 @@ import {
   UserProfile
 } from "./src/types";
 import { calculateBudgetTotals } from "./src/utils/budgetTotals";
+import { convertDisplayAmount } from "./src/utils/exchange";
 import { shiftMonthToken } from "./src/utils/month";
 import { resolveRegionalPreferences } from "./src/utils/regional";
 
@@ -163,6 +165,7 @@ export default function App() {
   const [budgetTotals, setBudgetTotals] = useState(emptyBudgetTotals);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [reportSummary, setReportSummary] = useState<ReportSummary | null>(null);
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRateSnapshot | null>(null);
   const [reportMonth, setReportMonth] = useState(getCurrentMonthToken());
   const [budgetMonth, setBudgetMonth] = useState(getCurrentMonthToken());
   const [refreshing, setRefreshing] = useState(false);
@@ -184,6 +187,25 @@ export default function App() {
   const isAuthenticated = Boolean(token && user);
   const authStage = deriveAuthStage(pendingEmail, isAuthenticated);
   const regionalPreferences = useMemo(() => resolveRegionalPreferences(profile, bootstrap), [bootstrap, profile]);
+  const displayBudgetTotals = useMemo(() => {
+    if (!exchangeRates) {
+      return budgetTotals;
+    }
+
+    return budgets.reduce(
+      (totals, budget) => {
+        const displayAmount = convertDisplayAmount(budget.amount, budget.currency, exchangeRates);
+        const displaySpent = convertDisplayAmount(budget.spentAmount, budget.currency, exchangeRates);
+        const displayRemaining = convertDisplayAmount(budget.remainingAmount, budget.currency, exchangeRates);
+
+        totals.budgeted += displayAmount ?? budget.amount;
+        totals.spent += displaySpent ?? budget.spentAmount;
+        totals.remaining += displayRemaining ?? budget.remainingAmount;
+        return totals;
+      },
+      { budgeted: 0, spent: 0, remaining: 0 }
+    );
+  }, [budgetTotals, budgets, exchangeRates]);
 
   useEffect(() => {
     const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
@@ -321,13 +343,15 @@ export default function App() {
       }
 
       try {
-        const [categoryItems, transactionData, budgetData, goalItems, reportData, profileData] = await Promise.all([
+        const profileData = await apiClient.getProfile(sessionToken);
+        const displayCurrency = resolveRegionalPreferences(profileData, bootstrap).currency;
+        const [categoryItems, transactionData, budgetData, goalItems, reportData, rateSnapshot] = await Promise.all([
           apiClient.getCategories(sessionToken),
           apiClient.getTransactions(sessionToken, buildTransactionQuery(transactionFilters, 1)),
           apiClient.getBudgets(sessionToken, budgetMonth),
           apiClient.getGoals(sessionToken),
-          apiClient.getReportSummary(sessionToken, reportMonth),
-          apiClient.getProfile(sessionToken)
+          apiClient.getReportSummary(sessionToken, reportMonth, displayCurrency),
+          apiClient.getExchangeRates(sessionToken, displayCurrency)
         ]);
 
         setCategories(categoryItems);
@@ -342,6 +366,7 @@ export default function App() {
         setGoals(goalItems);
         setReportSummary(reportData);
         setProfile(profileData);
+        setExchangeRates(rateSnapshot);
       } finally {
         if (showRefreshing) {
           setRefreshing(false);
@@ -353,7 +378,7 @@ export default function App() {
         }
       }
     },
-    [budgetMonth, reportMonth, transactionFilters]
+    [bootstrap, budgetMonth, reportMonth, transactionFilters]
   );
 
   const enqueueReconcileSync = useCallback(
@@ -382,9 +407,11 @@ export default function App() {
       apiClient.getGoals(sessionToken)
     ]);
     const monthToken = getCurrentMonthToken(profileData.timezone);
-    const [budgetData, reportData] = await Promise.all([
+    const displayCurrency = resolveRegionalPreferences(profileData, bootstrapPayload).currency;
+    const [budgetData, reportData, rateSnapshot] = await Promise.all([
       apiClient.getBudgets(sessionToken, monthToken),
-      apiClient.getReportSummary(sessionToken, monthToken)
+      apiClient.getReportSummary(sessionToken, monthToken, displayCurrency),
+      apiClient.getExchangeRates(sessionToken, displayCurrency)
     ]);
 
     setBootstrap(bootstrapPayload);
@@ -399,6 +426,7 @@ export default function App() {
     setBudgetMonth(budgetData.month);
     setGoals(goalItems);
     setReportSummary(reportData);
+    setExchangeRates(rateSnapshot);
     setReportMonth(reportData.month);
   };
 
@@ -780,7 +808,7 @@ export default function App() {
     if (!token) return;
 
     try {
-      const summary = await apiClient.getReportSummary(token, reportMonth);
+      const summary = await apiClient.getReportSummary(token, reportMonth, regionalPreferences.currency);
       setReportSummary(summary);
       setReportMonth(summary.month);
     } catch (error) {
@@ -1005,6 +1033,13 @@ export default function App() {
 
     const updatedProfile = await apiClient.updateProfile(token, payload);
     setProfile(updatedProfile);
+    const displayCurrency = resolveRegionalPreferences(updatedProfile, bootstrap).currency;
+    const [summary, rateSnapshot] = await Promise.all([
+      apiClient.getReportSummary(token, reportMonth, displayCurrency),
+      apiClient.getExchangeRates(token, displayCurrency)
+    ]);
+    setReportSummary(summary);
+    setExchangeRates(rateSnapshot);
     enqueueReconcileSync(token);
     publishToast({
       tone: "success",
@@ -1018,6 +1053,24 @@ export default function App() {
 
     const updatedProfile = await apiClient.updateProfile(token, { settings });
     setProfile(updatedProfile);
+    enqueueReconcileSync(token);
+  };
+
+  const handleChangeDisplayCurrency = async (currency: string) => {
+    if (!token) {
+      return;
+    }
+
+    const updatedProfile = await apiClient.updateProfile(token, { currency });
+    const displayCurrency = resolveRegionalPreferences(updatedProfile, bootstrap).currency;
+    const [summary, rateSnapshot] = await Promise.all([
+      apiClient.getReportSummary(token, reportMonth, displayCurrency),
+      apiClient.getExchangeRates(token, displayCurrency)
+    ]);
+
+    setProfile(updatedProfile);
+    setReportSummary(summary);
+    setExchangeRates(rateSnapshot);
     enqueueReconcileSync(token);
   };
 
@@ -1065,6 +1118,7 @@ export default function App() {
     setBudgets([]);
     setGoals([]);
     setReportSummary(null);
+    setExchangeRates(null);
     setReportMonth(getCurrentMonthToken());
     setCategories([]);
     setPendingEmail("");
@@ -1238,6 +1292,7 @@ export default function App() {
           month={reportMonth}
           summary={reportSummary}
           profile={profile}
+          exchangeRates={exchangeRates}
           regionalPreferences={regionalPreferences}
           refreshing={refreshing}
           onMonthChange={setReportMonth}
@@ -1253,6 +1308,7 @@ export default function App() {
         <TransactionsScreen
           items={transactions}
           categories={categories}
+          exchangeRates={exchangeRates}
           regionalPreferences={regionalPreferences}
           filters={transactionFilters}
           pagination={transactionPagination}
@@ -1281,7 +1337,8 @@ export default function App() {
         <BudgetsScreen
           month={budgetMonth}
           items={budgets}
-          totals={budgetTotals}
+          totals={displayBudgetTotals}
+          exchangeRates={exchangeRates}
           regionalPreferences={regionalPreferences}
           refreshing={refreshing}
           onMonthChange={setBudgetMonth}
@@ -1306,6 +1363,7 @@ export default function App() {
       return (
         <GoalsScreen
           items={goals}
+          exchangeRates={exchangeRates}
           regionalPreferences={regionalPreferences}
           refreshing={refreshing}
           onRefresh={refreshAll}
@@ -1326,6 +1384,7 @@ export default function App() {
     return (
       <SettingsScreen
         profile={profile}
+        displayCurrency={regionalPreferences.currency}
         smsDisclosureVersion={bootstrap?.legal.smsDisclosureVersion ?? "sms_disclosure_v1"}
         onOpenProfile={() => {
           setModalRoute({ kind: "profile" });
@@ -1335,6 +1394,7 @@ export default function App() {
           setModalRoute({ kind: "categoryManager" });
         }}
         onSaveProfileSettings={handleSaveProfileSettings}
+        onChangeDisplayCurrency={handleChangeDisplayCurrency}
         onDeleteAccount={handleDeleteAccount}
         onSignOut={handleSignOut}
       />

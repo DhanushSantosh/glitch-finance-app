@@ -1,13 +1,15 @@
 import { Text, View } from "react-native";
 import { AppHeader, Button, EmptyState, ListItem, Screen } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { Goal } from "../types";
+import { ExchangeRateSnapshot, Goal } from "../types";
 import { formatDateOnly, formatMoney } from "../utils/format";
+import { buildMoneyDisplay } from "../utils/exchange";
 import { RegionalPreferences } from "../utils/regional";
 import { Target, CheckCircle, Clock, Zap } from "lucide-react-native";
 
 type GoalsScreenProps = {
   items: Goal[];
+  exchangeRates: ExchangeRateSnapshot | null;
   regionalPreferences: RegionalPreferences;
   refreshing: boolean;
   onRefresh: () => Promise<void>;
@@ -19,7 +21,17 @@ type GoalsScreenProps = {
 
 const quickContributeIncrements = [500, 1000, 5000] as const;
 
-export const GoalsScreen = ({ items, regionalPreferences, refreshing, onRefresh, onAdd, onEdit, onDelete, onContribute }: GoalsScreenProps) => {
+export const GoalsScreen = ({
+  items,
+  exchangeRates,
+  regionalPreferences,
+  refreshing,
+  onRefresh,
+  onAdd,
+  onEdit,
+  onDelete,
+  onContribute
+}: GoalsScreenProps) => {
   return (
     <Screen refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <AppHeader
@@ -40,86 +52,95 @@ export const GoalsScreen = ({ items, regionalPreferences, refreshing, onRefresh,
       ) : null}
 
       <View style={styles.listContainer}>
-        {items.map((item) => (
-          <ListItem
-            key={item.id}
-            useCard
-            title={item.name}
-            subtitle={`${item.progressPercent.toFixed(0)}% SECURED`}
-            meta={item.targetDate ? `DEADLINE: ${formatDateOnly(item.targetDate, regionalPreferences)}` : "OPEN ENDED"}
-            trailing={
-              <View style={styles.amountContainer}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  {item.isCompleted ? <CheckCircle size={16} color={theme.color.statusSuccess} /> : <Clock size={16} color={theme.color.actionPrimary} />}
-                  <Text style={[styles.amount, item.isCompleted ? styles.completed : styles.info]}>
-                    {formatMoney(item.currentAmount, item.currency, regionalPreferences)}
-                  </Text>
-                </View>
-                <Text style={styles.amountLabel}>CAPTURED</Text>
-              </View>
-            }
-          >
-            <View style={styles.progressTrack}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { width: `${Math.min(item.progressPercent, 100)}%` },
-                  item.isCompleted ? styles.fillSuccess : styles.fillInfo
-                ]} 
-              />
-            </View>
+        {items.map((item) => {
+          const currentDisplay = buildMoneyDisplay(item.currentAmount, item.currency, regionalPreferences, exchangeRates);
+          const targetDisplay = buildMoneyDisplay(item.targetAmount, item.currency, regionalPreferences, exchangeRates);
+          const remainingDisplay = buildMoneyDisplay(item.remainingAmount, item.currency, regionalPreferences, exchangeRates);
 
-            <View style={styles.detailRow}>
-              <View style={styles.detailWrap}>
-                <Text style={styles.detailLabel}>TARGET</Text>
-                <Text style={styles.detailText}>{formatMoney(item.targetAmount, item.currency, regionalPreferences)}</Text>
-              </View>
-              <View style={styles.detailWrapRight}>
-                <Text style={styles.detailLabel}>DEFICIT</Text>
-                <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{formatMoney(item.remainingAmount, item.currency, regionalPreferences)}</Text>
-              </View>
-            </View>
-
-            {!item.isCompleted ? (
-              <>
-                <View style={styles.quickLabelContainer}>
-                  <Zap size={12} color={theme.color.statusWarn} style={{ marginRight: 4 }} />
-                  <Text style={styles.quickLabel}>QUICK INJECT</Text>
+          return (
+            <ListItem
+              key={item.id}
+              useCard
+              title={item.name}
+              subtitle={`${item.progressPercent.toFixed(0)}% SECURED`}
+              meta={item.targetDate ? `DEADLINE: ${formatDateOnly(item.targetDate, regionalPreferences)}` : "OPEN ENDED"}
+              trailing={
+                <View style={styles.amountContainer}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    {item.isCompleted ? <CheckCircle size={16} color={theme.color.statusSuccess} /> : <Clock size={16} color={theme.color.actionPrimary} />}
+                    <Text style={[styles.amount, item.isCompleted ? styles.completed : styles.info]}>
+                      {currentDisplay.primaryLabel}
+                    </Text>
+                  </View>
+                  {currentDisplay.secondaryLabel ? <Text style={styles.amountSecondaryLabel}>{currentDisplay.secondaryLabel}</Text> : null}
+                  <Text style={styles.amountLabel}>CAPTURED</Text>
                 </View>
-                <View style={styles.quickRow}>
-                  {quickContributeIncrements.map((increment) => (
-                    <Button
-                      key={`${item.id}-${increment}`}
-                      label={
-                        <Text style={styles.quickActionText}>
-                          +{formatMoney(increment, item.currency, regionalPreferences)}
-                        </Text>
-                      }
-                      variant="ghost"
-                      onPress={() => void onContribute(item, increment)}
-                      style={styles.quickAction}
-                    />
-                  ))}
-                </View>
-              </>
-            ) : null}
+              }
+            >
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${Math.min(item.progressPercent, 100)}%` },
+                    item.isCompleted ? styles.fillSuccess : styles.fillInfo
+                  ]}
+                />
+              </View>
 
-            <View style={styles.actionRow}>
-              <Button 
-                label="Modify" 
-                variant="ghost" 
-                onPress={() => onEdit(item)} 
-                style={styles.smallAction} 
-              />
-              <Button 
-                label={<Text style={{ color: theme.color.actionDanger, fontWeight: "700" }}>Clear</Text>} 
-                variant="ghost" 
-                onPress={() => void onDelete(item)} 
-                style={styles.smallActionDanger} 
-              />
-            </View>
-          </ListItem>
-        ))}
+              <View style={styles.detailRow}>
+                <View style={styles.detailWrap}>
+                  <Text style={styles.detailLabel}>TARGET</Text>
+                  <Text style={styles.detailText}>{targetDisplay.primaryLabel}</Text>
+                  {targetDisplay.secondaryLabel ? <Text style={styles.detailSubtext}>{targetDisplay.secondaryLabel}</Text> : null}
+                </View>
+                <View style={styles.detailWrapRight}>
+                  <Text style={styles.detailLabel}>DEFICIT</Text>
+                  <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{remainingDisplay.primaryLabel}</Text>
+                  {remainingDisplay.secondaryLabel ? <Text style={styles.detailSubtext}>{remainingDisplay.secondaryLabel}</Text> : null}
+                </View>
+              </View>
+
+              {!item.isCompleted ? (
+                <>
+                  <View style={styles.quickLabelContainer}>
+                    <Zap size={12} color={theme.color.statusWarn} style={{ marginRight: 4 }} />
+                    <Text style={styles.quickLabel}>QUICK INJECT</Text>
+                  </View>
+                  <View style={styles.quickRow}>
+                    {quickContributeIncrements.map((increment) => (
+                      <Button
+                        key={`${item.id}-${increment}`}
+                        label={
+                          <Text style={styles.quickActionText}>
+                            +{formatMoney(increment, item.currency, regionalPreferences)}
+                          </Text>
+                        }
+                        variant="ghost"
+                        onPress={() => void onContribute(item, increment)}
+                        style={styles.quickAction}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
+              <View style={styles.actionRow}>
+                <Button
+                  label="Modify"
+                  variant="ghost"
+                  onPress={() => onEdit(item)}
+                  style={styles.smallAction}
+                />
+                <Button
+                  label={<Text style={{ color: theme.color.actionDanger, fontWeight: "700" }}>Clear</Text>}
+                  variant="ghost"
+                  onPress={() => void onDelete(item)}
+                  style={styles.smallActionDanger}
+                />
+              </View>
+            </ListItem>
+          );
+        })}
       </View>
     </Screen>
   );
@@ -158,6 +179,12 @@ const styles = createStyles(() => ({
     color: theme.color.textMuted,
     marginTop: -2,
     letterSpacing: 1
+  },
+  amountSecondaryLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: theme.color.textMuted,
+    letterSpacing: 0.4
   },
   info: {
     color: theme.color.actionPrimary
@@ -200,6 +227,11 @@ const styles = createStyles(() => ({
     color: theme.color.textSecondary,
     fontSize: theme.typography.caption,
     fontWeight: "700"
+  },
+  detailSubtext: {
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "600"
   },
   quickLabelContainer: {
     flexDirection: "row",

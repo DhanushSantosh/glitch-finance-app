@@ -3,6 +3,7 @@ import {
   BootstrapPayload,
   BudgetListResponse,
   Category,
+  ExchangeRateSnapshot,
   Goal,
   ProfileSettings,
   ReportSummary,
@@ -484,9 +485,19 @@ export const apiClient = {
     });
   },
 
-  async getReportSummary(token: string, month?: string): Promise<ReportSummary> {
-    const query = month ? `?month=${encodeURIComponent(month)}` : "";
+  async getReportSummary(token: string, month?: string, currency?: string): Promise<ReportSummary> {
+    const query = toQueryString({
+      month,
+      currency: currency?.trim().toUpperCase()
+    });
     return request<ReportSummary>(`/api/v1/reports/summary${query}`, {
+      token
+    });
+  },
+
+  async getExchangeRates(token: string, baseCurrency: string): Promise<ExchangeRateSnapshot> {
+    const query = `?base=${encodeURIComponent(baseCurrency.trim().toUpperCase())}`;
+    return request<ExchangeRateSnapshot>(`/api/v1/fx/latest${query}`, {
       token
     });
   }

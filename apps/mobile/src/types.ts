@@ -91,6 +91,13 @@ export type BootstrapPayload = {
   };
 };
 
+export type ExchangeRateSnapshot = {
+  provider: string;
+  asOf: string;
+  baseCurrency: string;
+  rates: Record<string, number>;
+};
+
 export type Budget = {
   id: string;
   categoryId: string;

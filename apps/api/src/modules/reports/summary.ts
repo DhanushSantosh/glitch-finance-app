@@ -1,7 +1,8 @@
-import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, eq, gte, lt } from "drizzle-orm";
 import { DbClient } from "../../db/client.js";
 import { categories, transactions } from "../../db/schema.js";
 import { getMonthWindowForTimeZone } from "../../utils/regional.js";
+import { convertAmount, ExchangeRateSnapshot } from "../fx/service.js";
 
 export type ReportSummaryPayload = {
   month: string;
@@ -34,7 +35,6 @@ export type ReportSummaryPayload = {
 };
 
 const parseMoney = (value: string | number): number => Number(value);
-const parseCount = (value: string | number): number => Number(value);
 
 const formatDateToken = (year: number, month: number, day: number): string =>
   `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -53,6 +53,14 @@ const listDateTokensForMonth = (monthToken: string): string[] => {
   return tokens;
 };
 
+const getDateTokenForTimeZone = (value: Date, formatter: Intl.DateTimeFormat): string => {
+  const parts = formatter.formatToParts(value);
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  return `${year}-${month}-${day}`;
+};
+
 export const buildReportSummary = async (input: {
   db: DbClient;
   userId: string;
@@ -60,25 +68,24 @@ export const buildReportSummary = async (input: {
   currency: string;
   timezone: string;
   top: number;
+  exchangeSnapshot: ExchangeRateSnapshot;
 }): Promise<ReportSummaryPayload> => {
   const { start, end } = getMonthWindowForTimeZone(input.month, input.timezone);
 
-  const windowFilter = and(
-    eq(transactions.userId, input.userId),
-    eq(transactions.currency, input.currency),
-    gte(transactions.occurredAt, start),
-    lt(transactions.occurredAt, end)
-  );
+  const windowFilter = and(eq(transactions.userId, input.userId), gte(transactions.occurredAt, start), lt(transactions.occurredAt, end));
 
-  const totalRows = await input.db
+  const rows = await input.db
     .select({
+      categoryId: transactions.categoryId,
+      categoryName: categories.name,
       direction: transactions.direction,
-      totalAmount: sql<string>`coalesce(sum(${transactions.amount}), 0)`,
-      transactionCount: sql<string>`count(*)`
+      amount: transactions.amount,
+      currency: transactions.currency,
+      occurredAt: transactions.occurredAt
     })
     .from(transactions)
-    .where(windowFilter)
-    .groupBy(transactions.direction);
+    .leftJoin(categories, eq(categories.id, transactions.categoryId))
+    .where(windowFilter);
 
   const totals = {
     income: 0,
@@ -89,18 +96,52 @@ export const buildReportSummary = async (input: {
     currency: input.currency
   };
 
-  for (const row of totalRows) {
-    const amount = parseMoney(row.totalAmount);
-    const count = parseCount(row.transactionCount);
+  const topCategoryMap = new Map<
+    string,
+    { categoryId: string | null; categoryName: string; amount: number; transactionCount: number }
+  >();
+  const dailyMap = new Map<string, { income: number; expense: number }>();
+  for (const token of listDateTokensForMonth(input.month)) {
+    dailyMap.set(token, { income: 0, expense: 0 });
+  }
 
-    totals.transactionCount += count;
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: input.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+
+  for (const row of rows) {
+    const convertedAmount = convertAmount(parseMoney(row.amount), row.currency, input.currency, input.exchangeSnapshot);
+    totals.transactionCount += 1;
 
     if (row.direction === "credit") {
-      totals.income += amount;
+      totals.income += convertedAmount;
     } else if (row.direction === "debit") {
-      totals.expense += amount;
+      totals.expense += convertedAmount;
+      const categoryKey = row.categoryId ?? "uncategorized";
+      const existingCategory = topCategoryMap.get(categoryKey) ?? {
+        categoryId: row.categoryId,
+        categoryName: row.categoryName ?? "Uncategorized",
+        amount: 0,
+        transactionCount: 0
+      };
+      existingCategory.amount += convertedAmount;
+      existingCategory.transactionCount += 1;
+      topCategoryMap.set(categoryKey, existingCategory);
     } else {
-      totals.transfer += amount;
+      totals.transfer += convertedAmount;
+    }
+
+    const dayToken = getDateTokenForTimeZone(row.occurredAt, formatter);
+    const dailyEntry = dailyMap.get(dayToken);
+    if (dailyEntry) {
+      if (row.direction === "credit") {
+        dailyEntry.income += convertedAmount;
+      } else if (row.direction === "debit") {
+        dailyEntry.expense += convertedAmount;
+      }
     }
   }
 
@@ -109,63 +150,21 @@ export const buildReportSummary = async (input: {
   totals.transfer = Number(totals.transfer.toFixed(2));
   totals.net = Number((totals.income - totals.expense).toFixed(2));
 
-  const spentAmountExpr = sql`coalesce(sum(${transactions.amount}), 0)`;
-
-  const topCategoryRows = await input.db
-    .select({
-      categoryId: transactions.categoryId,
-      categoryName: sql<string>`coalesce(${categories.name}, 'Uncategorized')`,
-      spentAmount: sql<string>`${spentAmountExpr}`,
-      transactionCount: sql<string>`count(*)`
+  const topCategories = Array.from(topCategoryMap.values())
+    .sort((left, right) => {
+      if (right.amount !== left.amount) {
+        return right.amount - left.amount;
+      }
+      return left.categoryName.localeCompare(right.categoryName);
     })
-    .from(transactions)
-    .leftJoin(categories, eq(categories.id, transactions.categoryId))
-    .where(and(windowFilter, eq(transactions.direction, "debit")))
-    .groupBy(transactions.categoryId, categories.name)
-    .orderBy(desc(spentAmountExpr), asc(categories.name))
-    .limit(input.top);
-
-  const topCategories = topCategoryRows.map((row) => ({
+    .slice(0, input.top)
+    .map((row) => ({
     categoryId: row.categoryId,
     categoryName: row.categoryName,
-    amount: Number(parseMoney(row.spentAmount).toFixed(2)),
-    transactionCount: parseCount(row.transactionCount),
+    amount: Number(row.amount.toFixed(2)),
+    transactionCount: row.transactionCount,
     currency: input.currency
   }));
-
-  const escapedTimeZone = input.timezone.replaceAll("'", "''");
-  const timezoneLiteral = sql.raw(`'${escapedTimeZone}'`);
-  const dayTokenExpr = sql<string>`to_char(timezone(${timezoneLiteral}, ${transactions.occurredAt}), 'YYYY-MM-DD')`;
-
-  const dailyRows = await input.db
-    .select({
-      day: dayTokenExpr,
-      direction: transactions.direction,
-      totalAmount: sql<string>`coalesce(sum(${transactions.amount}), 0)`
-    })
-    .from(transactions)
-    .where(windowFilter)
-    .groupBy(dayTokenExpr, transactions.direction)
-    .orderBy(asc(dayTokenExpr));
-
-  const dailyMap = new Map<string, { income: number; expense: number }>();
-  for (const token of listDateTokensForMonth(input.month)) {
-    dailyMap.set(token, { income: 0, expense: 0 });
-  }
-
-  for (const row of dailyRows) {
-    const entry = dailyMap.get(row.day);
-    if (!entry) {
-      continue;
-    }
-
-    const amount = parseMoney(row.totalAmount);
-    if (row.direction === "credit") {
-      entry.income += amount;
-    } else if (row.direction === "debit") {
-      entry.expense += amount;
-    }
-  }
 
   const dailySeries = Array.from(dailyMap.entries()).map(([date, values]) => {
     const income = Number(values.income.toFixed(2));

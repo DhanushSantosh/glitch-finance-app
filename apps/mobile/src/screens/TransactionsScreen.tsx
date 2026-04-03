@@ -1,8 +1,9 @@
 import { Text, View } from "react-native";
 import { AppHeader, Button, Card, EmptyState, ListItem, Screen, SegmentedControl, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { Category, Transaction } from "../types";
-import { formatDateTime, formatMoney } from "../utils/format";
+import { Category, ExchangeRateSnapshot, Transaction } from "../types";
+import { formatDateTime } from "../utils/format";
+import { buildMoneyDisplay } from "../utils/exchange";
 import { RegionalPreferences } from "../utils/regional";
 import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter } from "lucide-react-native";
 
@@ -19,6 +20,7 @@ type TransactionFilters = {
 type TransactionsScreenProps = {
   items: Transaction[];
   categories: Category[];
+  exchangeRates: ExchangeRateSnapshot | null;
   regionalPreferences: RegionalPreferences;
   filters: TransactionFilters;
   pagination: {
@@ -42,6 +44,7 @@ type TransactionsScreenProps = {
 export const TransactionsScreen = ({
   items,
   categories,
+  exchangeRates,
   regionalPreferences,
   filters,
   pagination,
@@ -155,6 +158,7 @@ export const TransactionsScreen = ({
         {items.map((item) => {
           const isDebit = item.direction === "debit";
           const isCredit = item.direction === "credit";
+          const displayAmount = buildMoneyDisplay(item.amount, item.currency, regionalPreferences, exchangeRates);
           
           return (
             <ListItem
@@ -171,9 +175,10 @@ export const TransactionsScreen = ({
                     {isCredit ? <ArrowUpRight size={18} color={theme.color.statusSuccess} style={{marginRight: 4}}/> : null}
                     {!isDebit && !isCredit ? <RefreshCw size={16} color={theme.color.statusInfo} style={{marginRight: 4}}/> : null}
                     <Text style={[styles.amount, isCredit ? styles.credit : null, isDebit ? styles.debit : null]}>
-                      {formatMoney(item.amount, item.currency, regionalPreferences)}
+                      {displayAmount.primaryLabel}
                     </Text>
                   </View>
+                  {displayAmount.secondaryLabel ? <Text style={styles.originalAmountLabel}>{displayAmount.secondaryLabel}</Text> : null}
                 </View>
               }
             >
@@ -258,6 +263,12 @@ const styles = createStyles(() => ({
   amountValueRow: {
     flexDirection: "row",
     alignItems: "center"
+  },
+  originalAmountLabel: {
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.4
   },
   amount: {
     fontSize: theme.typography.heading,

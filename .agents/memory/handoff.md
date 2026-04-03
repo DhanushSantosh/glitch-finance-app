@@ -16,34 +16,31 @@ This file is updated at the END of every work session. It captures exactly what 
 ## Last Session — 2026-03-29
 
 **Done:**
-- Investigated the profile-picture inconsistency that showed up in both local dev and hosted staging after restarts.
-- Implemented a durable avatar persistence fix locally:
-  - added new `avatar_assets` table to persist avatar content in Postgres instead of container/local filesystem storage
-  - generated Drizzle migration `0005_lovely_thunderbolts.sql`
-  - updated profile avatar routes to read/write avatar blobs from the DB and store app-relative avatar paths in `user_profiles.avatar_url`
-- Implemented a mobile-side avatar URL normalization fix locally:
-  - `apps/mobile/src/api/client.ts` now rewrites relative or stale absolute avatar URLs to the current `API_BASE_URL`
-  - this protects local dev when the API host changes between localhost, LAN, Tailscale, or staging sessions
-- Fixed an env parsing sharp edge locally:
-  - optional blank env vars in `.env` / `.env.example` now normalize to `undefined` instead of failing validation (`PUBLIC_API_BASE_URL`, `AVATAR_STORAGE_DIR`, `ALERTS_WEBHOOK_URL`, `RESEND_API_KEY`)
-- Added/updated tests:
-  - API profile integration test now verifies avatar persistence across app restarts
-  - mobile API client tests now verify avatar URL normalization
+- Implemented app-wide multi-currency display switching.
+- Backend:
+  - added new `fx` module with `GET /api/v1/fx/latest?base=<CURRENCY>`
+  - ECB daily exchange-rate ingestion with Redis + in-memory caching
+  - report summaries/exports now aggregate mixed-currency months into the requested display currency instead of filtering by stored currency
+  - added integration coverage for FX snapshot retrieval and mixed-currency summary conversion
+- Mobile:
+  - app state now fetches and stores the latest FX snapshot for the selected display currency
+  - profile currency is treated as the app-wide display currency
+  - dashboard, ledger, budgets, and goals render converted primary values with original-currency secondary context when currencies differ
+  - settings now includes an immediate-save display currency selector using the existing select-sheet UI
 - Verification completed locally:
   - `pnpm --filter @glitch/api typecheck`
   - `pnpm --filter @glitch/mobile typecheck`
-  - `pnpm --filter @glitch/api test` -> 185 passing
-  - `pnpm --filter @glitch/mobile test` -> 53 passing
+  - `pnpm --filter @glitch/api test` -> 187 passing
+  - `pnpm --filter @glitch/mobile test` -> 58 passing
 
 **Open threads:**
-- The avatar persistence + URL normalization fix is currently local only and not committed/pushed yet.
-- `.env.example` is still modified in the working tree from the env cleanup / formatting pass and remains uncommitted.
-- Hosted staging is still using the last pushed code, so the new DB-backed avatar persistence is not deployed yet.
+- Currency switching changes are currently local only and not committed/pushed yet.
+- UI behavior has test/type coverage, but runtime device validation of the new converted-value presentation is still pending.
 
 **Next session should:**
-- Review the local avatar fix working tree, then commit/push it if approved.
-- After push, redeploy `glitch-api-staging` so staging avatars persist across service restarts/hibernation.
-- Custom staging DNS is still deferred; keep using `https://glitch-api-staging.onrender.com` until domain work starts.
+- Review the local multi-currency working tree, then commit/push it if approved.
+- After push, redeploy `glitch-api-staging` so hosted staging uses the FX/report conversion changes.
+- Do a quick device-level pass on dashboard, ledger, budgets, and goals after switching currencies to confirm the new converted-value hierarchy feels right.
 
 ---
 

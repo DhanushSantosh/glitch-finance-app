@@ -30,6 +30,7 @@ apps/api/src/modules/<name>/
 - Unknown fields on strict security-sensitive payloads should be rejected rather than ignored.
 - Currency amounts stored as integers (cents) or decimals — check existing schema before adding
 - Dates as ISO strings (`occurredAt`, `targetDate`)
+- Display-currency conversion must happen at read/render time; do not rewrite persisted finance records just to change how they are shown
 
 ### Database
 - ORM: Drizzle — always use typed queries, never raw SQL except in `db.execute(sql\`...\`)`
@@ -86,6 +87,13 @@ apps/mobile/src/
 ### API Client
 - All calls go through `apps/mobile/src/api/client.ts`
 - Error handling: catch in App.tsx/screen handlers and surface user-facing failures via centralized toast where applicable
+- When app-wide display currency affects backend summaries, pass it explicitly to API calls (for example `getReportSummary(..., currency)`) instead of relying on stale defaults
+
+### Currency Display
+- Profile `currency` is the single source of truth for app-wide display currency.
+- Stored transactions, budgets, and goals keep their original `currency` values.
+- Dashboard/report aggregates should come from the API already converted into the selected display currency.
+- Row-level money UI should show converted primary values plus original-currency secondary context when the currencies differ.
 
 ### Local Device Workflow
 - For real-phone testing on any network, use `pnpm dev` / `pnpm dev:tailscale`.

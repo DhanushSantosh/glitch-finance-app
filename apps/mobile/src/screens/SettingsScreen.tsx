@@ -1,28 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Switch, Text, View, Image } from "react-native";
-import { AppHeader, Button, Card, InlineMessage, publishToast, Screen } from "../components/ui";
+import { AppHeader, Button, Card, InlineMessage, publishToast, Screen, SelectField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User, SlidersHorizontal } from "lucide-react-native";
 import { UserProfile } from "../types";
+import { currencyOptions } from "../utils/regionalOptions";
 
 type SettingsScreenProps = {
   profile: UserProfile | null;
+  displayCurrency: string;
   smsDisclosureVersion: string;
   onOpenProfile: () => void;
   onRequestEnable: (enabled: boolean) => Promise<void>;
   onOpenCategoryManager: () => void;
   onSaveProfileSettings: (settings: UserProfile["settings"]) => Promise<void>;
+  onChangeDisplayCurrency: (currency: string) => Promise<void>;
   onDeleteAccount: () => Promise<void>;
   onSignOut: () => Promise<void>;
 };
 
 export const SettingsScreen = ({
   profile,
+  displayCurrency,
   smsDisclosureVersion,
   onOpenProfile,
   onRequestEnable,
   onOpenCategoryManager,
   onSaveProfileSettings,
+  onChangeDisplayCurrency,
   onDeleteAccount,
   onSignOut
 }: SettingsScreenProps) => {
@@ -42,7 +47,10 @@ export const SettingsScreen = ({
     }
   );
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [savingCurrency, setSavingCurrency] = useState(false);
+  const [displayCurrencyState, setDisplayCurrencyState] = useState(displayCurrency);
   const requestVersionRef = useRef(0);
+  const currencyRequestVersionRef = useRef(0);
 
   useEffect(() => {
     if (!profile) {
@@ -51,6 +59,10 @@ export const SettingsScreen = ({
 
     setSettingsState(profile.settings);
   }, [profile]);
+
+  useEffect(() => {
+    setDisplayCurrencyState(displayCurrency);
+  }, [displayCurrency]);
 
   const updatePreference = async (patch: Partial<UserProfile["settings"]>) => {
     if (!profile) {
@@ -112,6 +124,43 @@ export const SettingsScreen = ({
         title: "SMS protocol",
         message: error instanceof Error ? error.message : "Unable to record this request right now."
       });
+    }
+  };
+
+  const handleSelectDisplayCurrency = async (currency: string) => {
+    if (!profile || currency === displayCurrencyState) {
+      return;
+    }
+
+    const previousCurrency = displayCurrencyState;
+    const requestVersion = currencyRequestVersionRef.current + 1;
+    currencyRequestVersionRef.current = requestVersion;
+
+    setDisplayCurrencyState(currency);
+    setSavingCurrency(true);
+
+    try {
+      await onChangeDisplayCurrency(currency);
+      if (currencyRequestVersionRef.current === requestVersion) {
+        publishToast({
+          tone: "success",
+          title: "Display currency",
+          message: `All portfolio values now render in ${currency}.`
+        });
+      }
+    } catch (error) {
+      if (currencyRequestVersionRef.current === requestVersion) {
+        setDisplayCurrencyState(previousCurrency);
+        publishToast({
+          tone: "error",
+          title: "Display currency",
+          message: error instanceof Error ? error.message : "Unable to switch display currency right now."
+        });
+      }
+    } finally {
+      if (currencyRequestVersionRef.current === requestVersion) {
+        setSavingCurrency(false);
+      }
     }
   };
 
@@ -243,6 +292,21 @@ export const SettingsScreen = ({
           </View>
           <Text style={styles.sectionSubtitle}>App behavior controls for this account.</Text>
         </View>
+
+        <SelectField
+          label="DISPLAY CURRENCY"
+          value={displayCurrencyState}
+          options={currencyOptions}
+          searchable
+          placeholder="Select display currency"
+          onSelect={(value) => {
+            void handleSelectDisplayCurrency(value);
+          }}
+        />
+        <Text style={styles.preferenceNote}>
+          Dashboard, ledger, budgets, and goals render in the selected display currency while each record keeps its original stored currency.
+        </Text>
+        {savingCurrency ? <Text style={styles.preferenceSavingLabel}>Updating display currency...</Text> : null}
 
         <View style={styles.toggleRow}>
           <View style={styles.toggleTextWrap}>
@@ -453,6 +517,20 @@ const styles = createStyles(() => ({
     color: theme.color.textSecondary,
     fontSize: theme.typography.caption,
     fontWeight: "500"
+  },
+  preferenceNote: {
+    color: theme.color.textSecondary,
+    fontSize: theme.typography.caption,
+    lineHeight: 18,
+    marginTop: -theme.spacing.xs
+  },
+  preferenceSavingLabel: {
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginTop: -theme.spacing.xs
   },
   actionRow: {
     flexDirection: "row",

@@ -9,7 +9,7 @@ updated_at: 2026-03-29
 ### API (apps/api)
 - Fastify v5 REST API fully implemented and tested
 - Modules: auth (OTP + session), categories, transactions, budgets, goals, reports (summary + export), imports (SMS), consents, audit, alerts, SLO monitor, metrics
-- 184 API tests passing (unit + integration)
+- 187 API tests passing (unit + integration)
 - Idempotent mutation protection implemented for authenticated write routes (transactions, budgets, goals, categories, consent intent)
 - New persistence table for idempotency records: `idempotency_keys`
 - Error normalization improved: Fastify JSON parser + Postgres constraint errors now map to stable 4xx envelopes where applicable
@@ -36,7 +36,7 @@ updated_at: 2026-03-29
 - Screens: Dashboard, Transactions, TransactionForm, Budgets, BudgetForm, Goals, GoalForm, Settings, Login, OtpVerify, CategoryManagerScreen, CategoryFormScreen
 - Realtime sync with optimistic updates + 15s background interval
 - BottomTabBar: liquid glass floating pill with BlurView + animated spring
-- 51 mobile tests passing
+- 58 mobile tests passing
 - Mobile session storage migrated from AsyncStorage to `expo-secure-store`
 - metro.config.js wired for pnpm monorepo (iOS + Android working)
 - iOS safe-area handling fixed at app shell (`SafeAreaProvider` + `SafeAreaView`) to prevent top notification-bar overlap
@@ -59,6 +59,21 @@ updated_at: 2026-03-29
 - Settings preferences moved below Category Studio and now persist immediately on toggle (no save button)
 - Refactored session termination UI in `SettingsScreen` to a more user-friendly "SIGN OUT" flow with a native confirmation dialog, replacing technical "SEVER CONNECTION" terminology
 - Major mutation feedback shifted from nearby inline banners to centralized toast UX
+- App-wide display currency switching is now implemented:
+  - profile currency is the selected display currency
+  - transactions, budgets, and goals keep original stored currencies
+  - dashboard/report totals are converted server-side into the selected display currency
+  - ledger, budgets, and goals render converted primary amounts with original-currency secondary context when needed
+  - settings includes an immediate-save display currency selector
+
+### FX / Currency
+- New API FX module implemented:
+  - `GET /api/v1/fx/latest?base=<CURRENCY>`
+  - ECB-backed daily exchange-rate feed
+  - Redis + in-memory caching
+  - deterministic test snapshot for `NODE_ENV=test`
+- Report summaries/exports now aggregate mixed-currency months into the requested display currency instead of filtering by a single stored currency
+- Mobile fetches the current FX snapshot for the selected display currency and uses it to render ledger, budgets, and goals consistently
 
 ### Infrastructure
 - pnpm monorepo workspaces

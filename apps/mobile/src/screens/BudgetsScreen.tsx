@@ -1,14 +1,16 @@
 import { Text, View } from "react-native";
 import { AppHeader, Button, Card, EmptyState, InlineMessage, ListItem, Screen, StatTile, TextField } from "../components/ui";
 import { createStyles, theme } from "../theme";
-import { Budget } from "../types";
+import { Budget, ExchangeRateSnapshot } from "../types";
 import { formatMoney } from "../utils/format";
+import { buildMoneyDisplay } from "../utils/exchange";
 import { RegionalPreferences } from "../utils/regional";
 import { ChevronLeft, ChevronRight, RefreshCw, PieChart } from "lucide-react-native";
 
 type BudgetsScreenProps = {
   month: string;
   items: Budget[];
+  exchangeRates: ExchangeRateSnapshot | null;
   regionalPreferences: RegionalPreferences;
   totals: {
     budgeted: number;
@@ -29,6 +31,7 @@ type BudgetsScreenProps = {
 export const BudgetsScreen = ({
   month,
   items,
+  exchangeRates,
   regionalPreferences,
   totals,
   refreshing,
@@ -116,6 +119,9 @@ export const BudgetsScreen = ({
         {items.map((item) => {
           const isOver = item.utilizationPercent > 100;
           const isNear = item.utilizationPercent >= 85;
+          const remainingDisplay = buildMoneyDisplay(item.remainingAmount, item.currency, regionalPreferences, exchangeRates);
+          const capDisplay = buildMoneyDisplay(item.amount, item.currency, regionalPreferences, exchangeRates);
+          const usedDisplay = buildMoneyDisplay(item.spentAmount, item.currency, regionalPreferences, exchangeRates);
 
           return (
             <ListItem
@@ -126,8 +132,11 @@ export const BudgetsScreen = ({
               trailing={
                 <View style={styles.amountContainer}>
                   <Text style={[styles.amount, isOver ? styles.negative : isNear ? styles.warn : styles.positive]}>
-                    {formatMoney(item.remainingAmount, item.currency, regionalPreferences)}
+                    {remainingDisplay.primaryLabel}
                   </Text>
+                  {remainingDisplay.secondaryLabel ? (
+                    <Text style={styles.amountSecondaryLabel}>{remainingDisplay.secondaryLabel}</Text>
+                  ) : null}
                   <Text style={styles.amountLabel}>REMAINING</Text>
                 </View>
               }
@@ -145,11 +154,13 @@ export const BudgetsScreen = ({
               <View style={styles.detailRow}>
                 <View style={styles.detailWrap}>
                   <Text style={styles.detailLabel}>CAP</Text>
-                  <Text style={styles.detailText}>{formatMoney(item.amount, item.currency, regionalPreferences)}</Text>
+                  <Text style={styles.detailText}>{capDisplay.primaryLabel}</Text>
+                  {capDisplay.secondaryLabel ? <Text style={styles.detailSubtext}>{capDisplay.secondaryLabel}</Text> : null}
                 </View>
                 <View style={styles.detailWrapRight}>
                   <Text style={styles.detailLabel}>USED</Text>
-                  <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{formatMoney(item.spentAmount, item.currency, regionalPreferences)}</Text>
+                  <Text style={[styles.detailText, { color: theme.color.textPrimary }]}>{usedDisplay.primaryLabel}</Text>
+                  {usedDisplay.secondaryLabel ? <Text style={styles.detailSubtext}>{usedDisplay.secondaryLabel}</Text> : null}
                 </View>
               </View>
 
@@ -242,6 +253,12 @@ const styles = createStyles(() => ({
     marginTop: -4,
     letterSpacing: 1
   },
+  amountSecondaryLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: theme.color.textMuted,
+    letterSpacing: 0.4
+  },
   progressTrack: {
     height: 6,
     backgroundColor: theme.color.borderSubtle, // Darker track for high contrast
@@ -278,6 +295,11 @@ const styles = createStyles(() => ({
     color: theme.color.textSecondary,
     fontSize: theme.typography.caption,
     fontWeight: "700"
+  },
+  detailSubtext: {
+    color: theme.color.textMuted,
+    fontSize: 10,
+    fontWeight: "600"
   },
   actionRow: {
     flexDirection: "row",
