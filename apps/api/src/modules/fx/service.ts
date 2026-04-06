@@ -42,9 +42,10 @@ const parseEcbRatesXml = (xml: string): ExchangeRateSnapshot => {
     throw new AppError(502, "FX_UNAVAILABLE", "Exchange rates are unavailable right now.");
   }
 
-  const rates: Record<string, number> = {
-    EUR: 1
-  };
+  // Use a null-prototype map to prevent prototype-pollution via keys extracted from
+  // the external ECB XML feed (Semgrep: detect-bracket-object-injection).
+  const rates = Object.create(null) as Record<string, number>;
+  rates["EUR"] = 1;
 
   const rateMatches = xml.matchAll(/currency=['"]([A-Z]{3})['"]\s+rate=['"]([0-9.]+)['"]/g);
   for (const [, currency, rateRaw] of rateMatches) {
@@ -169,7 +170,9 @@ export const mapRatesFromBaseCurrency = (
   snapshot: ExchangeRateSnapshot
 ): Record<string, number> => {
   const base = baseCurrency.trim().toUpperCase();
-  const mappedRates: Record<string, number> = {};
+  // Use a null-prototype map to prevent prototype-pollution via currency keys derived
+  // from the external rate feed or the caller-supplied base currency string.
+  const mappedRates = Object.create(null) as Record<string, number>;
 
   for (const currency of Object.keys(snapshot.rates)) {
     mappedRates[currency] = convertAmount(1, base, currency, snapshot);
