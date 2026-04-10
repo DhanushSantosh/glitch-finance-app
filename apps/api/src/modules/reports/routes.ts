@@ -8,7 +8,13 @@ import { buildReportCsv, buildReportPdf } from "./export.js";
 import { buildReportSummary } from "./summary.js";
 import { reportExportQuerySchema, reportSummaryQuerySchema, resolveReportMonth } from "./validation.js";
 
-const buildExportFileName = (format: "csv" | "pdf", month: string): string => `glitch-report-${month}.${format}`;
+const buildExportFileName = (format: "csv" | "pdf", month: string): string => {
+  const sanitized = month.replace(/[^0-9-]/g, "");
+  return `glitch-report-${sanitized}.${format}`;
+};
+
+const encodeContentDisposition = (fileName: string): string =>
+  `attachment; filename="${fileName.replace(/[\r\n"\\]/g, "")}"`;
 
 export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext): Promise<void> => {
   app.get("/api/v1/reports/summary", async (request) => {
@@ -70,14 +76,14 @@ export const registerReportRoutes = async (app: FastifyInstance, ctx: AppContext
       const pdfBuffer = buildReportPdf(summary);
       return reply
         .header("content-type", "application/pdf")
-        .header("content-disposition", `attachment; filename=\"${fileName}\"`)
+        .header("content-disposition", encodeContentDisposition(fileName))
         .send(pdfBuffer);
     }
 
     const csv = buildReportCsv(summary);
     return reply
       .header("content-type", "text/csv; charset=utf-8")
-      .header("content-disposition", `attachment; filename=\"${fileName}\"`)
+      .header("content-disposition", encodeContentDisposition(fileName))
       .send(csv);
   });
 };

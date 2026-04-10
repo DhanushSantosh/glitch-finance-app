@@ -34,7 +34,7 @@ const verifyOtpSchema = z.object({
 });
 
 export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext): Promise<void> => {
-  app.post("/api/v1/auth/request-otp", async (request) => {
+  app.post("/api/v1/auth/request-otp", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request) => {
     const body = parseOrThrow(requestOtpSchema, request.body);
 
     return ctx.authService.requestOtp({
@@ -44,7 +44,7 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     });
   });
 
-  app.post("/api/v1/auth/verify-otp", async (request) => {
+  app.post("/api/v1/auth/verify-otp", { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } }, async (request) => {
     const body = parseOrThrow(verifyOtpSchema, request.body);
 
     const result = await ctx.authService.verifyOtp({
@@ -63,7 +63,7 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     };
   });
 
-  app.post("/api/v1/auth/recovery/request-otp", async (request) => {
+  app.post("/api/v1/auth/recovery/request-otp", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request) => {
     const body = parseOrThrow(requestOtpSchema, request.body);
 
     return ctx.authService.requestOtp({
@@ -73,7 +73,7 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     });
   });
 
-  app.post("/api/v1/auth/recovery/verify-otp", async (request) => {
+  app.post("/api/v1/auth/recovery/verify-otp", { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } }, async (request) => {
     const body = parseOrThrow(verifyOtpSchema, request.body);
 
     const result = await ctx.authService.verifyOtp({
@@ -106,13 +106,13 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     };
   });
 
-  app.delete("/api/v1/account", async (request) => {
+  app.delete("/api/v1/account", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request) => {
     const identity = requireAuth(request);
     await ctx.authService.deleteAccount(identity, request.id, request.ip);
     return { success: true };
   });
 
-  app.post("/api/v1/auth/oauth/google", async (request) => {
+  app.post("/api/v1/auth/oauth/google", { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } }, async (request) => {
     const body = parseOrThrow(googleOAuthSchema, request.body);
 
     const result = await ctx.authService.signInWithOAuth({
@@ -130,7 +130,7 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
     };
   });
 
-  app.post("/api/v1/auth/oauth/apple", async (request) => {
+  app.post("/api/v1/auth/oauth/apple", { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } }, async (request) => {
     const body = parseOrThrow(appleOAuthSchema, request.body);
 
     const result = await ctx.authService.signInWithOAuth({
