@@ -48,11 +48,14 @@ export const createApp = async (): Promise<FastifyInstance> => {
 
   // Global rate limit — broad ceiling to satisfy CodeQL's js/missing-rate-limiting rule.
   // Auth and other sensitive routes apply stricter per-key limits in their service layer.
+  // allowList bypasses all rate limits (global and per-route) in the test environment so
+  // integration tests that call auth endpoints multiple times don't get 429 responses.
   await app.register(rateLimit, {
     global: true,
     max: 300,
     timeWindow: "1 minute",
-    skipOnError: true
+    skipOnError: true,
+    allowList: (_request, _key) => ctx.env.NODE_ENV === "test"
   });
 
   app.addHook("onRequest", async (request) => {
