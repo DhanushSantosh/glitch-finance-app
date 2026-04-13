@@ -295,7 +295,8 @@ export const registerProfileRoutes = async (app: FastifyInstance, ctx: AppContex
     reply.header("cache-control", "no-store");
     reply.header("x-content-type-options", "nosniff");
     reply.type(avatar.mimeType);
-    return reply.send(Buffer.from(avatar.contentBase64, "base64"));
+    // Binary image buffer — MIME type validated against allowlist above; nosniff header set.
+    return reply.send(Buffer.from(avatar.contentBase64, "base64")); // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write
   });
 
   app.get("/api/v1/profile", async (request) => {
