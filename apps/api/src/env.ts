@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { z } from "zod";
+import { isValidOtpSenderAddress } from "./modules/auth/provider.js";
 
 dotenv.config({ path: process.env.ENV_FILE ?? ".env" });
 
@@ -88,6 +89,14 @@ const envSchema = z
         code: z.ZodIssueCode.custom,
         message: "RESEND_API_KEY is required when OTP_PROVIDER=resend",
         path: ["RESEND_API_KEY"]
+      });
+    }
+
+    if (value.OTP_PROVIDER === "resend" && !isValidOtpSenderAddress(value.OTP_EMAIL_FROM)) {
+      refinementContext.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "OTP_EMAIL_FROM must be a valid sender address like email@example.com or Name <email@example.com>.",
+        path: ["OTP_EMAIL_FROM"]
       });
     }
 

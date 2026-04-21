@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { AppContext } from "../../context.js";
 import { AppError } from "../../errors.js";
+import { isValidOtpSenderAddress } from "../auth/provider.js";
 
 export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext): Promise<void> => {
   app.get("/health", async () => {
@@ -34,7 +35,9 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
 
     const otpProvider = ctx.env.OTP_PROVIDER;
     const otpProviderReady =
-      otpProvider === "resend" ? Boolean(ctx.env.RESEND_API_KEY && ctx.env.OTP_EMAIL_FROM) : ctx.env.NODE_ENV !== "production";
+      otpProvider === "resend"
+        ? Boolean(ctx.env.RESEND_API_KEY && isValidOtpSenderAddress(ctx.env.OTP_EMAIL_FROM))
+        : ctx.env.NODE_ENV !== "production";
 
     return {
       message: "Glitch API is running",

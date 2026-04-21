@@ -4,6 +4,23 @@ export interface OtpDeliveryProvider {
   sendOtp(email: string, code: string): Promise<void>;
 }
 
+const plainEmailPattern = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+const namedEmailPattern = /^[^<>]+<\s*([^\s@<>]+@[^\s@<>]+\.[^\s@<>]+)\s*>$/;
+
+export const isValidOtpSenderAddress = (value: string): boolean => {
+  const normalized = value.trim();
+  if (normalized.length < 3) {
+    return false;
+  }
+
+  if (plainEmailPattern.test(normalized)) {
+    return true;
+  }
+
+  const match = normalized.match(namedEmailPattern);
+  return Boolean(match && plainEmailPattern.test(match[1]));
+};
+
 export class ConsoleOtpProvider implements OtpDeliveryProvider {
   constructor(
     private readonly logger: FastifyBaseLogger,
@@ -62,7 +79,15 @@ export class ResendOtpProvider implements OtpDeliveryProvider {
           from: this.fromEmail,
           to: [email],
           subject: "Your Glitch Finance OTP",
-          text: `Your verification code is ${code}. It expires in a few minutes.`
+          text: `Your verification code is ${code}. It expires in a few minutes.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
+              <p>Your Glitch Finance verification code is:</p>
+              <p style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 16px 0;">${code}</p>
+              <p>This code expires in a few minutes.</p>
+              <p>If you did not request this code, you can safely ignore this email.</p>
+            </div>
+          `
         }),
         signal: controller.signal
       });

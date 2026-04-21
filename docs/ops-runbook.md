@@ -141,8 +141,12 @@ Restart Expo after update.
 
 1. Set `OTP_PROVIDER=resend`.
 2. Set `OTP_EMAIL_FROM` and `RESEND_API_KEY`.
-3. Set `ALERTS_WEBHOOK_URL` for delivery failure alerts.
-4. Restart API and verify `/api/v1/auth/request-otp`.
+3. Ensure `OTP_EMAIL_FROM` is a valid sender string:
+   - `noreply@example.com`
+   - `Glitch Finance <noreply@example.com>`
+4. Ensure the sender domain/address is verified in Resend.
+5. Set `ALERTS_WEBHOOK_URL` for delivery failure alerts.
+6. Restart API and verify `/api/v1/auth/request-otp`.
 
 ## Backup and Restore Scripts
 
