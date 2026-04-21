@@ -9,6 +9,7 @@ import { configureGoogleSignIn, signInWithApple, signInWithGoogle } from "./src/
 import { BottomTabBar, publishToast, ToastViewport } from "./src/components/ui";
 import { deriveAuthStage, getCurrentMonthToken, resolveSmsIntentOutcome } from "./src/flow/mobileFlow";
 import { AppTabRoute, defaultTabRoute, emptyModalRoute, ModalRoute } from "./src/navigation/routes";
+import { syncSentryUser } from "./src/monitoring/sentry";
 import { BudgetFormScreen } from "./src/screens/BudgetFormScreen";
 import { BudgetsScreen } from "./src/screens/BudgetsScreen";
 import { CategoryFormScreen } from "./src/screens/CategoryFormScreen";
@@ -213,6 +214,10 @@ export default function App() {
       configureGoogleSignIn(googleClientId);
     }
   }, []);
+
+  useEffect(() => {
+    syncSentryUser(user, profile);
+  }, [profile, user]);
 
   useEffect(() => {
     if (Platform.OS !== "android") {

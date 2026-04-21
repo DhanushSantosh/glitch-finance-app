@@ -17,6 +17,7 @@
     "@fastify/cors": "^11.1.0",
     "@fastify/multipart": "^9.4.0",
     "@fastify/rate-limit": "^10.3.0",
+    "@sentry/node": "^10.49.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.5",

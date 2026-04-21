@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-29
+updated_at: 2026-04-21
 ---
 
 # Key Decisions Log
@@ -54,6 +54,7 @@ updated_at: 2026-03-29
 | Container registry | GHCR | Free, integrated with GitHub Actions |
 | Deploy target | Render | Simple, managed Postgres + Redis |
 | Active staging hostname | Use the Render default hostname until custom DNS is verified live | Avoid blocked rollout on unresolved `staging.quantex25.app` |
+| Observability rollout | Add Sentry as a runtime-only first pass before source maps/build credentials | Gives immediate crash visibility for API + mobile without complicating local dev or Expo Go |
 | DATABASE_URL host | 127.0.0.1 not localhost | Avoid IPv6 (::1) resolution on Linux |
 | Default local dev workflow | `pnpm dev` should not require Tailscale | New teammates must be able to run the project on emulator/simulator/LAN without Tailnet setup |
 | Cross-network mobile dev | `pnpm dev:tailscale` uses Tailscale + Expo Go LAN mode | Stable across networks without relying on Expo/ngrok or Cloudflare quick tunnels |

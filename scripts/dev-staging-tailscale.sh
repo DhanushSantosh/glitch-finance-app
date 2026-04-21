@@ -32,6 +32,7 @@ echo "Make sure your phone is connected to the same Tailnet, then scan the Expo 
 echo ""
 
 EXPO_PUBLIC_API_URL="$STAGING_API_URL" \
+EXPO_PUBLIC_SENTRY_ENVIRONMENT=staging \
 REACT_NATIVE_PACKAGER_HOSTNAME="$TAILSCALE_IP" \
 EXPO_NO_REDIRECT_PAGE=1 \
   pnpm --filter @glitch/mobile exec expo start --lan --go

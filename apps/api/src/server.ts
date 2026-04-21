@@ -1,5 +1,8 @@
 import { createApp } from "./app.js";
 import { env } from "./env.js";
+import { captureApiException, initServerSentry } from "./monitoring/sentry.js";
+
+initServerSentry();
 
 const collectErrorCodes = (error: unknown): string[] => {
   if (!error || typeof error !== "object") {
@@ -49,6 +52,12 @@ const start = async () => {
       console.error("API startup failed before logger initialization.", error);
     }
 
+    captureApiException(error, {
+      tags: {
+        phase: "startup"
+      }
+    });
+
     if (isConnectionRefusedError(error)) {
       console.error("Database connection refused.");
       console.error("Start local infrastructure with: pnpm db:up");
@@ -58,5 +67,24 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+process.on("unhandledRejection", (reason) => {
+  captureApiException(reason, {
+    tags: {
+      phase: "unhandledRejection"
+    }
+  });
+});
+
+process.on("uncaughtException", (error) => {
+  captureApiException(error, {
+    tags: {
+      phase: "uncaughtException"
+    }
+  });
+
+  console.error("Uncaught exception. Exiting process after reporting to Sentry.", error);
+  process.exit(1);
+});
 
 await start();

@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import { createAppContext, closeAppContext } from "./context.js";
 import { env } from "./env.js";
 import { AppError, toClientAppError } from "./errors.js";
+import { captureApiException } from "./monitoring/sentry.js";
 import { registerHealthRoutes } from "./modules/health/routes.js";
 import { registerAuthRoutes } from "./modules/auth/routes.js";
 import { registerCategoryRoutes } from "./modules/categories/routes.js";
@@ -68,6 +69,20 @@ export const createApp = async (): Promise<FastifyInstance> => {
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
+      if (error.statusCode >= 500) {
+        captureApiException(error, {
+          requestId: request.id,
+          method: request.method,
+          route: request.routeOptions.url ?? request.url,
+          statusCode: error.statusCode,
+          userId: request.auth?.userId,
+          extras: {
+            url: request.url,
+            code: error.code
+          }
+        });
+      }
+
       return reply.status(error.statusCode).send({
         error: {
           code: error.code,
@@ -102,6 +117,16 @@ export const createApp = async (): Promise<FastifyInstance> => {
     }
 
     request.log.error({ err: error }, "Unhandled request error");
+    captureApiException(error, {
+      requestId: request.id,
+      method: request.method,
+      route: request.routeOptions.url ?? request.url,
+      statusCode: 500,
+      userId: request.auth?.userId,
+      extras: {
+        url: request.url
+      }
+    });
     void ctx.alertsService.notify({
       severity: "error",
       title: "Unhandled API error",

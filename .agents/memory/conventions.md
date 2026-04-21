@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-29
+updated_at: 2026-04-21
 ---
 
 # Project Conventions
@@ -24,6 +24,7 @@ apps/api/src/modules/<name>/
 - Error shape: `{ error: { code: string, message: string, details? }, requestId }`.
 - Authenticated mutation routes should support `Idempotency-Key` via shared `executeIdempotent(...)` utility.
 - Generated public URLs must come from trusted env/config (`PUBLIC_API_BASE_URL`) rather than forwarded request headers unless proxy trust has been explicitly configured.
+- Sentry should only capture backend 5xx/unhandled failures; expected 4xx validation/auth/parser errors stay out of Sentry to keep signal clean.
 
 ### Validation
 - All inputs validated with Zod schemas defined in `validation.ts`
@@ -87,6 +88,7 @@ apps/mobile/src/
 ### API Client
 - All calls go through `apps/mobile/src/api/client.ts`
 - Error handling: catch in App.tsx/screen handlers and surface user-facing failures via centralized toast where applicable
+- Mobile Sentry is initialized once at the app root and should be used for runtime crash visibility, not as a replacement for user-facing toast/error flows.
 - When app-wide display currency affects backend summaries, pass it explicitly to API calls (for example `getReportSummary(..., currency)`) instead of relying on stale defaults
 
 ### Currency Display

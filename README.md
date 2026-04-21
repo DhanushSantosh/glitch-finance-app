@@ -137,6 +137,9 @@ Key variables to configure in the root `.env`:
 | `OTP_HASH_SECRET` | `change-me-in-production-otp-secret` | **Must change in production** |
 | `PUBLIC_API_BASE_URL` | _(empty)_ | Canonical public API origin used for generated asset URLs |
 | `AVATAR_STORAGE_DIR` | _(system temp dir)_ | Optional writable directory for uploaded avatar files in hosted environments |
+| `SENTRY_DSN` | _(empty)_ | Optional backend Sentry DSN for API error and trace capture |
+| `SENTRY_ENVIRONMENT` | _(empty)_ | Optional backend Sentry environment tag override |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0` | Backend trace sampling rate between `0` and `1` |
 | `TRUST_PROXY_HOPS` | `0` | Set to proxy hop count in deployed environments |
 | `DEBUG_OTP_EXPOSURE` | `true` (local) | Keep `false` outside local development |
 | `OTP_PROVIDER` | `console` | `console` or `resend` |
@@ -153,6 +156,11 @@ Key variables to configure in the root `.env`:
 | `SMS_IMPORT_SCAN_ENABLED` | `false` | Keeps SMS scan service disabled unless explicitly enabled |
 
 Mobile: set `EXPO_PUBLIC_API_URL` in the root `.env`. Use `http://10.0.2.2:4000` for Android emulator. For real-phone testing on any network, prefer `pnpm dev` so the Tailscale IP is injected automatically for that session.
+
+Optional mobile Sentry variables:
+- `EXPO_PUBLIC_SENTRY_DSN`
+- `EXPO_PUBLIC_SENTRY_ENVIRONMENT`
+- `EXPO_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
 
 Google Sign-In stays disabled by default in the current app because the secure nonce-bound native flow is not yet enabled for production use.
 

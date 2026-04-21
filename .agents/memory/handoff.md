@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-29
+updated_at: 2026-04-21
 ---
 
 # Handoff Log
@@ -13,34 +13,38 @@ This file is updated at the END of every work session. It captures exactly what 
 
 ---
 
-## Last Session — 2026-03-29
+## Last Session — 2026-04-21
 
 **Done:**
-- Implemented app-wide multi-currency display switching.
+- Added first-pass Sentry runtime monitoring for both backend and mobile.
 - Backend:
-  - added new `fx` module with `GET /api/v1/fx/latest?base=<CURRENCY>`
-  - ECB daily exchange-rate ingestion with Redis + in-memory caching
-  - report summaries/exports now aggregate mixed-currency months into the requested display currency instead of filtering by stored currency
-  - added integration coverage for FX snapshot retrieval and mixed-currency summary conversion
+  - installed `@sentry/node`
+  - added `apps/api/src/monitoring/sentry.ts`
+  - startup, uncaught, unhandled-rejection, handled 5xx `AppError`, and unhandled request failures now report to Sentry when `SENTRY_DSN` is configured
+  - expected 4xx validation/auth/parser noise is filtered out before capture
 - Mobile:
-  - app state now fetches and stores the latest FX snapshot for the selected display currency
-  - profile currency is treated as the app-wide display currency
-  - dashboard, ledger, budgets, and goals render converted primary values with original-currency secondary context when currencies differ
-  - settings now includes an immediate-save display currency selector using the existing select-sheet UI
+  - installed `@sentry/react-native`
+  - added `apps/mobile/src/monitoring/sentry.ts`
+  - Sentry initializes from `index.ts` when `EXPO_PUBLIC_SENTRY_DSN` is set
+  - authenticated user/profile context is synced into Sentry from `App.tsx`
+- Config/docs:
+  - added Sentry env vars to `.env.example`, `README.md`, and `docs/ops-runbook.md`
+  - added Sentry placeholders to Render staging/production manifests
+  - EAS preview/production and staging dev scripts now set explicit Sentry environment tags
 - Verification completed locally:
   - `pnpm --filter @glitch/api typecheck`
   - `pnpm --filter @glitch/mobile typecheck`
-  - `pnpm --filter @glitch/api test` -> 187 passing
+  - `pnpm --filter @glitch/api test` -> 195 passing
   - `pnpm --filter @glitch/mobile test` -> 58 passing
 
 **Open threads:**
-- Currency switching changes are currently local only and not committed/pushed yet.
-- UI behavior has test/type coverage, but runtime device validation of the new converted-value presentation is still pending.
+- Changes are local only right now; no commit yet for the Sentry integration pass.
+- Sentry is runtime-only in this pass. Source map upload/build-plugin auth is intentionally deferred until Sentry org/project/auth-token details are ready.
 
 **Next session should:**
-- Review the local multi-currency working tree, then commit/push it if approved.
-- After push, redeploy `glitch-api-staging` so hosted staging uses the FX/report conversion changes.
-- Do a quick device-level pass on dashboard, ledger, budgets, and goals after switching currencies to confirm the new converted-value hierarchy feels right.
+- Commit and push the Sentry integration if approved.
+- Add real DSNs in staging/local envs and do a quick verification event from API and mobile.
+- If build-time symbolication is desired next, add the Sentry Expo plugin/source-map workflow with org/project/auth-token config.
 
 ---
 

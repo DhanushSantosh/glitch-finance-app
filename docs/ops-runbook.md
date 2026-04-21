@@ -29,6 +29,9 @@ API (`apps/api/.env`):
 - `API_PORT`
 - `API_HOST`
 - `PUBLIC_API_BASE_URL`
+- `SENTRY_DSN`
+- `SENTRY_ENVIRONMENT`
+- `SENTRY_TRACES_SAMPLE_RATE`
 - `TRUST_PROXY_HOPS`
 - `MOBILE_APP_ORIGIN`
 - `DATABASE_URL`
@@ -61,6 +64,9 @@ API (`apps/api/.env`):
 Mobile (root `.env`):
 
 - `EXPO_PUBLIC_API_URL`
+- `EXPO_PUBLIC_SENTRY_DSN`
+- `EXPO_PUBLIC_SENTRY_ENVIRONMENT`
+- `EXPO_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
 - `EXPO_PUBLIC_GOOGLE_OAUTH_ENABLED`
 
 ## Health Checks
@@ -147,6 +153,16 @@ Restart Expo after update.
 4. Ensure the sender domain/address is verified in Resend.
 5. Set `ALERTS_WEBHOOK_URL` for delivery failure alerts.
 6. Restart API and verify `/api/v1/auth/request-otp`.
+
+### Sentry monitoring
+
+1. Set `SENTRY_DSN` on the API to enable backend crash capture.
+2. Set `SENTRY_ENVIRONMENT` to the deployed environment name (`staging` or `production`).
+3. Start with `SENTRY_TRACES_SAMPLE_RATE=0.1` and adjust after observing volume.
+4. Set `EXPO_PUBLIC_SENTRY_DSN` in the mobile environment to enable runtime mobile error capture.
+5. Set `EXPO_PUBLIC_SENTRY_ENVIRONMENT` to match the build target.
+6. Keep `EXPO_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` conservative in production.
+7. This first-pass integration focuses on runtime capture; source map upload can be added later once auth tokens and release workflow are ready.
 
 ## Backup and Restore Scripts
 

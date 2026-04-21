@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-03-29
+updated_at: 2026-04-21
 ---
 
 # Project State
@@ -9,7 +9,7 @@ updated_at: 2026-03-29
 ### API (apps/api)
 - Fastify v5 REST API fully implemented and tested
 - Modules: auth (OTP + session), categories, transactions, budgets, goals, reports (summary + export), imports (SMS), consents, audit, alerts, SLO monitor, metrics
-- 187 API tests passing (unit + integration)
+- 195 API tests passing (unit + integration)
 - Idempotent mutation protection implemented for authenticated write routes (transactions, budgets, goals, categories, consent intent)
 - New persistence table for idempotency records: `idempotency_keys`
 - Error normalization improved: Fastify JSON parser + Postgres constraint errors now map to stable 4xx envelopes where applicable
@@ -26,6 +26,11 @@ updated_at: 2026-03-29
   - Apple OAuth no longer trusts client-supplied email hints
   - Google OAuth remains disabled by default and backend nonce enforcement is in place for any future re-enable
 - AlertsService wired to webhook (ALERTS_WEBHOOK_URL)
+- First-pass Sentry runtime integration added:
+  - backend uses `@sentry/node` with env-gated startup, request-aware exception capture, and 4xx/noise filtering
+  - mobile uses `@sentry/react-native` with env-gated init at app root and user/profile context sync
+  - staging/production Render blueprints now include Sentry env placeholders
+  - this pass is runtime-only; source map upload is intentionally deferred until auth token/release workflow is ready
 - SLO monitor with rolling-window evaluation
 - Drizzle ORM migrations in place
 - CI: lint → typecheck → db:check → API tests → mobile tests (all green)
@@ -89,6 +94,7 @@ updated_at: 2026-03-29
 - `pnpm dev:tailscale` remains the cross-network local-backend workflow using the machine's Tailscale IPv4
 - `pnpm dev:staging` launches Expo Go against the hosted staging backend without requiring Tailscale
 - `pnpm dev:staging:tailscale` is the cross-network staging workflow using the machine's Tailscale IPv4
+- `pnpm dev:staging` and `pnpm dev:staging:tailscale` now also tag the mobile Sentry environment as `staging`
 - Dependency audit is clean: direct Fastify vulnerability patched and transitive pnpm overrides applied for `brace-expansion` and `yaml`
 - Expo account connected, project linked to GitHub (EAS available)
   - `eas build` available for dev builds, preview, and production
@@ -102,10 +108,6 @@ updated_at: 2026-03-29
 - Added explicit staging and production readiness checklists with env validation and rollout gates
 - Added `docs/environment-workflows.md` to explain how local dev, staging, production, and maintenance flows are separated in practice
 - Staging docs and mobile preview config now target the live Render staging hostname until custom DNS is live
-- Local uncommitted fix in progress for avatar persistence:
-  - avatar blobs moved from filesystem storage to Postgres-backed `avatar_assets`
-  - mobile client normalizes avatar URLs against the current API origin to survive host/IP changes between sessions
-
 ## What's In Progress
 - No platform-blocking issue on local dev.
 - Hosted staging exists and works; remaining ops maturity work is custom DNS, staging smoke/perf, and finalizing production-domain rollout.
@@ -124,3 +126,4 @@ updated_at: 2026-03-29
 - DELETE-with-empty-JSON parser errors now return explicit 400 envelopes (no accidental 500)
 - Mutation retry safety improved via idempotency key replay behavior
 - Top notification/status-bar toast overlap fixed by moving toast host to bottom-safe position
+- Added runtime Sentry monitoring for API and mobile with conservative environment-gated defaults
