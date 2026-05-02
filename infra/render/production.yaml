@@ -15,7 +15,7 @@ services:
       - key: API_HOST
         value: 0.0.0.0
       - key: PUBLIC_API_BASE_URL
-        value: https://app.quantex25.com
+        value: https://app.velqora.com
       - key: SENTRY_DSN
         sync: false
       - key: SENTRY_ENVIRONMENT
@@ -25,7 +25,7 @@ services:
       - key: TRUST_PROXY_HOPS
         value: "1"
       - key: MOBILE_APP_ORIGIN
-        value: https://app.quantex25.com
+        value: https://app.velqora.com
       - key: DATABASE_URL
         fromDatabase:
           name: velqora-postgres-production
@@ -40,7 +40,7 @@ services:
       - key: DEBUG_OTP_EXPOSURE
         value: "false"
       - key: OTP_EMAIL_FROM
-        value: Velqora <noreply@app.quantex25.com>
+        value: Velqora <noreply@app.velqora.com>
       - key: RESEND_API_KEY
         sync: false
       - key: STATUS_ENDPOINT_ENABLED

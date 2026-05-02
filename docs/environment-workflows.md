@@ -136,7 +136,7 @@ Expected behavior:
 - `STATUS_ENDPOINT_ENABLED=false`
 - `METRICS_ENDPOINT_ENABLED=false`
 - `GOOGLE_OAUTH_ENABLED=false`
-- `PUBLIC_API_BASE_URL=https://app.quantex25.com`
+- `PUBLIC_API_BASE_URL=https://app.velqora.com`
 - `TRUST_PROXY_HOPS=1`
 - two API instances
 - no automatic deploy on every push

@@ -13,11 +13,10 @@ fi
 
 backup_dir="${BACKUP_DIR:-./backups}"
 timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
-output_file="${backup_dir}/glitch_${timestamp}.dump"
+output_file="${backup_dir}/velqora_${timestamp}.dump"
 
 mkdir -p "$backup_dir"
 
 pg_dump --format=custom --compress=9 --no-owner --no-privileges --file "$output_file" "$DATABASE_URL"
 
 echo "Backup created: $output_file"
-

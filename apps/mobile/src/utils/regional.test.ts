@@ -3,7 +3,7 @@ import { getCurrentMonthTokenForTimeZone, resolveRegionalPreferences } from "./r
 import { BootstrapPayload, UserProfile } from "../types";
 
 const bootstrapFixture: BootstrapPayload = {
-  appName: "Quantex25",
+  appName: "Velqora",
   currency: "INR",
   locale: "en-IN",
   timezone: "UTC",
@@ -65,4 +65,3 @@ describe("regional helpers", () => {
     expect(getCurrentMonthTokenForTimeZone("America/Los_Angeles", fixedInstant)).toBe("2026-02");
   });
 });
-

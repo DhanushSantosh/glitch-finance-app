@@ -13,7 +13,7 @@ Expected values from [production.yaml](../infra/render/production.yaml):
 | Variable | Expected value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `PUBLIC_API_BASE_URL` | `https://app.quantex25.com` |
+| `PUBLIC_API_BASE_URL` | `https://app.velqora.com` |
 | `TRUST_PROXY_HOPS` | `1` |
 | `OTP_PROVIDER` | `resend` |
 | `DEBUG_OTP_EXPOSURE` | `false` |
@@ -53,9 +53,9 @@ DATABASE_URL=... \
 REDIS_URL=... \
 OTP_HASH_SECRET=... \
 OTP_PROVIDER=resend \
-OTP_EMAIL_FROM="Velqora <noreply@app.quantex25.com>" \
+OTP_EMAIL_FROM="Velqora <noreply@app.velqora.com>" \
 RESEND_API_KEY=... \
-PUBLIC_API_BASE_URL=https://app.quantex25.com \
+PUBLIC_API_BASE_URL=https://app.velqora.com \
 TRUST_PROXY_HOPS=1 \
 DEBUG_OTP_EXPOSURE=false \
 STATUS_ENDPOINT_ENABLED=false \
@@ -70,9 +70,9 @@ SLO_MONITOR_ENABLED=true \
 Validate only the externally expected behavior:
 
 ```bash
-curl -i https://app.quantex25.com/health
-curl -i https://app.quantex25.com/api/v1/status
-curl -i https://app.quantex25.com/api/v1/metrics
+curl -i https://app.velqora.com/health
+curl -i https://app.velqora.com/api/v1/status
+curl -i https://app.velqora.com/api/v1/metrics
 ```
 
 Expected results:
