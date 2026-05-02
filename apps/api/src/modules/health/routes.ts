@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { API_SERVICE_NAME, APP_BRAND_NAME } from "../../appMetadata.js";
 import { AppContext } from "../../context.js";
 import { AppError } from "../../errors.js";
 import { isValidOtpSenderAddress } from "../auth/provider.js";
@@ -7,7 +8,7 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
   app.get("/health", async () => {
     return {
       status: "ok",
-      service: "velqora-api",
+      service: API_SERVICE_NAME,
       time: new Date().toISOString()
     };
   });
@@ -40,7 +41,7 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
         : ctx.env.NODE_ENV !== "production";
 
     return {
-      message: "Velqora API is running",
+      message: `${APP_BRAND_NAME} API is running`,
       databaseUrlSet: Boolean(ctx.env.DATABASE_URL),
       redisUrlSet: Boolean(ctx.env.REDIS_URL),
       otpDelivery: {

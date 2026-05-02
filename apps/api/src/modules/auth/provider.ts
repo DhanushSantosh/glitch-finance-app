@@ -1,4 +1,5 @@
 import { FastifyBaseLogger } from "fastify";
+import { APP_BRAND_NAME, OTP_EMAIL_SUBJECT } from "../../appMetadata.js";
 
 export interface OtpDeliveryProvider {
   sendOtp(email: string, code: string): Promise<void>;
@@ -78,11 +79,11 @@ export class ResendOtpProvider implements OtpDeliveryProvider {
         body: JSON.stringify({
           from: this.fromEmail,
           to: [email],
-          subject: "Your Velqora OTP",
+          subject: OTP_EMAIL_SUBJECT,
           text: `Your verification code is ${code}. It expires in a few minutes.`,
           html: `
             <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
-              <p>Your Velqora verification code is:</p>
+              <p>Your ${APP_BRAND_NAME} verification code is:</p>
               <p style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 16px 0;">${code}</p>
               <p>This code expires in a few minutes.</p>
               <p>If you did not request this code, you can safely ignore this email.</p>

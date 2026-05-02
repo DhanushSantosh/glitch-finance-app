@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Platform, Text, View } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { APP_DISPLAY_NAME } from "../appMetadata";
 import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
 import { isGoogleSignInAvailable } from "../auth/oauthProviders";
 import { createStyles, theme } from "../theme";
@@ -74,7 +75,7 @@ export const LoginScreen = ({ onRequestOtp, onGoogleSignIn, onAppleSignIn }: Log
     <Screen keyboardAware contentContainerStyle={styles.container}>
       <Card variant="glass" style={styles.authCard}>
         <AppHeader
-          title="Velqora"
+          title={APP_DISPLAY_NAME}
           subtitle="Precision finance tracking for the modern era. Securely sign in to continue."
           style={styles.header}
         />

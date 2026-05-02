@@ -1,5 +1,6 @@
 import type { FastifyBaseLogger } from "fastify";
 import { Redis } from "ioredis";
+import { API_SERVICE_NAME } from "./appMetadata.js";
 import { createDbClient } from "./db/client.js";
 import { applyRuntimeMigrations } from "./db/migrate.js";
 import { env, AppEnv } from "./env.js";
@@ -125,7 +126,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     enabled: Boolean(env.ALERTS_WEBHOOK_URL),
     webhookUrl: env.ALERTS_WEBHOOK_URL,
     cooldownMs: env.ALERTS_COOLDOWN_SECONDS * 1000,
-    serviceName: "velqora-api",
+    serviceName: API_SERVICE_NAME,
     environment: env.NODE_ENV
   });
   const sloMonitorService = new SloMonitorService({

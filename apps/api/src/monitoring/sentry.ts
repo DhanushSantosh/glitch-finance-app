@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import * as Sentry from "@sentry/node";
+import { API_SERVICE_NAME } from "../appMetadata.js";
 import { AppError, toClientAppError } from "../errors.js";
 import { env } from "../env.js";
 
@@ -33,7 +34,7 @@ export const initServerSentry = (): void => {
     enabled: true,
     initialScope: {
       tags: {
-        service: "velqora-api",
+        service: API_SERVICE_NAME,
         runtime: "fastify"
       }
     }
@@ -65,7 +66,7 @@ export const captureApiException = (error: unknown, context: ApiExceptionContext
   }
 
   Sentry.withScope((scope) => {
-    scope.setTag("service", "velqora-api");
+    scope.setTag("service", API_SERVICE_NAME);
     scope.setTag("environment", resolveSentryEnvironment());
 
     if (context.method) {

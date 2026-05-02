@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Switch, Text, View, Image } from "react-native";
+import { APP_BUILD_LABEL } from "../appMetadata";
 import { AppHeader, Button, Card, InlineMessage, publishToast, Screen, SelectField } from "../components/ui";
 import { createStyles, theme } from "../theme";
 import { ShieldAlert, ShieldCheck, LogOut, TerminalSquare, FolderTree, User, SlidersHorizontal } from "lucide-react-native";
@@ -414,7 +415,7 @@ export const SettingsScreen = ({
       </Card>
 
       <View style={styles.versionFooter}>
-        <Text style={styles.versionText}>VELQORA CORE V1.0.0 // BUILD 2026.1</Text>
+        <Text style={styles.versionText}>{APP_BUILD_LABEL}</Text>
       </View>
     </Screen>
   );

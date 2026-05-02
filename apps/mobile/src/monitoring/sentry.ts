@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import * as Sentry from "@sentry/react-native";
+import { MOBILE_SERVICE_NAME } from "../appMetadata";
 import type { User, UserProfile } from "../types";
 
 const parseSampleRate = (value: string | undefined, fallback: number): number => {
@@ -37,7 +38,7 @@ export const initMobileSentry = (): void => {
     attachStacktrace: true,
     initialScope: {
       tags: {
-        service: "velqora-mobile",
+        service: MOBILE_SERVICE_NAME,
         runtime: "expo"
       }
     }

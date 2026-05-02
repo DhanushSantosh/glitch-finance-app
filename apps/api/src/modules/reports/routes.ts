@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { REPORT_FILE_PREFIX } from "../../appMetadata.js";
 import { AppContext } from "../../context.js";
 import { requireAuth } from "../../utils/auth.js";
 import { normalizeCurrency, resolveUserRegionalPreferences } from "../../utils/regional.js";
@@ -10,7 +11,7 @@ import { reportExportQuerySchema, reportSummaryQuerySchema, resolveReportMonth }
 
 const buildExportFileName = (format: "csv" | "pdf", month: string): string => {
   const sanitized = month.replace(/[^0-9-]/g, "");
-  return `velqora-report-${sanitized}.${format}`;
+  return `${REPORT_FILE_PREFIX}-${sanitized}.${format}`;
 };
 
 const encodeContentDisposition = (fileName: string): string =>

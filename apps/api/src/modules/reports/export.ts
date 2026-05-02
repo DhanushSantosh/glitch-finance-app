@@ -1,3 +1,4 @@
+import { REPORT_TITLE_PREFIX } from "../../appMetadata.js";
 import { ReportSummaryPayload } from "./summary.js";
 
 const csvEscape = (value: string | number): string => {
@@ -103,7 +104,7 @@ const buildPdf = (lines: string[]): Buffer => {
 
 export const buildReportPdf = (summary: ReportSummaryPayload): Buffer => {
   const lines: string[] = [
-    `Velqora Report - ${summary.month}`,
+    `${REPORT_TITLE_PREFIX} - ${summary.month}`,
     "",
     `Period Start: ${summary.period.start}`,
     `Period End (Exclusive): ${summary.period.endExclusive}`,
@@ -130,4 +131,3 @@ export const buildReportPdf = (summary: ReportSummaryPayload): Buffer => {
 
   return buildPdf(lines);
 };
-
