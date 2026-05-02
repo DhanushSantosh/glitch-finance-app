@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-04-21
+updated_at: 2026-05-02
 ---
 
 # Project State
@@ -84,10 +84,10 @@ updated_at: 2026-04-21
 - pnpm monorepo workspaces
 - docker-compose for local Postgres + Redis
 - Render blueprints: staging.yaml + production.yaml
-- Hosted staging is now live on Render at `https://glitch-api-staging.onrender.com`
-  - service: `glitch-api-staging`
-  - Postgres: `glitch-postgres-staging`
-  - Key Value: `glitch-redis-staging`
+- Hosted staging is now live on Render at `https://velqora-api-staging.onrender.com`
+  - service: `velqora-api-staging`
+  - Postgres: `velqora-postgres-staging`
+  - Key Value: `velqora-redis-staging`
   - `/health`, `/api/v1/status`, and `/api/v1/bootstrap` verified healthy
   - `/api/v1/metrics` intentionally disabled in staging
 - `pnpm dev` / `pnpm dev:local` are the default local workflow: they auto-start DB, start the API, and launch Expo Go without requiring Tailscale

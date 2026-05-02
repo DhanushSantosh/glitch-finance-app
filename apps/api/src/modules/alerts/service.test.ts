@@ -30,7 +30,7 @@ describe("AlertsService", () => {
       enabled: false,
       webhookUrl: "https://example.com/alerts",
       cooldownMs: 1000,
-      serviceName: "glitch-api",
+      serviceName: "velqora-api",
       environment: "test"
     });
 
@@ -55,7 +55,7 @@ describe("AlertsService", () => {
       enabled: true,
       webhookUrl: "https://example.com/alerts",
       cooldownMs: 1000,
-      serviceName: "glitch-api",
+      serviceName: "velqora-api",
       environment: "test"
     });
 
@@ -77,7 +77,7 @@ describe("AlertsService", () => {
       fingerprint: string;
     };
     expect(body.severity).toBe("critical");
-    expect(body.service).toBe("glitch-api");
+    expect(body.service).toBe("velqora-api");
     expect(body.environment).toBe("test");
     expect(body.fingerprint).toBe("otp_delivery_failed:test");
   });
@@ -94,7 +94,7 @@ describe("AlertsService", () => {
       enabled: true,
       webhookUrl: "https://example.com/alerts",
       cooldownMs: 60_000,
-      serviceName: "glitch-api",
+      serviceName: "velqora-api",
       environment: "test"
     });
 

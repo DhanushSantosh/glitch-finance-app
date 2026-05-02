@@ -17,13 +17,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: glitch
-          POSTGRES_PASSWORD: glitch
-          POSTGRES_DB: glitch
+          POSTGRES_USER: velqora
+          POSTGRES_PASSWORD: velqora
+          POSTGRES_DB: velqora
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U glitch -d glitch"
+          --health-cmd "pg_isready -U velqora -d velqora"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 15
@@ -39,14 +39,14 @@ jobs:
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://glitch:glitch@127.0.0.1:5432/glitch
+      DATABASE_URL: postgresql://velqora:velqora@127.0.0.1:5432/velqora
       REDIS_URL: redis://127.0.0.1:6379
       OTP_HASH_SECRET: test-secret-at-least-16
       OTP_PROVIDER: console
       MOBILE_APP_ORIGIN: http://localhost:8081
       AUTH_MAX_ACTIVE_SESSIONS: 5
       GOOGLE_CLIENT_ID: test-google-client-id
-      APPLE_APP_BUNDLE_ID: com.glitch.finance
+      APPLE_APP_BUNDLE_ID: com.velqora.finance
 
     steps:
       - name: Checkout
@@ -73,7 +73,7 @@ jobs:
         run: pnpm db:check
 
       - name: API tests
-        run: pnpm --filter @glitch/api test
+        run: pnpm --filter @velqora/api test
 
       - name: Mobile tests
-        run: pnpm --filter @glitch/mobile test
+        run: pnpm --filter @velqora/mobile test

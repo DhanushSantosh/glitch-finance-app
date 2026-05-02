@@ -1,4 +1,4 @@
-# Glitch Docs
+# Velqora Docs
 
 All files use lowercase kebab-case names. Update docs in the same PR as the code change.
 
@@ -13,7 +13,7 @@ All files use lowercase kebab-case names. Update docs in the same PR as the code
 
 | File | What's in it |
 |---|---|
-| [ui-style-guide.md](./ui-style-guide.md) | Glitch Midnight tokens, typography, motion, and component patterns |
+| [ui-style-guide.md](./ui-style-guide.md) | Velqora Midnight tokens, typography, motion, and component patterns |
 | [ui-screens.md](./ui-screens.md) | Per-screen structure and component contracts |
 
 ## Engineering

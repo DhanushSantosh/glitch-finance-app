@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-04-21
+updated_at: 2026-05-02
 ---
 
 # Project Conventions
@@ -36,7 +36,7 @@ apps/api/src/modules/<name>/
 ### Database
 - ORM: Drizzle — always use typed queries, never raw SQL except in `db.execute(sql\`...\`)`
 - Migrations in `apps/api/drizzle/`
-- Run `pnpm --filter @glitch/api db:generate` after schema changes
+- Run `pnpm --filter @velqora/api db:generate` after schema changes
 - Never modify existing migration files
 - Hosted environments must be able to bootstrap a brand-new database: keep runtime migration support intact when changing API startup or Docker packaging
 - Hosted environments must use a writable avatar storage path. Prefer the default temp-directory behavior unless a persistent volume is explicitly mounted and exposed via `AVATAR_STORAGE_DIR`.
@@ -62,7 +62,7 @@ apps/mobile/src/
   flow/           — App state logic
 ```
 
-### Design System ("Glitch Midnight")
+### Design System ("Velqora Midnight")
 - Background: `#000000` (true black)
 - Accent: `#D4FF00` (chartreuse)
 - Danger: `#FF3366` (pink)
@@ -126,10 +126,10 @@ apps/mobile/src/
 - After dependency changes, rerun:
   - `pnpm audit --prod`
   - `pnpm audit`
-  - `pnpm --filter @glitch/api typecheck`
-  - `pnpm --filter @glitch/mobile typecheck`
-  - `pnpm --filter @glitch/api test`
-  - `pnpm --filter @glitch/mobile test`
+  - `pnpm --filter @velqora/api typecheck`
+  - `pnpm --filter @velqora/mobile typecheck`
+  - `pnpm --filter @velqora/api test`
+  - `pnpm --filter @velqora/mobile test`
 
 ## Naming
 - API files: camelCase `.ts`

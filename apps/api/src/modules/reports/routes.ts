@@ -10,7 +10,7 @@ import { reportExportQuerySchema, reportSummaryQuerySchema, resolveReportMonth }
 
 const buildExportFileName = (format: "csv" | "pdf", month: string): string => {
   const sanitized = month.replace(/[^0-9-]/g, "");
-  return `glitch-report-${sanitized}.${format}`;
+  return `velqora-report-${sanitized}.${format}`;
 };
 
 const encodeContentDisposition = (fileName: string): string =>

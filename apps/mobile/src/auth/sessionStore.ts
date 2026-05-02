@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-const SESSION_TOKEN_KEY = "glitch_session_token";
+const SESSION_TOKEN_KEY = "velqora_session_token";
 
 export const saveSessionToken = async (token: string): Promise<void> => {
   await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);

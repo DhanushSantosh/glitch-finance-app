@@ -1,6 +1,6 @@
 # Environment Workflows
 
-This document explains how development, staging, and production are separated in the Glitch project, and how they run in practice.
+This document explains how development, staging, and production are separated in the Velqora project, and how they run in practice.
 
 ## Overview
 
@@ -84,7 +84,7 @@ Expected behavior:
 - `STATUS_ENDPOINT_ENABLED=true`
 - `METRICS_ENDPOINT_ENABLED=false`
 - `GOOGLE_OAUTH_ENABLED=false`
-- `PUBLIC_API_BASE_URL=https://glitch-api-staging.onrender.com`
+- `PUBLIC_API_BASE_URL=https://velqora-api-staging.onrender.com`
 - `TRUST_PROXY_HOPS=1`
 
 ### Mobile shape
@@ -213,6 +213,6 @@ The repo has a clean conceptual separation between local, staging, and productio
 
 The live staging backend is currently:
 
-- `https://glitch-api-staging.onrender.com`
+- `https://velqora-api-staging.onrender.com`
 
 Use that hostname until custom DNS is live.

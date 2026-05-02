@@ -1,4 +1,4 @@
-# UI Style Guide — Glitch Midnight
+# UI Style Guide — Velqora Midnight
 
 ## Purpose
 
@@ -7,7 +7,7 @@ It aligns implementation with design principles from Apple HIG, Android design g
 
 ## Brand Tone
 
-**Glitch Midnight** is a dark-first, premium finance aesthetic.
+**Velqora Midnight** is a dark-first, premium finance aesthetic.
 
 - High-contrast black-and-chartreuse palette signals precision and control.
 - Minimal visual noise — surfaces are intentionally near-black to let financial data breathe.
@@ -34,7 +34,7 @@ Import via `createStyles` helper or `theme` singleton — never reference raw he
 
 ## Color System
 
-### Active Theme: Dark (Glitch Midnight)
+### Active Theme: Dark (Velqora Midnight)
 
 | Role | Value | Usage |
 |---|---|---|
@@ -116,7 +116,7 @@ Usage rules:
 
 `elevation.card` is the only defined elevation token.
 
-On dark (Glitch Midnight): `elevation = 0` — rely on dark borders and background contrast; shadows would be invisible against true black.
+On dark (Velqora Midnight): `elevation = 0` — rely on dark borders and background contrast; shadows would be invisible against true black.
 
 On light theme: standard box shadow with low opacity.
 

@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-04-21
+updated_at: 2026-05-02
 ---
 
 # Key Decisions Log
@@ -37,7 +37,7 @@ updated_at: 2026-04-21
 | State location | All state in App.tsx | Simple, no Redux/Context overhead |
 | Sync strategy | Optimistic updates + reconcile after 700ms | Snappy UX, eventual consistency |
 | Background sync | 15s interval + AppState listener | Fresh data without hammering API |
-| BottomTabBar | BlurView + spring-animated pill | Premium feel, "Glitch Midnight" brand |
+| BottomTabBar | BlurView + spring-animated pill | Premium feel, "Velqora Midnight" brand |
 | Safe area handling | Global `SafeAreaProvider` + top/side `SafeAreaView` in app shell | Prevent iOS notch/status-bar overlap across flows |
 | Action feedback model | Centralized toast bus + global viewport | Consistent UX, less duplicated inline/error UI logic |
 | Toast placement | Bottom-safe with dynamic offset above tab bar | Avoid status bar overlap and avoid collision with floating navigation |

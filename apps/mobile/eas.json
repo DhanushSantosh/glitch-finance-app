@@ -19,7 +19,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://glitch-api-staging.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://velqora-api-staging.onrender.com",
         "EXPO_PUBLIC_SENTRY_ENVIRONMENT": "staging"
       }
     },

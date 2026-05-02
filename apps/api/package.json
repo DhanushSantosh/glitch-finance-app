@@ -1,5 +1,5 @@
 {
-  "name": "@glitch/api",
+  "name": "@velqora/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
-    "test": "ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.glitch.finance pnpm db:migrate && ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.glitch.finance vitest run",
+    "test": "ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.velqora.finance pnpm db:migrate && ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.velqora.finance vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },

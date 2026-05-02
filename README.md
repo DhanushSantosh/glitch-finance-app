@@ -1,11 +1,11 @@
-# Glitch Finance App
+# Velqora App
 
 A mobile-first personal finance tracker. Log transactions, set monthly budgets, track savings goals, and view financial summaries — secured with email OTP and a high-contrast dark UI.
 
 ## Repo structure
 
 ```
-glitch-finance-app/
+velqora-app/
 ├── apps/
 │   ├── api/          Fastify v5 REST API (TypeScript, Drizzle ORM, PostgreSQL, Redis)
 │   └── mobile/       Expo React Native app (Android + iOS)
@@ -60,11 +60,11 @@ glitch-finance-app/
 
 ```bash
 git clone <repo-url>
-cd glitch-finance-app
+cd velqora-app
 pnpm install
 cp .env.example .env
 pnpm db:up
-pnpm --filter @glitch/api db:migrate
+pnpm --filter @velqora/api db:migrate
 ```
 
 ---
@@ -93,7 +93,7 @@ For real-device testing on any network, use the explicit Tailscale workflow:
 If you pull native module updates (for example image picker/document picker), restart Metro and rebuild the app binary once:
 
 ```bash
-pnpm --filter @glitch/mobile exec npx expo prebuild
+pnpm --filter @velqora/mobile exec npx expo prebuild
 ```
 
 For hosted staging testing, use:
@@ -104,7 +104,7 @@ pnpm dev:staging
 
 This starts Expo Go locally and points the mobile app at:
 
-- `https://glitch-api-staging.onrender.com`
+- `https://velqora-api-staging.onrender.com`
 
 This is the cleanest way to test the real remote backend without starting local API infrastructure.
 
@@ -132,7 +132,7 @@ Key variables to configure in the root `.env`:
 
 | Variable | Default | Notes |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://glitch:glitch@127.0.0.1:5432/glitch` | |
+| `DATABASE_URL` | `postgresql://velqora:velqora@127.0.0.1:5432/velqora` | |
 | `REDIS_URL` | `redis://127.0.0.1:6379` | Optional — falls back to in-memory |
 | `OTP_HASH_SECRET` | `change-me-in-production-otp-secret` | **Must change in production** |
 | `PUBLIC_API_BASE_URL` | _(empty)_ | Canonical public API origin used for generated asset URLs |
@@ -175,14 +175,14 @@ Full variable reference: [`docs/ops-runbook.md`](./docs/ops-runbook.md)
 pnpm db:up                               # start Postgres + Redis
 pnpm db:down                             # stop containers
 pnpm db:check                            # fail if schema has uncommitted migrations
-pnpm --filter @glitch/api db:migrate     # apply pending migrations
-pnpm --filter @glitch/api db:generate    # generate migration from schema changes
+pnpm --filter @velqora/api db:migrate     # apply pending migrations
+pnpm --filter @velqora/api db:generate    # generate migration from schema changes
 
 # Quality
 pnpm typecheck                           # type-check all workspaces
 pnpm lint                                # lint all workspaces
-pnpm --filter @glitch/api test           # API unit + integration tests
-pnpm --filter @glitch/mobile test        # mobile unit tests
+pnpm --filter @velqora/api test           # API unit + integration tests
+pnpm --filter @velqora/mobile test        # mobile unit tests
 
 # Operations
 pnpm secrets:otp                         # generate a secure OTP_HASH_SECRET
@@ -263,7 +263,7 @@ Before first production deploy:
 | [api-reference.md](./docs/api-reference.md) | Full endpoint contracts |
 | [data-model.md](./docs/data-model.md) | DB schema, relations, migrations |
 | [regionalization.md](./docs/regionalization.md) | Locale/timezone/currency support strategy and implementation |
-| [ui-style-guide.md](./docs/ui-style-guide.md) | Glitch Midnight design system |
+| [ui-style-guide.md](./docs/ui-style-guide.md) | Velqora Midnight design system |
 | [ui-screens.md](./docs/ui-screens.md) | Per-screen component contracts |
 | [security.md](./docs/security.md) | Auth, audit logging, production hardening |
 | [testing.md](./docs/testing.md) | Test strategy and coverage |

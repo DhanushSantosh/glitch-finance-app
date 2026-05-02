@@ -94,8 +94,8 @@ const run = async () => {
       throw new Error(`GET /api/v1/metrics failed with status ${metricsResponse.status}`);
     }
     const metricsText = await metricsResponse.text();
-    if (!metricsText.includes("glitch_api_http_requests_total")) {
-      throw new Error("Metrics endpoint missing glitch_api_http_requests_total.");
+    if (!metricsText.includes("velqora_api_http_requests_total")) {
+      throw new Error("Metrics endpoint missing velqora_api_http_requests_total.");
     }
     console.log("[smoke] /api/v1/metrics ok");
   } else {

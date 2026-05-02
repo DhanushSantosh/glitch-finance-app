@@ -74,7 +74,7 @@ export const LoginScreen = ({ onRequestOtp, onGoogleSignIn, onAppleSignIn }: Log
     <Screen keyboardAware contentContainerStyle={styles.container}>
       <Card variant="glass" style={styles.authCard}>
         <AppHeader
-          title="Glitch"
+          title="Velqora"
           subtitle="Precision finance tracking for the modern era. Securely sign in to continue."
           style={styles.header}
         />

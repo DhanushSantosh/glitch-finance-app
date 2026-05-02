@@ -4,11 +4,11 @@
 
 ```bash
 git clone <your-fork-or-repo-url>
-cd glitch-finance-app
+cd velqora-app
 pnpm install
 cp .env.example .env
 pnpm db:up
-pnpm --filter @glitch/api db:migrate
+pnpm --filter @velqora/api db:migrate
 pnpm dev
 ```
 
@@ -72,7 +72,7 @@ pnpm dev:staging
 
 That launches Expo Go locally and points the app at:
 
-- `https://glitch-api-staging.onrender.com`
+- `https://velqora-api-staging.onrender.com`
 
 Use this when you want to test the real hosted backend without running local API infrastructure.
 
@@ -84,7 +84,7 @@ pnpm dev:staging:tailscale
 
 That launcher injects:
 
-- `EXPO_PUBLIC_API_URL=https://glitch-api-staging.onrender.com`
+- `EXPO_PUBLIC_API_URL=https://velqora-api-staging.onrender.com`
 - `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
 
 ## Quick diagnostics

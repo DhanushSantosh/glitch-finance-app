@@ -59,8 +59,8 @@ From repo root:
 
 ```bash
 pnpm typecheck
-pnpm --filter @glitch/api test
-pnpm --filter @glitch/mobile test
+pnpm --filter @velqora/api test
+pnpm --filter @velqora/mobile test
 pnpm smoke:staging
 pnpm smoke:perf
 ```

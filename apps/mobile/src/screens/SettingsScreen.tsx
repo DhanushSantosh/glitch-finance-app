@@ -414,7 +414,7 @@ export const SettingsScreen = ({
       </Card>
 
       <View style={styles.versionFooter}>
-        <Text style={styles.versionText}>GLITCH CORE V1.0.0 // BUILD 2026.1</Text>
+        <Text style={styles.versionText}>VELQORA CORE V1.0.0 // BUILD 2026.1</Text>
       </View>
     </Screen>
   );

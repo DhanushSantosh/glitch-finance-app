@@ -37,7 +37,7 @@ export const initMobileSentry = (): void => {
     attachStacktrace: true,
     initialScope: {
       tags: {
-        service: "glitch-mobile",
+        service: "velqora-mobile",
         runtime: "expo"
       }
     }

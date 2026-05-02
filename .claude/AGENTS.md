@@ -1,5 +1,5 @@
 # Agent Collaboration Protocol
-## Glitch Finance App — Three-Agent System
+## Velqora App — Three-Agent System
 
 **Read this file before starting any work session.**
 
@@ -134,7 +134,7 @@ Stack:    Fastify v5 API + Expo 55 React Native
 Monorepo: pnpm workspaces — apps/api + apps/mobile
 DB:       PostgreSQL 16, Drizzle ORM
 Auth:     Email OTP, session tokens (max 5 active)
-Theme:    Glitch Midnight — #000000 bg, #D4FF00 accent
+Theme:    Velqora Midnight — #000000 bg, #D4FF00 accent
 Tests:    Vitest — 171 tests, all green
 CI:       GitHub Actions (lint → typecheck → db:check → test)
 Deploy:   Render (staging + production)

@@ -53,14 +53,14 @@ DATABASE_URL=... \
 REDIS_URL=... \
 OTP_HASH_SECRET=... \
 OTP_PROVIDER=resend \
-OTP_EMAIL_FROM="Glitch Finance <noreply@app.quantex25.com>" \
+OTP_EMAIL_FROM="Velqora <noreply@app.quantex25.com>" \
 RESEND_API_KEY=... \
 PUBLIC_API_BASE_URL=https://app.quantex25.com \
 TRUST_PROXY_HOPS=1 \
 DEBUG_OTP_EXPOSURE=false \
 STATUS_ENDPOINT_ENABLED=false \
 METRICS_ENDPOINT_ENABLED=false \
-ALERTS_WEBHOOK_URL=https://alerts.example.com/glitch \
+ALERTS_WEBHOOK_URL=https://alerts.example.com/velqora \
 SLO_MONITOR_ENABLED=true \
 ./scripts/ops/validate-runtime-secrets.sh production
 ```

@@ -142,8 +142,8 @@ Indexes and constraints:
 From repo root:
 
 ```bash
-pnpm --filter @glitch/api db:generate
-pnpm --filter @glitch/api db:migrate
+pnpm --filter @velqora/api db:generate
+pnpm --filter @velqora/api db:migrate
 ```
 
 Generated migration artifacts live in `apps/api/drizzle`.

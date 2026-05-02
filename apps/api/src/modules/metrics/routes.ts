@@ -3,17 +3,17 @@ import { collectDefaultMetrics, Counter, Histogram, Registry } from "prom-client
 import { AppError } from "../../errors.js";
 
 const metricsRegistry = new Registry();
-collectDefaultMetrics({ register: metricsRegistry, prefix: "glitch_api_" });
+collectDefaultMetrics({ register: metricsRegistry, prefix: "velqora_api_" });
 
 const httpRequestCount = new Counter({
-  name: "glitch_api_http_requests_total",
+  name: "velqora_api_http_requests_total",
   help: "Total HTTP requests handled by the API",
   labelNames: ["method", "route", "status_code"] as const,
   registers: [metricsRegistry]
 });
 
 const httpRequestDuration = new Histogram({
-  name: "glitch_api_http_request_duration_ms",
+  name: "velqora_api_http_request_duration_ms",
   help: "HTTP request duration in milliseconds",
   labelNames: ["method", "route", "status_code"] as const,
   buckets: [10, 25, 50, 75, 100, 200, 400, 800, 1200, 2000, 5000],

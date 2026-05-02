@@ -65,7 +65,7 @@ This is no longer a fragile prototype. The main work ahead is product completion
   - profile
   - settings
 - UX baseline in place:
-  - Glitch Midnight design system
+  - Velqora Midnight design system
   - bottom tab shell
   - centralized toast feedback
   - safe-area handling
@@ -78,10 +78,10 @@ Latest validated results:
 
 - `pnpm audit --prod` -> clean
 - `pnpm audit` -> clean
-- `pnpm --filter @glitch/api typecheck` -> passed
-- `pnpm --filter @glitch/mobile typecheck` -> passed
-- `pnpm --filter @glitch/api test` -> 184 passed
-- `pnpm --filter @glitch/mobile test` -> 51 passed
+- `pnpm --filter @velqora/api typecheck` -> passed
+- `pnpm --filter @velqora/mobile typecheck` -> passed
+- `pnpm --filter @velqora/api test` -> 184 passed
+- `pnpm --filter @velqora/mobile test` -> 51 passed
 
 ## What Is Stable
 

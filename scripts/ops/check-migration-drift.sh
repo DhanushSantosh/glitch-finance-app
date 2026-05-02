@@ -6,7 +6,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 cd "${PROJECT_ROOT}"
 
-pnpm --filter @glitch/api db:generate
+pnpm --filter @velqora/api db:generate
 
 if ! git diff --quiet -- apps/api/drizzle; then
   echo "Migration drift detected in apps/api/drizzle."

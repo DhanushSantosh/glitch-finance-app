@@ -7,12 +7,12 @@ describe("otp sender address validation", () => {
   });
 
   it("accepts display-name sender addresses", () => {
-    expect(isValidOtpSenderAddress("Glitch Finance <noreply@example.com>")).toBe(true);
+    expect(isValidOtpSenderAddress("Velqora <noreply@example.com>")).toBe(true);
   });
 
   it("rejects malformed sender addresses", () => {
-    expect(isValidOtpSenderAddress("Glitch Finance noreply@example.com")).toBe(false);
-    expect(isValidOtpSenderAddress("Glitch Finance <noreply@example>")).toBe(false);
+    expect(isValidOtpSenderAddress("Velqora noreply@example.com")).toBe(false);
+    expect(isValidOtpSenderAddress("Velqora <noreply@example>")).toBe(false);
     expect(isValidOtpSenderAddress("")).toBe(false);
   });
 });

@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-STAGING_API_URL="${EXPO_PUBLIC_API_URL:-https://glitch-api-staging.onrender.com}"
+STAGING_API_URL="${EXPO_PUBLIC_API_URL:-https://velqora-api-staging.onrender.com}"
 
 if ! command -v tailscale >/dev/null 2>&1; then
   echo "Error: tailscale is not installed."
@@ -35,4 +35,4 @@ EXPO_PUBLIC_API_URL="$STAGING_API_URL" \
 EXPO_PUBLIC_SENTRY_ENVIRONMENT=staging \
 REACT_NATIVE_PACKAGER_HOSTNAME="$TAILSCALE_IP" \
 EXPO_NO_REDIRECT_PAGE=1 \
-  pnpm --filter @glitch/mobile exec expo start --lan --go
+  pnpm --filter @velqora/mobile exec expo start --lan --go

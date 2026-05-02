@@ -16,7 +16,7 @@ regexes = [
   # OTP hash secret placeholder in example env files
   '''test-secret-at-least-16''',
   # Postgres example DSN in docs/config
-  '''postgresql://glitch:glitch@''',
+  '''postgresql://velqora:velqora@''',
   # Redis example DSN
   '''redis://127\.0\.0\.1:6379''',
 ]

@@ -461,7 +461,7 @@ describe("reports integration", () => {
 
     expect(csvResponse.statusCode).toBe(200);
     expect(csvResponse.headers["content-type"]).toContain("text/csv");
-    expect(csvResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.csv");
+    expect(csvResponse.headers["content-disposition"]).toContain("velqora-report-2026-03.csv");
     // body is valid CSV with a header row
     const lines = csvResponse.body.trim().split("\n");
     expect(lines.length).toBeGreaterThanOrEqual(1);
@@ -479,7 +479,7 @@ describe("reports integration", () => {
 
     expect(pdfResponse.statusCode).toBe(200);
     expect(pdfResponse.headers["content-type"]).toContain("application/pdf");
-    expect(pdfResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.pdf");
+    expect(pdfResponse.headers["content-disposition"]).toContain("velqora-report-2026-03.pdf");
     expect(pdfResponse.rawPayload.length).toBeGreaterThan(0);
   });
 
@@ -524,7 +524,7 @@ describe("reports integration", () => {
 
     expect(csvResponse.statusCode).toBe(200);
     expect(csvResponse.headers["content-type"]).toContain("text/csv");
-    expect(csvResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.csv");
+    expect(csvResponse.headers["content-disposition"]).toContain("velqora-report-2026-03.csv");
     expect(csvResponse.body).toContain("section,key,value");
     expect(csvResponse.body).toContain("totals,expense");
 
@@ -538,7 +538,7 @@ describe("reports integration", () => {
 
     expect(pdfResponse.statusCode).toBe(200);
     expect(pdfResponse.headers["content-type"]).toContain("application/pdf");
-    expect(pdfResponse.headers["content-disposition"]).toContain("glitch-report-2026-03.pdf");
+    expect(pdfResponse.headers["content-disposition"]).toContain("velqora-report-2026-03.pdf");
     expect(pdfResponse.rawPayload.slice(0, 8).toString("utf8")).toContain("%PDF-1.4");
   });
 });

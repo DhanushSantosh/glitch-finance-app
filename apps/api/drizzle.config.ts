@@ -8,7 +8,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgresql://glitch:glitch@localhost:5432/glitch"
+    url: process.env.DATABASE_URL ?? "postgresql://velqora:velqora@localhost:5432/velqora"
   },
   strict: true,
   verbose: true

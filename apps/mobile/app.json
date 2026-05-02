@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Glitch",
-    "slug": "glitch-finance-app",
+    "name": "Velqora",
+    "slug": "velqora-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -13,14 +13,14 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.glitch.finance",
+      "bundleIdentifier": "com.velqora.finance",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.glitch.finance",
+      "package": "com.velqora.finance",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -36,7 +36,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Glitch to access your photo library so you can set a profile picture."
+          "photosPermission": "Allow Velqora to access your photo library so you can set a profile picture."
         }
       ],
       "expo-document-picker",

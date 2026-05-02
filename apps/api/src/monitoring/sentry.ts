@@ -33,7 +33,7 @@ export const initServerSentry = (): void => {
     enabled: true,
     initialScope: {
       tags: {
-        service: "glitch-api",
+        service: "velqora-api",
         runtime: "fastify"
       }
     }
@@ -65,7 +65,7 @@ export const captureApiException = (error: unknown, context: ApiExceptionContext
   }
 
   Sentry.withScope((scope) => {
-    scope.setTag("service", "glitch-api");
+    scope.setTag("service", "velqora-api");
     scope.setTag("environment", resolveSentryEnvironment());
 
     if (context.method) {

@@ -61,7 +61,7 @@ const start = async () => {
     if (isConnectionRefusedError(error)) {
       console.error("Database connection refused.");
       console.error("Start local infrastructure with: pnpm db:up");
-      console.error("Then run migrations with: pnpm --filter @glitch/api db:migrate");
+      console.error("Then run migrations with: pnpm --filter @velqora/api db:migrate");
     }
 
     process.exit(1);

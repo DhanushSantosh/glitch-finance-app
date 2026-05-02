@@ -1,4 +1,4 @@
-# Agent Collaboration — Glitch Finance App
+# Agent Collaboration — Velqora App
 
 **All agents read this file before starting any work.**
 
@@ -37,7 +37,7 @@ Monorepo:   pnpm workspaces — apps/api + apps/mobile
 API:        Fastify v5, Drizzle ORM, PostgreSQL 16, Redis (optional)
 Mobile:     Expo 55, React Native 0.83, React 19
 Auth:       Email OTP → session token
-Theme:      Glitch Midnight — #000000 bg, #D4FF00 accent
+Theme:      Velqora Midnight — #000000 bg, #D4FF00 accent
 Tests:      Vitest — 171 tests, all green
 CI:         GitHub Actions (lint → typecheck → db:check → test)
 ```
@@ -79,4 +79,4 @@ Every agent is responsible for keeping memory current.
 2. **No commits except Claude**
 3. **Read memory before starting** — never assume context from a previous session
 4. **Update memory before ending** — next agent depends on it
-5. **Tests must stay green** — run `pnpm --filter @glitch/api test` after API changes
+5. **Tests must stay green** — run `pnpm --filter @velqora/api test` after API changes

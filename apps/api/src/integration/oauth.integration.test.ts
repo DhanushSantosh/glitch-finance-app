@@ -121,7 +121,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
 
   beforeAll(async () => {
     // Must be set before createApp() parses the env schema
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
     app = await createApp();
     await app.ready();
   });
@@ -155,7 +155,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   });
 
   it("signs up a new user with email on first Apple sign-in", async () => {
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
     await mockAppleToken("a-new-user-001", RAW_NONCE, "firsttime@privaterelay.appleid.com");
 
     const response = await app.inject({
@@ -176,7 +176,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   });
 
   it("returns the same user on subsequent sign-in (no email claim on repeat)", async () => {
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
 
     // First sign-in — Apple provides email
     await mockAppleToken("a-returning-002", RAW_NONCE, "apple-returning@privaterelay.appleid.com");
@@ -200,7 +200,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   });
 
   it("returns 401 when nonce does not match", async () => {
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
     const jose = await import("jose");
     // Nonce hash in token does not match rawNonce provided
     vi.spyOn(jose, "jwtVerify").mockResolvedValueOnce({
@@ -219,7 +219,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   });
 
   it("returns 401 when token verification fails", async () => {
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
     const jose = await import("jose");
     vi.spyOn(jose, "jwtVerify").mockRejectedValueOnce(new Error("expired"));
 
@@ -234,7 +234,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   });
 
   it("issued token is valid for authenticated requests", async () => {
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
     await mockAppleToken("a-auth-check-004", RAW_NONCE, "appleauth@privaterelay.appleid.com");
 
     const signIn = await app.inject({
@@ -255,7 +255,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   });
 
   it("rejects client-supplied email hints when Apple does not return a verified email", async () => {
-    process.env.APPLE_APP_BUNDLE_ID = "com.glitch.finance";
+    process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
     await mockAppleToken("a-no-email-005", RAW_NONCE);
 
     const response = await app.inject({

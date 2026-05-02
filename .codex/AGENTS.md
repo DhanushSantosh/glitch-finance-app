@@ -1,4 +1,4 @@
-# Codex Agent — Glitch Finance App
+# Codex Agent — Velqora App
 
 You are the **Backend Specialist** in a three-agent system. Claude leads. Gemini handles frontend/analysis.
 
@@ -46,7 +46,7 @@ apps/api/src/
 - Error shape: `{ error: { code: string, message: string } }`
 - Tests hit real Postgres — never mock the DB
 - NODE_ENV=test bypasses rate limiting in tests — always set this in test env
-- Run `pnpm --filter @glitch/api test` to verify
+- Run `pnpm --filter @velqora/api test` to verify
 
 ## Memory Update
 

@@ -14,20 +14,20 @@ jobs:
       drill_postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: glitch
-          POSTGRES_PASSWORD: glitch
+          POSTGRES_USER: velqora
+          POSTGRES_PASSWORD: velqora
           POSTGRES_DB: glitch_restore_drill
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U glitch -d glitch_restore_drill"
+          --health-cmd "pg_isready -U velqora -d glitch_restore_drill"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
 
     env:
       SOURCE_DATABASE_URL: ${{ secrets.BACKUP_SOURCE_DATABASE_URL }}
-      DRILL_DATABASE_URL: postgresql://glitch:glitch@127.0.0.1:5433/glitch_restore_drill
+      DRILL_DATABASE_URL: postgresql://velqora:velqora@127.0.0.1:5433/glitch_restore_drill
 
     steps:
       - name: Checkout

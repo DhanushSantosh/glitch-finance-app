@@ -1,5 +1,5 @@
 # Software Requirements Specification (SRS)
-## Project: Glitch - AI-Powered Expense Tracker
+## Project: Velqora - AI-Powered Expense Tracker
 
 - **Version**: 1.0 (Draft)
 - **Date**: March 10, 2026
@@ -7,7 +7,7 @@
 - **Status**: Planning approved for pre-development stage
 
 ## 1. Purpose
-This SRS defines product requirements, system behavior, architecture constraints, and delivery criteria for the Glitch mobile application. The goal is to de-risk implementation before coding starts and align product, engineering, and compliance decisions.
+This SRS defines product requirements, system behavior, architecture constraints, and delivery criteria for the Velqora mobile application. The goal is to de-risk implementation before coding starts and align product, engineering, and compliance decisions.
 
 ## 2. Product Vision
 Build a cross-platform (iOS + Android) personal finance tracker focused on UPI-era transaction visibility, with low-friction ingestion, user-controlled privacy, and scalable architecture ready for future AI insights.

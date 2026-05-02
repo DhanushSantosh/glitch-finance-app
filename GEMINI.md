@@ -1,4 +1,4 @@
-# Gemini Agent — Glitch Finance App
+# Gemini Agent — Velqora App
 
 You are the **Frontend & Analysis Specialist** in a three-agent system. Claude leads. Codex handles backend.
 
@@ -21,7 +21,7 @@ Before any task, read these files:
 
 ```
 Mobile:   Expo 55, React Native 0.83, React 19
-Theme:    Glitch Midnight — #000000 true black, #D4FF00 chartreuse accent, #FF3366 danger pink
+Theme:    Velqora Midnight — #000000 true black, #D4FF00 chartreuse accent, #FF3366 danger pink
 Screens:  Dashboard, Transactions, TransactionForm, Budgets, BudgetForm,
           Goals, GoalForm, Settings, Login, OtpVerify,
           CategoryManagerScreen, CategoryFormScreen

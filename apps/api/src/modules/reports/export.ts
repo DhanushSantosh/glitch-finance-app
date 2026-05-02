@@ -103,7 +103,7 @@ const buildPdf = (lines: string[]): Buffer => {
 
 export const buildReportPdf = (summary: ReportSummaryPayload): Buffer => {
   const lines: string[] = [
-    `Glitch Finance Report - ${summary.month}`,
+    `Velqora Report - ${summary.month}`,
     "",
     `Period Start: ${summary.period.start}`,
     `Period End (Exclusive): ${summary.period.endExclusive}`,

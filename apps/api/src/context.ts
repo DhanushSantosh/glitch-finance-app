@@ -125,7 +125,7 @@ export const createAppContext = async (logger: FastifyBaseLogger): Promise<AppCo
     enabled: Boolean(env.ALERTS_WEBHOOK_URL),
     webhookUrl: env.ALERTS_WEBHOOK_URL,
     cooldownMs: env.ALERTS_COOLDOWN_SECONDS * 1000,
-    serviceName: "glitch-api",
+    serviceName: "velqora-api",
     environment: env.NODE_ENV
   });
   const sloMonitorService = new SloMonitorService({

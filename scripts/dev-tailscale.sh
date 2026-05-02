@@ -50,7 +50,7 @@ pnpm db:up
 pnpm db:wait
 
 echo "Starting API on :4000..."
-pnpm --filter @glitch/api dev &
+pnpm --filter @velqora/api dev &
 API_PID=$!
 
 echo "Waiting for API health..."
@@ -67,4 +67,4 @@ echo ""
 EXPO_PUBLIC_API_URL="http://$TAILSCALE_IP:4000" \
 REACT_NATIVE_PACKAGER_HOSTNAME="$TAILSCALE_IP" \
 EXPO_NO_REDIRECT_PAGE=1 \
-  pnpm --filter @glitch/mobile exec expo start --lan --go
+  pnpm --filter @velqora/mobile exec expo start --lan --go

@@ -131,7 +131,7 @@ describe("health, status, bootstrap and metrics", () => {
     expect(response.headers["content-type"]).toContain("text/plain");
   });
 
-  it("GET /api/v1/metrics body contains glitch_api_http_requests_total metric name", async () => {
+  it("GET /api/v1/metrics body contains velqora_api_http_requests_total metric name", async () => {
     // Make a request first so the counter is populated
     await app.inject({ method: "GET", url: "/health" });
 
@@ -140,10 +140,10 @@ describe("health, status, bootstrap and metrics", () => {
       url: "/api/v1/metrics"
     });
 
-    expect(response.body).toContain("glitch_api_http_requests_total");
+    expect(response.body).toContain("velqora_api_http_requests_total");
   });
 
-  it("GET /api/v1/metrics body contains glitch_api_http_request_duration_ms metric name", async () => {
+  it("GET /api/v1/metrics body contains velqora_api_http_request_duration_ms metric name", async () => {
     // Make a request first so the histogram is populated
     await app.inject({ method: "GET", url: "/health" });
 
@@ -152,6 +152,6 @@ describe("health, status, bootstrap and metrics", () => {
       url: "/api/v1/metrics"
     });
 
-    expect(response.body).toContain("glitch_api_http_request_duration_ms");
+    expect(response.body).toContain("velqora_api_http_request_duration_ms");
   });
 });

@@ -3,10 +3,10 @@
 ## Local Startup
 
 ```bash
-cd /home/dhanush/Projects/glitch-finance-app
+cd /home/dhanush/Projects/velqora-app
 pnpm install
 pnpm db:up
-pnpm --filter @glitch/api db:migrate
+pnpm --filter @velqora/api db:migrate
 pnpm dev
 ```
 
@@ -92,7 +92,7 @@ Production note:
 ## Staging and Perf Smoke Commands
 
 ```bash
-API_BASE_URL=https://glitch-api-staging.onrender.com \
+API_BASE_URL=https://velqora-api-staging.onrender.com \
 SMOKE_TEST_EMAIL=smoke-check@example.com \
 SMOKE_BEARER_TOKEN=<token_if_resend_has_no_debug_otp> \
 SMOKE_EXPECT_STATUS_ENDPOINT=true \
@@ -101,7 +101,7 @@ pnpm smoke:staging
 ```
 
 ```bash
-API_BASE_URL=https://glitch-api-staging.onrender.com \
+API_BASE_URL=https://velqora-api-staging.onrender.com \
 PERF_BEARER_TOKEN=<token> \
 PERF_ITERATIONS=20 \
 PERF_P95_THRESHOLD_MS=300 \
@@ -114,7 +114,7 @@ pnpm smoke:perf
 
 1. Run `pnpm db:up`.
 2. Verify postgres container is healthy with `pnpm db:logs`.
-3. Re-run `pnpm --filter @glitch/api db:migrate`.
+3. Re-run `pnpm --filter @velqora/api db:migrate`.
 4. Restart API with `pnpm dev:api`.
 
 If startup fails, API now logs actionable hints for connection refusal.
@@ -149,7 +149,7 @@ Restart Expo after update.
 2. Set `OTP_EMAIL_FROM` and `RESEND_API_KEY`.
 3. Ensure `OTP_EMAIL_FROM` is a valid sender string:
    - `noreply@example.com`
-   - `Glitch Finance <noreply@example.com>`
+   - `Velqora <noreply@example.com>`
 4. Ensure the sender domain/address is verified in Resend.
 5. Set `ALERTS_WEBHOOK_URL` for delivery failure alerts.
 6. Restart API and verify `/api/v1/auth/request-otp`.
@@ -190,8 +190,8 @@ OTP_HASH_SECRET=... \
 PUBLIC_API_BASE_URL=https://app.example.com \
 TRUST_PROXY_HOPS=1 \
 OTP_PROVIDER=resend \
-OTP_EMAIL_FROM="Glitch Finance <noreply@app.example.com>" \
-ALERTS_WEBHOOK_URL=https://alerts.example.com/glitch \
+OTP_EMAIL_FROM="Velqora <noreply@app.example.com>" \
+ALERTS_WEBHOOK_URL=https://alerts.example.com/velqora \
 SLO_MONITOR_ENABLED=true \
 RESEND_API_KEY=... \
 pnpm secrets:validate

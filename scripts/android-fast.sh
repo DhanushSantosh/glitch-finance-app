@@ -102,4 +102,4 @@ if [[ "${MODE}" == "--emulator-only" ]]; then
 fi
 
 cd "${PROJECT_ROOT}"
-exec pnpm --filter @glitch/mobile android
+exec pnpm --filter @velqora/mobile android

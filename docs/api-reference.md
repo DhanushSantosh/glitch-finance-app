@@ -176,7 +176,7 @@ Response:
     "locale": "en-IN",
     "currency": "INR",
     "occupation": "Student",
-    "bio": "Building Glitch to production quality.",
+    "bio": "Building Velqora to production quality.",
     "settings": {
       "pushNotificationsEnabled": true,
       "emailNotificationsEnabled": true,

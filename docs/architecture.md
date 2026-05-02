@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Glitch is a mobile-first personal finance tracker with a modular Fastify backend and an Expo React Native client.
+Velqora is a mobile-first personal finance tracker with a modular Fastify backend and an Expo React Native client.
 
 ```text
 [React Native App]
@@ -43,7 +43,7 @@ Session token persisted with `expo-secure-store` (Keychain / Android Keystore ba
 | Login | pre-auth (`authStage = login`) |
 | OTP Verify | pre-auth (`authStage = otpVerify`) |
 
-**UI system**: Glitch Midnight dark theme — true black backgrounds, chartreuse (`#D4FF00`) accent, `expo-blur` liquid glass BottomTabBar with animated spring pill. See `docs/ui-style-guide.md` for full token reference.
+**UI system**: Velqora Midnight dark theme — true black backgrounds, chartreuse (`#D4FF00`) accent, `expo-blur` liquid glass BottomTabBar with animated spring pill. See `docs/ui-style-guide.md` for full token reference.
 
 ### API (`apps/api`)
 

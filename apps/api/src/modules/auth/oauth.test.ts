@@ -77,13 +77,13 @@ describe("verifyAppleIdToken", () => {
   });
 
   it("throws INVALID_OAUTH_TOKEN on a malformed token string", async () => {
-    await expect(verifyAppleIdToken("garbage", "raw-nonce", "com.glitch.finance")).rejects.toMatchObject({
+    await expect(verifyAppleIdToken("garbage", "raw-nonce", "com.velqora.finance")).rejects.toMatchObject({
       code: "INVALID_OAUTH_TOKEN"
     });
   });
 
   it("throws INVALID_OAUTH_TOKEN on an empty token string", async () => {
-    await expect(verifyAppleIdToken("", "raw-nonce", "com.glitch.finance")).rejects.toMatchObject({
+    await expect(verifyAppleIdToken("", "raw-nonce", "com.velqora.finance")).rejects.toMatchObject({
       code: "INVALID_OAUTH_TOKEN"
     });
   });
@@ -181,33 +181,33 @@ describe("verifyAppleIdToken — payload validation", () => {
 
   it("returns parsed payload with email for a valid token", async () => {
     await mockJwtVerify({ sub: "apple-uid-456", email: "user@privaterelay.appleid.com", nonce: nonceHash });
-    const result = await verifyAppleIdToken("token", rawNonce, "com.glitch.finance");
+    const result = await verifyAppleIdToken("token", rawNonce, "com.velqora.finance");
     expect(result).toEqual({ sub: "apple-uid-456", email: "user@privaterelay.appleid.com" });
   });
 
   it("returns payload without email when email claim is absent (repeat sign-ins)", async () => {
     await mockJwtVerify({ sub: "apple-uid-456", nonce: nonceHash });
-    const result = await verifyAppleIdToken("token", rawNonce, "com.glitch.finance");
+    const result = await verifyAppleIdToken("token", rawNonce, "com.velqora.finance");
     expect(result.email).toBeUndefined();
   });
 
   it("throws INVALID_OAUTH_TOKEN when sub is missing", async () => {
     await mockJwtVerify({ nonce: nonceHash });
-    await expect(verifyAppleIdToken("token", rawNonce, "com.glitch.finance")).rejects.toMatchObject({
+    await expect(verifyAppleIdToken("token", rawNonce, "com.velqora.finance")).rejects.toMatchObject({
       code: "INVALID_OAUTH_TOKEN"
     });
   });
 
   it("throws NONCE_MISMATCH when nonce does not match rawNonce", async () => {
     await mockJwtVerify({ sub: "apple-uid-456", nonce: "wrong-nonce-hash" });
-    await expect(verifyAppleIdToken("token", rawNonce, "com.glitch.finance")).rejects.toMatchObject({
+    await expect(verifyAppleIdToken("token", rawNonce, "com.velqora.finance")).rejects.toMatchObject({
       code: "NONCE_MISMATCH"
     });
   });
 
   it("throws NONCE_MISMATCH when nonce claim is absent", async () => {
     await mockJwtVerify({ sub: "apple-uid-456" });
-    await expect(verifyAppleIdToken("token", rawNonce, "com.glitch.finance")).rejects.toMatchObject({
+    await expect(verifyAppleIdToken("token", rawNonce, "com.velqora.finance")).rejects.toMatchObject({
       code: "NONCE_MISMATCH"
     });
   });

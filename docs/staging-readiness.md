@@ -18,12 +18,12 @@ Expected values from [staging.yaml](../infra/render/staging.yaml).
 
 Until custom DNS is live, use the Render default hostname:
 
-- `https://glitch-api-staging.onrender.com`
+- `https://velqora-api-staging.onrender.com`
 
 | Variable | Expected value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `PUBLIC_API_BASE_URL` | `https://glitch-api-staging.onrender.com` |
+| `PUBLIC_API_BASE_URL` | `https://velqora-api-staging.onrender.com` |
 | `TRUST_PROXY_HOPS` | `1` |
 | `OTP_PROVIDER` | `resend` |
 | `DEBUG_OTP_EXPOSURE` | `false` |
@@ -59,14 +59,14 @@ DATABASE_URL=... \
 REDIS_URL=... \
 OTP_HASH_SECRET=... \
 OTP_PROVIDER=resend \
-OTP_EMAIL_FROM="Glitch Finance <noreply@staging.quantex25.app>" \
+OTP_EMAIL_FROM="Velqora <noreply@staging.quantex25.app>" \
 RESEND_API_KEY=... \
-PUBLIC_API_BASE_URL=https://glitch-api-staging.onrender.com \
+PUBLIC_API_BASE_URL=https://velqora-api-staging.onrender.com \
 TRUST_PROXY_HOPS=1 \
 DEBUG_OTP_EXPOSURE=false \
 STATUS_ENDPOINT_ENABLED=true \
 METRICS_ENDPOINT_ENABLED=false \
-ALERTS_WEBHOOK_URL=https://alerts.example.com/glitch \
+ALERTS_WEBHOOK_URL=https://alerts.example.com/velqora \
 SLO_MONITOR_ENABLED=true \
 ./scripts/ops/validate-runtime-secrets.sh staging
 ```
@@ -76,7 +76,7 @@ SLO_MONITOR_ENABLED=true \
 If staging does not expose debug OTPs, provide a known-good bearer token:
 
 ```bash
-API_BASE_URL=https://glitch-api-staging.onrender.com \
+API_BASE_URL=https://velqora-api-staging.onrender.com \
 SMOKE_TEST_EMAIL=smoke-check@example.com \
 SMOKE_BEARER_TOKEN=<staging-token> \
 SMOKE_EXPECT_STATUS_ENDPOINT=true \
@@ -97,7 +97,7 @@ What this validates:
 ## Optional Performance Check
 
 ```bash
-API_BASE_URL=https://glitch-api-staging.onrender.com \
+API_BASE_URL=https://velqora-api-staging.onrender.com \
 PERF_BEARER_TOKEN=<staging-token> \
 PERF_ITERATIONS=20 \
 PERF_P95_THRESHOLD_MS=300 \

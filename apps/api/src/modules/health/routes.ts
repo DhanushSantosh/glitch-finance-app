@@ -7,7 +7,7 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
   app.get("/health", async () => {
     return {
       status: "ok",
-      service: "glitch-api",
+      service: "velqora-api",
       time: new Date().toISOString()
     };
   });
@@ -40,7 +40,7 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
         : ctx.env.NODE_ENV !== "production";
 
     return {
-      message: "Glitch API is running",
+      message: "Velqora API is running",
       databaseUrlSet: Boolean(ctx.env.DATABASE_URL),
       redisUrlSet: Boolean(ctx.env.REDIS_URL),
       otpDelivery: {

@@ -42,7 +42,7 @@ const authViaOtp = async (app: FastifyInstance, email: string): Promise<AuthResu
 };
 
 const createMultipartAvatarPayload = (fileName: string, mimeType: string, content: Buffer) => {
-  const boundary = `----glitch-avatar-${randomUUID()}`;
+  const boundary = `----velqora-avatar-${randomUUID()}`;
   const header = Buffer.from(
     `--${boundary}\r\n` +
       `Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
@@ -146,7 +146,7 @@ describe("profile integration", () => {
         locale: "en-IN",
         currency: "INR",
         occupation: "Student",
-        bio: "Building Glitch to production quality.",
+        bio: "Building Velqora to production quality.",
         settings: {
           pushNotificationsEnabled: false,
           emailNotificationsEnabled: true,
