@@ -58,7 +58,7 @@ export const registerHealthRoutes = async (app: FastifyInstance, ctx: AppContext
 
   app.get("/api/v1/bootstrap", async () => {
     return {
-      appName: "Quantex25",
+      appName: APP_BRAND_NAME,
       currency: ctx.env.APP_CURRENCY,
       locale: "en-IN",
       timezone: "UTC",
