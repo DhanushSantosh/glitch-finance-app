@@ -27,7 +27,10 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -51,8 +54,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "729df5f9-5568-4920-a078-1662320f41ab"
+        "projectId": "f1e0078f-ae5f-4365-b070-087dee81d75a"
       }
-    }
+    },
+    "owner": "dhanushsantosh"
   }
 }
