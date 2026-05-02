@@ -9,12 +9,13 @@
     "start": "node dist/server.js",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
-    "test": "ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.velqora.finance pnpm db:migrate && ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.velqora.finance vitest run",
+    "test": "ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.velqora.finance APPLE_SERVICE_ID=com.velqora.finance.service pnpm db:migrate && ENV_FILE=../../.env NODE_ENV=test OTP_PROVIDER=console APPLE_APP_BUNDLE_ID=com.velqora.finance APPLE_SERVICE_ID=com.velqora.finance.service vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
+    "@fastify/formbody": "^8.0.2",
     "@fastify/multipart": "^9.4.0",
     "@fastify/rate-limit": "^10.3.0",
     "@sentry/node": "^10.49.0",

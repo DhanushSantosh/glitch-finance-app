@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { AppContext } from "../../context.js";
+import { AppError } from "../../errors.js";
 import { parseOrThrow } from "../../utils/validation.js";
 import { requireAuth } from "../../utils/auth.js";
 
@@ -16,6 +17,7 @@ const googleOAuthSchema = z.object({
 const appleOAuthSchema = z.object({
   identityToken: z.string().min(1).max(4096),
   rawNonce: z.string().min(8).max(128),
+  audience: z.enum(["app", "service"]).optional(),
   user: z
     .object({
       firstName: z.string().max(80).optional(),
@@ -24,6 +26,47 @@ const appleOAuthSchema = z.object({
     })
     .optional()
 });
+
+const appleCallbackBodySchema = z.object({
+  state: z.string().min(1).max(2048),
+  id_token: z.string().min(1).max(4096).optional(),
+  user: z.string().max(4096).optional(),
+  error: z.string().max(128).optional(),
+  error_description: z.string().max(512).optional()
+});
+
+const appleCallbackStateSchema = z.object({
+  clientState: z.string().min(1).max(256),
+  rawNonce: z.string().min(8).max(128),
+  redirectUri: z.string().url().max(2048)
+});
+
+const appleUserHintSchema = z
+  .object({
+    name: z
+      .object({
+        firstName: z.string().max(80).optional(),
+        lastName: z.string().max(80).optional()
+      })
+      .optional(),
+    email: z.string().email().max(320).optional()
+  })
+  .transform((value) => ({
+    firstName: value.name?.firstName,
+    lastName: value.name?.lastName,
+    email: value.email
+  }));
+
+const isSupportedMobileRedirectUri = (value: string): boolean =>
+  value.startsWith("velqora://") || value.startsWith("exp://") || value.startsWith("exps://");
+
+const parseJsonValue = <T>(value: string, label: string): T => {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    throw new AppError(400, "INVALID_OAUTH_CALLBACK", `Apple Sign-In callback contained invalid ${label}.`);
+  }
+};
 
 const verifyOtpSchema = z.object({
   email: z.string().trim().email().max(320),
@@ -137,6 +180,7 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
       provider: "apple",
       idToken: body.identityToken,
       rawNonce: body.rawNonce,
+      audience: body.audience,
       profileHint: body.user,
       ipAddress: request.ip,
       requestId: request.id
@@ -147,5 +191,43 @@ export const registerAuthRoutes = async (app: FastifyInstance, ctx: AppContext):
       user: result.user,
       session: { expiresInDays: ctx.env.AUTH_SESSION_TTL_DAYS }
     };
+  });
+
+  app.post("/api/v1/auth/oauth/apple/callback", async (request, reply) => {
+    const body = parseOrThrow(appleCallbackBodySchema, request.body);
+    const callbackState = parseOrThrow(appleCallbackStateSchema, parseJsonValue(body.state, "state"));
+
+    if (!isSupportedMobileRedirectUri(callbackState.redirectUri)) {
+      throw new AppError(400, "INVALID_OAUTH_CALLBACK", "Apple Sign-In callback redirect URI is not allowed.");
+    }
+
+    const redirectUrl = new URL(callbackState.redirectUri);
+    redirectUrl.searchParams.set("state", callbackState.clientState);
+
+    if (body.error) {
+      redirectUrl.searchParams.set("error", body.error);
+      if (body.error_description) {
+        redirectUrl.searchParams.set("errorDescription", body.error_description);
+      }
+      return reply.redirect(redirectUrl.toString(), 303);
+    }
+
+    if (!body.id_token) {
+      redirectUrl.searchParams.set("error", "missing_identity_token");
+      redirectUrl.searchParams.set("errorDescription", "Apple Sign-In did not return an identity token.");
+      return reply.redirect(redirectUrl.toString(), 303);
+    }
+
+    redirectUrl.searchParams.set("identityToken", body.id_token);
+    redirectUrl.searchParams.set("rawNonce", callbackState.rawNonce);
+
+    if (body.user) {
+      const user = parseOrThrow(appleUserHintSchema, parseJsonValue(body.user, "user payload"));
+      if (user.firstName || user.lastName || user.email) {
+        redirectUrl.searchParams.set("user", JSON.stringify(user));
+      }
+    }
+
+    return reply.redirect(redirectUrl.toString(), 303);
   });
 };

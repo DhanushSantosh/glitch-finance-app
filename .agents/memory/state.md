@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-05-02
+updated_at: 2026-05-03
 ---
 
 # Project State
@@ -43,6 +43,10 @@ updated_at: 2026-05-02
 - BottomTabBar: liquid glass floating pill with BlurView + animated spring
 - 58 mobile tests passing
 - Mobile session storage migrated from AsyncStorage to `expo-secure-store`
+- Cross-platform OAuth pass completed:
+  - Apple Sign-In keeps the native iOS flow when available
+  - Apple Sign-In now falls back to a backend-mediated browser flow for Android / non-native contexts
+  - Google Sign-In button visibility is no longer hidden by platform; runtime availability still depends on a native build
 - metro.config.js wired for pnpm monorepo (iOS + Android working)
 - iOS safe-area handling fixed at app shell (`SafeAreaProvider` + `SafeAreaView`) to prevent top notification-bar overlap
 - Fixed UI congestion on `GoalFormScreen` by adjusting field layouts and flex ratios for a cleaner aesthetic
@@ -111,6 +115,10 @@ updated_at: 2026-05-02
 ## What's In Progress
 - No platform-blocking issue on local dev.
 - Hosted staging exists and works; remaining ops maturity work is custom DNS, staging smoke/perf, and finalizing production-domain rollout.
+- Cross-platform Apple Sign-In now depends on provider-side Service ID setup:
+  - API env: `APPLE_SERVICE_ID`
+  - mobile env: `EXPO_PUBLIC_APPLE_SERVICE_ID`
+  - Google Sign-In still requires a dev/preview/prod native build and will not run inside Expo Go.
 
 ## Recent Fixes
 - Removed the failed Cloudflare / Expo tunnel experiment and replaced it with a Tailscale-based Expo Go workflow

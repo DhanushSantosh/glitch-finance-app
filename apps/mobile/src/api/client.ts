@@ -150,11 +150,12 @@ export const apiClient = {
   async authWithApple(
     identityToken: string,
     rawNonce: string,
-    user?: { firstName?: string; lastName?: string; email?: string }
+    user?: { firstName?: string; lastName?: string; email?: string },
+    audience?: "app" | "service"
   ): Promise<{ token: string; user: User }> {
     return request<{ token: string; user: User }>("/api/v1/auth/oauth/apple", {
       method: "POST",
-      body: { identityToken, rawNonce, ...(user ? { user } : {}) }
+      body: { identityToken, rawNonce, ...(user ? { user } : {}), ...(audience ? { audience } : {}) }
     });
   },
 

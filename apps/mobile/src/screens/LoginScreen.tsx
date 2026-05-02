@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Platform, Text, View } from "react-native";
-import * as AppleAuthentication from "expo-apple-authentication";
+import { Text, View } from "react-native";
 import { APP_DISPLAY_NAME } from "../appMetadata";
+import { isAppleSignInAvailable, isGoogleSignInAvailable } from "../auth/oauthProviders";
 import { AppHeader, Button, Card, publishToast, Screen, TextField } from "../components/ui";
-import { isGoogleSignInAvailable } from "../auth/oauthProviders";
 import { createStyles, theme } from "../theme";
 
 type LoginScreenProps = {
@@ -21,9 +20,7 @@ export const LoginScreen = ({ onRequestOtp, onGoogleSignIn, onAppleSignIn }: Log
   const googleAvailable = isGoogleSignInAvailable();
 
   useEffect(() => {
-    if (Platform.OS === "ios") {
-      void AppleAuthentication.isAvailableAsync().then(setAppleAvailable);
-    }
+    void isAppleSignInAvailable().then(setAppleAvailable);
   }, []);
 
   const handleSendOtp = async () => {

@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-05-02
+updated_at: 2026-05-03
 ---
 
 # Handoff Log
@@ -13,23 +13,25 @@ This file is updated at the END of every work session. It captures exactly what 
 
 ---
 
-## Last Session — 2026-05-02
+## Last Session — 2026-05-03
 
 **Done:**
-- Renamed the project across code, config, docs, tests, and shared agent memory from Glitch / glitch-finance to Velqora.
-- Updated workspace package names to `@velqora/api` and `@velqora/mobile`.
-- Updated app identity surfaces to `Velqora`, `velqora-app`, and `com.velqora.finance`.
-- Updated backend/runtime identifiers including report filenames, metrics prefixes, service names, session-storage key, OTP branding, and Sentry service tags.
-- Updated local/dev infra defaults including Docker, Render blueprints, CI database defaults, and staging host references to Velqora-prefixed names.
-- Updated docs and collaboration memory so future sessions use the Velqora name consistently.
+- Added cross-platform Apple Sign-In support by keeping the native iOS path and adding a backend-mediated browser fallback for Android / non-native contexts.
+- Added backend Apple callback handling for browser sign-in and support for validating Apple tokens against either the app bundle ID or a Service ID audience.
+- Added `APPLE_SERVICE_ID` / `EXPO_PUBLIC_APPLE_SERVICE_ID` env surfaces and Expo mobile scheme support for the browser callback round-trip.
+- Relaxed Google Sign-In button visibility so it can appear on both platforms when explicitly enabled, while still failing clearly in Expo Go where the native module is unavailable.
+- Updated API and mobile tests to cover the new Apple callback flow and Apple audience payload handling.
 
 **Open threads:**
-- External services still need manual rename/migration where names are registered outside the repo: Render resources, Sentry project names/DSNs, Expo/EAS project metadata, Apple bundle ID registration, Android package registration, and any branded email sender/domain settings.
-- The on-disk workspace folder is still `/home/dhanush/Projects/glitch-finance-app`; repo/directory renaming has not been performed in this pass.
+- Provider-side Apple browser auth still needs real service configuration to work end to end on Android:
+  - `APPLE_SERVICE_ID` in API env
+  - `EXPO_PUBLIC_APPLE_SERVICE_ID` in mobile env
+  - the Apple developer portal Service ID / return URL must point to `/api/v1/auth/oauth/apple/callback`
+- Google Sign-In is still native-build-only and cannot succeed inside Expo Go.
 
 **Next session should:**
-- Verify live third-party surfaces are renamed or intentionally aliased before the next deploy.
-- Commit and push the Velqora rename if approved.
+- Verify Apple browser sign-in end to end against a real configured Service ID.
+- Run a device-level auth sanity pass: Apple on Android/browser fallback, Apple on iPhone native flow, and Google in a dev build on both platforms when enabled.
 
 ---
 

@@ -61,12 +61,12 @@ export async function verifyGoogleIdToken(
 export async function verifyAppleIdToken(
   identityToken: string,
   rawNonce: string,
-  bundleId: string
+  audience: string
 ): Promise<AppleTokenPayload> {
   try {
     const { payload } = await jwtVerify(identityToken, APPLE_JWKS, {
       issuer: "https://appleid.apple.com",
-      audience: bundleId
+      audience
     });
 
     if (!payload.sub || typeof payload.sub !== "string") {

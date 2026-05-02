@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-05-02
+updated_at: 2026-05-03
 ---
 
 # Key Decisions Log
@@ -10,7 +10,8 @@ updated_at: 2026-05-02
 |---|---|---|
 | Routing model | Manual tab routing via `activeTab` state in App.tsx | No React Navigation — keeps mobile lightweight |
 | Auth | Email OTP → session token → SecureStore | No passwords, simpler onboarding with stronger mobile secret storage |
-| Google OAuth rollout | Keep disabled by default until a nonce-safe client flow is available | Current Expo Go / native setup does not yet provide a shippable end-to-end nonce-bound Google path |
+| Google OAuth rollout | Keep disabled by default in env, but allow the button to render when explicitly enabled | Native Google Sign-In works in real builds, but Expo Go still cannot host the native module and should fail loudly rather than disappear silently |
+| Apple OAuth rollout | Native iOS flow plus backend-mediated browser fallback for non-iOS / non-native contexts | Gives Apple Sign-In coverage on Android and other non-native contexts while preserving nonce verification on the backend |
 | OTP delivery | ConsoleOtpProvider (dev) / ResendOtpProvider (prod) | Env-switched, no code changes needed |
 | Rate limiting | Redis-backed with in-memory fallback | Redis optional — app works without it |
 | Default categories | Seeded at startup, immutable to users | Consistent baseline for all users |

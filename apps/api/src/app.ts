@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
+import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
 import { createAppContext, closeAppContext } from "./context.js";
@@ -58,6 +59,8 @@ export const createApp = async (): Promise<FastifyInstance> => {
     skipOnError: true,
     allowList: (_request, _key) => ctx.env.NODE_ENV === "test"
   });
+
+  await app.register(formbody);
 
   app.addHook("onRequest", async (request) => {
     request.auth = await ctx.authService.resolveAuth(request.headers.authorization);

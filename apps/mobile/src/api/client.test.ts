@@ -235,6 +235,34 @@ describe("apiClient — DELETE request for account deletion", () => {
   });
 });
 
+describe("apiClient — OAuth payloads", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("includes Apple audience when provided", async () => {
+    mockFetch.mockResolvedValueOnce(makeFetchResponse({ token: "session-token", user: { id: "u1", email: "a@b.com" } }, true));
+
+    await apiClient.authWithApple(
+      "apple-id-token",
+      "raw-nonce-123",
+      { firstName: "Jamie" },
+      "service"
+    );
+
+    const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(requestInit.method).toBe("POST");
+    expect(requestInit.body).toBe(
+      JSON.stringify({
+        identityToken: "apple-id-token",
+        rawNonce: "raw-nonce-123",
+        user: { firstName: "Jamie" },
+        audience: "service"
+      })
+    );
+  });
+});
+
 describe("apiClient — logout", () => {
   beforeEach(() => {
     mockFetch.mockReset();

@@ -563,8 +563,13 @@ export default function App() {
   };
 
   const handleAppleSignIn = async () => {
-    const appleResult = await signInWithApple();
-    const result = await apiClient.authWithApple(appleResult.identityToken, appleResult.rawNonce, appleResult.user);
+    const appleResult = await signInWithApple(apiClient.baseUrl);
+    const result = await apiClient.authWithApple(
+      appleResult.identityToken,
+      appleResult.rawNonce,
+      appleResult.user,
+      appleResult.audience
+    );
     await saveSessionToken(result.token);
     setToken(result.token);
     await loadAuthenticatedData(result.token);

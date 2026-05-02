@@ -1,5 +1,5 @@
 updated_by: Codex
-updated_at: 2026-05-02
+updated_at: 2026-05-03
 ---
 
 # Project Conventions
@@ -103,7 +103,8 @@ apps/mobile/src/
   - `EXPO_PUBLIC_API_URL=http://<tailscale-ip>:4000`
   - `REACT_NATIVE_PACKAGER_HOSTNAME=<tailscale-ip>`
 - Expo Go-oriented scripts should set `EXPO_NO_REDIRECT_PAGE=1` to avoid browser/interstitial QR codes when `expo-dev-client` is installed.
-- Google Sign-In must remain disabled until the mobile client can supply a nonce that the backend verifies against the ID token.
+- Google Sign-In can be surfaced when `EXPO_PUBLIC_GOOGLE_OAUTH_ENABLED=true`, but it still depends on a native build; Expo Go must continue to show a clear runtime error instead of pretending the flow is available.
+- Apple Sign-In should use the native `expo-apple-authentication` flow on iOS when available and fall back to the backend-mediated browser flow elsewhere. The browser path requires `APPLE_SERVICE_ID` on the API and `EXPO_PUBLIC_APPLE_SERVICE_ID` on mobile.
 - For hosted staging testing, prefer the live Render hostname until custom DNS is proven live; keep mobile preview/dev-staging configs aligned with the actual reachable backend host.
 - Keep Tailscale optional in command naming:
   - `pnpm dev` / `pnpm dev:local` should work without Tailscale

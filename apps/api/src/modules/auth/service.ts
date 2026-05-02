@@ -35,6 +35,7 @@ type OAuthSignInInput = {
   provider: "google" | "apple";
   idToken: string;
   rawNonce?: string;
+  audience?: "app" | "service";
   profileHint?: {
     firstName?: string;
     lastName?: string;
@@ -282,7 +283,7 @@ export class AuthService {
   }
 
   async signInWithOAuth(input: OAuthSignInInput): Promise<{ token: string; user: { id: string; email: string } }> {
-    const { provider, idToken, rawNonce, profileHint, ipAddress, requestId } = input;
+    const { provider, idToken, rawNonce, audience, profileHint, ipAddress, requestId } = input;
 
     // Rate limit by IP to prevent token-stuffing attacks
     if (this.deps.env.NODE_ENV !== "test") {
@@ -311,13 +312,15 @@ export class AuthService {
       providerId = payload.sub;
       providerEmail = payload.email;
     } else {
-      if (!this.deps.env.APPLE_APP_BUNDLE_ID) {
-        throw new AppError(503, "OAUTH_NOT_CONFIGURED", "Apple Sign-In is not configured.");
-      }
       if (!rawNonce) {
         throw new AppError(400, "MISSING_NONCE", "rawNonce is required for Apple Sign-In.");
       }
-      const payload = await verifyAppleIdToken(idToken, rawNonce, this.deps.env.APPLE_APP_BUNDLE_ID);
+      const appleAudience =
+        audience === "service" ? this.deps.env.APPLE_SERVICE_ID : this.deps.env.APPLE_APP_BUNDLE_ID;
+      if (!appleAudience) {
+        throw new AppError(503, "OAUTH_NOT_CONFIGURED", "Apple Sign-In is not configured.");
+      }
+      const payload = await verifyAppleIdToken(idToken, rawNonce, appleAudience);
       providerId = payload.sub;
       providerEmail = payload.email;
     }

@@ -122,6 +122,7 @@ describe("POST /api/v1/auth/oauth/apple", () => {
   beforeAll(async () => {
     // Must be set before createApp() parses the env schema
     process.env.APPLE_APP_BUNDLE_ID = "com.velqora.finance";
+    process.env.APPLE_SERVICE_ID = "com.velqora.finance.service";
     app = await createApp();
     await app.ready();
   });
@@ -231,6 +232,82 @@ describe("POST /api/v1/auth/oauth/apple", () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json<{ error: { code: string } }>().error.code).toBe("INVALID_OAUTH_TOKEN");
+  });
+
+  it("accepts Apple service-id audience for browser-based sign-in", async () => {
+    const jose = await import("jose");
+    const nonceHash = createHash("sha256").update(RAW_NONCE).digest("hex");
+    vi.spyOn(jose, "jwtVerify").mockResolvedValueOnce({
+      payload: { sub: "a-service-001", nonce: nonceHash, email: "apple-web@privaterelay.appleid.com" },
+      protectedHeader: { alg: "RS256" }
+    } as unknown as Awaited<ReturnType<typeof jose.jwtVerify>>);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/oauth/apple",
+      payload: { identityToken: "service-token", rawNonce: RAW_NONCE, audience: "service" }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ user: { email: string } }>().user.email).toBe("apple-web@privaterelay.appleid.com");
+    expect(jose.jwtVerify).toHaveBeenCalledWith(
+      "service-token",
+      expect.any(Function),
+      expect.objectContaining({ audience: "com.velqora.finance.service" })
+    );
+  });
+
+  it("redirects Apple browser callback back into the app with auth payload", async () => {
+    const callbackState = JSON.stringify({
+      clientState: "client-state-123",
+      rawNonce: RAW_NONCE,
+      redirectUri: "velqora://oauth/apple"
+    });
+    const callbackUser = JSON.stringify({
+      name: { firstName: "Jamie", lastName: "Lee" },
+      email: "jamie@privaterelay.appleid.com"
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/oauth/apple/callback",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      payload: new URLSearchParams({
+        state: callbackState,
+        id_token: "browser-id-token",
+        user: callbackUser
+      }).toString()
+    });
+
+    expect(response.statusCode).toBe(303);
+    expect(response.headers.location).toBe(
+      "velqora://oauth/apple?state=client-state-123&identityToken=browser-id-token&rawNonce=test-apple-raw-nonce-abc123&user=%7B%22firstName%22%3A%22Jamie%22%2C%22lastName%22%3A%22Lee%22%2C%22email%22%3A%22jamie%40privaterelay.appleid.com%22%7D"
+    );
+  });
+
+  it("rejects Apple browser callback redirects to unsupported targets", async () => {
+    const callbackState = JSON.stringify({
+      clientState: "client-state-unsafe",
+      rawNonce: RAW_NONCE,
+      redirectUri: "https://example.com/oauth/apple"
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/oauth/apple/callback",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      payload: new URLSearchParams({
+        state: callbackState,
+        id_token: "browser-id-token"
+      }).toString()
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ error: { code: string } }>().error.code).toBe("INVALID_OAUTH_CALLBACK");
   });
 
   it("issued token is valid for authenticated requests", async () => {
